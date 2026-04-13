@@ -1,26 +1,30 @@
-.PHONY: dev test migrate-up migrate-down build docker-build
+.PHONY: dev test migrate-up migrate-down build docker-build sqlc-gen
 
 APP_ENTRYPOINT ?= ./cmd/api
 BINARY_NAME ?= mali_api
 MIGRATIONS_DIR ?= ./db/migrations
-DOCKER_IMAGE ?= mali_api:latest
-DATABASE_URL ?= postgres://postgres:postgres@localhost:5432/mali?sslmode=disable
+COMPOSE ?= docker compose
 
 dev:
-	air
+	$(COMPOSE) up api
 
 test:
-	go test ./...
+	$(COMPOSE) run --rm api go test ./...
 
 migrate-up:
-	migrate -path "$(MIGRATIONS_DIR)" -database "$(DATABASE_URL)" up
+	$(COMPOSE) up -d postgres redis
+	$(COMPOSE) run --rm api migrate -path "$(MIGRATIONS_DIR)" -database "$$DATABASE_URL" up
 
 migrate-down:
-	migrate -path "$(MIGRATIONS_DIR)" -database "$(DATABASE_URL)" down 1
+	$(COMPOSE) up -d postgres redis
+	$(COMPOSE) run --rm api migrate -path "$(MIGRATIONS_DIR)" -database "$$DATABASE_URL" down 1
 
 build:
-	go build -o bin/$(BINARY_NAME) "$(APP_ENTRYPOINT)"
+	$(COMPOSE) run --rm api sh -c "mkdir -p bin && go build -o bin/$(BINARY_NAME) $(APP_ENTRYPOINT)"
 
 docker-build:
-	docker build -t "$(DOCKER_IMAGE)" .
+	$(COMPOSE) build api
+
+sqlc-gen:
+	$(COMPOSE) run --rm api sqlc generate
 
