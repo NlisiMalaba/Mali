@@ -2,12 +2,17 @@ package main
 
 import (
 	"log"
-	"os"
 
+	"github.com/mali-app/mali_api/config"
 	"github.com/gofiber/fiber/v2"
 )
 
 func main() {
+	cfg, err := config.Load()
+	if err != nil {
+		log.Fatalf("failed to load config: %v", err)
+	}
+
 	app := fiber.New()
 
 	app.Get("/health", func(c *fiber.Ctx) error {
@@ -16,12 +21,7 @@ func main() {
 		})
 	})
 
-	port := os.Getenv("PORT")
-	if port == "" {
-		port = "8080"
-	}
-
-	if err := app.Listen(":" + port); err != nil {
+	if err := app.Listen(":" + cfg.Port); err != nil {
 		log.Fatalf("failed to start api: %v", err)
 	}
 }
