@@ -11,17 +11,22 @@ import (
 )
 
 type Querier interface {
+	CreateUserCategory(ctx context.Context, arg CreateUserCategoryParams) (Category, error)
 	CreateRefreshToken(ctx context.Context, arg CreateRefreshTokenParams) error
 	CreateUser(ctx context.Context, arg CreateUserParams) (User, error)
 	CreateWallet(ctx context.Context, arg CreateWalletParams) (Wallet, error)
+	DeleteUserCategory(ctx context.Context, arg DeleteUserCategoryParams) error
 	GetRefreshTokenByHash(ctx context.Context, tokenHash string) (RefreshToken, error)
+	GetSystemCategories(ctx context.Context) ([]Category, error)
 	GetUserByEmail(ctx context.Context, email pgtype.Text) (User, error)
 	GetUserByID(ctx context.Context, id pgtype.UUID) (User, error)
 	GetUserByPhone(ctx context.Context, phone pgtype.Text) (User, error)
+	GetUserCategories(ctx context.Context, userID pgtype.UUID) ([]Category, error)
 	GetWalletByID(ctx context.Context, id pgtype.UUID) (Wallet, error)
 	GetWalletsByUser(ctx context.Context, userID pgtype.UUID) ([]Wallet, error)
 	RevokeRefreshTokenByID(ctx context.Context, arg RevokeRefreshTokenByIDParams) error
 	SoftDeleteWallet(ctx context.Context, id pgtype.UUID) error
+	UpdateUserCategory(ctx context.Context, arg UpdateUserCategoryParams) error
 	UpdateUserPassword(ctx context.Context, arg UpdateUserPasswordParams) error
 	UpdateWalletBalance(ctx context.Context, arg UpdateWalletBalanceParams) error
 	UpdateWalletName(ctx context.Context, arg UpdateWalletNameParams) error

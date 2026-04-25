@@ -8,6 +8,7 @@ import (
 type Dependencies struct {
 	AuthHandler     *httpHandler.AuthHandler
 	WalletHandler   *httpHandler.WalletHandler
+	CategoryHandler *httpHandler.CategoryHandler
 	AuthRateLimiter fiber.Handler
 	JWTAuthMiddleware fiber.Handler
 }
@@ -18,5 +19,6 @@ func Register(app *fiber.App, deps Dependencies) {
 	v1 := app.Group("/v1")
 	registerAuthRoutes(v1, deps)
 	registerWalletRoutes(v1, deps)
+	registerCategoryRoutes(v1, deps)
 }
 

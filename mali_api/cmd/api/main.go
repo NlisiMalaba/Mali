@@ -55,6 +55,7 @@ func main() {
 	userRepo := httpRepo.NewUserRepository(queries)
 	refreshRepo := httpRepo.NewRefreshTokenRepository(queries)
 	walletRepo := httpRepo.NewWalletRepository(queries)
+	categoryRepo := httpRepo.NewCategoryRepository(queries)
 
 	authService, err := usecase.NewAuthService(userRepo, refreshRepo, cfg.JWTSecret, cfg.JWTRefreshSecret)
 	if err != nil {
@@ -66,6 +67,11 @@ func main() {
 		log.Fatalf("failed to initialize wallet service: %v", err)
 	}
 	walletHandler := httpHandler.NewWalletHandler(walletService, validator.New())
+	categoryService, err := usecase.NewCategoryService(categoryRepo)
+	if err != nil {
+		log.Fatalf("failed to initialize category service: %v", err)
+	}
+	categoryHandler := httpHandler.NewCategoryHandler(categoryService, validator.New())
 	redisOptions, err := redis.ParseURL(cfg.RedisURL)
 	if err != nil {
 		log.Fatalf("failed to parse redis url: %v", err)
@@ -74,6 +80,7 @@ func main() {
 	httpRouter.Register(app, httpRouter.Dependencies{
 		AuthHandler:     authHandler,
 		WalletHandler:   walletHandler,
+		CategoryHandler: categoryHandler,
 		AuthRateLimiter: httpmiddleware.AuthRateLimit(redisClient, 10, time.Minute),
 		JWTAuthMiddleware: httpmiddleware.JWTAuth(cfg.JWTSecret),
 	})
