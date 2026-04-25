@@ -10,8 +10,20 @@ FROM users
 WHERE email = $1
 LIMIT 1;
 
+-- name: GetUserByPhone :one
+SELECT id, email, phone, name, password_hash, created_at, updated_at
+FROM users
+WHERE phone = $1
+LIMIT 1;
+
 -- name: CreateUser :one
 INSERT INTO users (email, phone, name, password_hash)
 VALUES ($1, $2, $3, $4)
 RETURNING id, email, phone, name, password_hash, created_at, updated_at;
+
+-- name: UpdateUserPassword :exec
+UPDATE users
+SET password_hash = $2,
+    updated_at = NOW()
+WHERE id = $1;
 
