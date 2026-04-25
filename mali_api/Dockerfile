@@ -5,7 +5,7 @@ WORKDIR /app
 RUN apk add --no-cache git curl bash make \
     && go install github.com/air-verse/air@latest \
     && go install github.com/golang-migrate/migrate/v4/cmd/migrate@latest \
-    && go install github.com/sqlc-dev/sqlc/cmd/sqlc@latest
+    && go install github.com/sqlc-dev/sqlc/cmd/sqlc@v1.30.0
 
 ENV PATH="/go/bin:${PATH}"
 
