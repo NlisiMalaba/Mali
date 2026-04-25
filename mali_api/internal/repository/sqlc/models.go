@@ -58,18 +58,19 @@ type RefreshToken struct {
 }
 
 type SavingsGoal struct {
-	ID           pgtype.UUID        `json:"id"`
-	UserID       pgtype.UUID        `json:"user_id"`
-	Name         string             `json:"name"`
-	Emoji        pgtype.Text        `json:"emoji"`
-	GoalType     pgtype.Text        `json:"goal_type"`
-	TargetAmount pgtype.Numeric     `json:"target_amount"`
-	Currency     string             `json:"currency"`
-	SavedAmount  pgtype.Numeric     `json:"saved_amount"`
-	Deadline     pgtype.Date        `json:"deadline"`
-	Priority     pgtype.Int4        `json:"priority"`
-	IsCompleted  pgtype.Bool        `json:"is_completed"`
-	CreatedAt    pgtype.Timestamptz `json:"created_at"`
+	ID              pgtype.UUID        `json:"id"`
+	UserID          pgtype.UUID        `json:"user_id"`
+	Name            string             `json:"name"`
+	Emoji           pgtype.Text        `json:"emoji"`
+	GoalType        pgtype.Text        `json:"goal_type"`
+	TargetAmount    pgtype.Numeric     `json:"target_amount"`
+	Currency        string             `json:"currency"`
+	SavedAmount     pgtype.Numeric     `json:"saved_amount"`
+	Deadline        pgtype.Date        `json:"deadline"`
+	Priority        pgtype.Int4        `json:"priority"`
+	IsCompleted     pgtype.Bool        `json:"is_completed"`
+	CreatedAt       pgtype.Timestamptz `json:"created_at"`
+	RequiredMonthly pgtype.Numeric     `json:"required_monthly"`
 }
 
 type SyncLog struct {

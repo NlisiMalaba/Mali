@@ -26,9 +26,22 @@ type CreateUserCategoryParams struct {
 }
 
 func (q *Queries) CreateUserCategory(ctx context.Context, arg CreateUserCategoryParams) (Category, error) {
-	row := q.db.QueryRow(ctx, createUserCategory, arg.UserID, arg.Name, arg.Icon, arg.ColorHex, arg.Type)
+	row := q.db.QueryRow(ctx, createUserCategory,
+		arg.UserID,
+		arg.Name,
+		arg.Icon,
+		arg.ColorHex,
+		arg.Type,
+	)
 	var i Category
-	err := row.Scan(&i.ID, &i.UserID, &i.Name, &i.Icon, &i.ColorHex, &i.Type)
+	err := row.Scan(
+		&i.ID,
+		&i.UserID,
+		&i.Name,
+		&i.Icon,
+		&i.ColorHex,
+		&i.Type,
+	)
 	return i, err
 }
 
@@ -64,7 +77,14 @@ func (q *Queries) GetSystemCategories(ctx context.Context) ([]Category, error) {
 	var items []Category
 	for rows.Next() {
 		var i Category
-		if err := rows.Scan(&i.ID, &i.UserID, &i.Name, &i.Icon, &i.ColorHex, &i.Type); err != nil {
+		if err := rows.Scan(
+			&i.ID,
+			&i.UserID,
+			&i.Name,
+			&i.Icon,
+			&i.ColorHex,
+			&i.Type,
+		); err != nil {
 			return nil, err
 		}
 		items = append(items, i)
@@ -91,7 +111,14 @@ func (q *Queries) GetUserCategories(ctx context.Context, userID pgtype.UUID) ([]
 	var items []Category
 	for rows.Next() {
 		var i Category
-		if err := rows.Scan(&i.ID, &i.UserID, &i.Name, &i.Icon, &i.ColorHex, &i.Type); err != nil {
+		if err := rows.Scan(
+			&i.ID,
+			&i.UserID,
+			&i.Name,
+			&i.Icon,
+			&i.ColorHex,
+			&i.Type,
+		); err != nil {
 			return nil, err
 		}
 		items = append(items, i)
@@ -122,7 +149,13 @@ type UpdateUserCategoryParams struct {
 }
 
 func (q *Queries) UpdateUserCategory(ctx context.Context, arg UpdateUserCategoryParams) error {
-	_, err := q.db.Exec(ctx, updateUserCategory, arg.ID, arg.UserID, arg.Name, arg.Icon, arg.ColorHex, arg.Type)
+	_, err := q.db.Exec(ctx, updateUserCategory,
+		arg.ID,
+		arg.UserID,
+		arg.Name,
+		arg.Icon,
+		arg.ColorHex,
+		arg.Type,
+	)
 	return err
 }
-

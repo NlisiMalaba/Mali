@@ -151,4 +151,3 @@ func (q *Queries) UpdateWalletName(ctx context.Context, arg UpdateWalletNamePara
 	_, err := q.db.Exec(ctx, updateWalletName, arg.ID, arg.Name)
 	return err
 }
-

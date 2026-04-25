@@ -11,13 +11,25 @@ import (
 )
 
 type Querier interface {
-	CreateUserCategory(ctx context.Context, arg CreateUserCategoryParams) (Category, error)
+	CreateGoal(ctx context.Context, arg CreateGoalParams) (CreateGoalRow, error)
+	CreateGoalContribution(ctx context.Context, arg CreateGoalContributionParams) (GoalContribution, error)
 	CreateRefreshToken(ctx context.Context, arg CreateRefreshTokenParams) error
+	CreateTransaction(ctx context.Context, arg CreateTransactionParams) (Transaction, error)
 	CreateUser(ctx context.Context, arg CreateUserParams) (User, error)
+	CreateUserCategory(ctx context.Context, arg CreateUserCategoryParams) (Category, error)
 	CreateWallet(ctx context.Context, arg CreateWalletParams) (Wallet, error)
+	DeleteGoal(ctx context.Context, arg DeleteGoalParams) error
 	DeleteUserCategory(ctx context.Context, arg DeleteUserCategoryParams) error
+	GetBudgetSpent(ctx context.Context, arg GetBudgetSpentParams) (pgtype.Numeric, error)
+	GetBudgetsByUserMonth(ctx context.Context, arg GetBudgetsByUserMonthParams) ([]Budget, error)
+	GetContributionsByGoal(ctx context.Context, arg GetContributionsByGoalParams) ([]GoalContribution, error)
+	GetGoalByID(ctx context.Context, arg GetGoalByIDParams) (GetGoalByIDRow, error)
+	GetGoalsByUser(ctx context.Context, userID pgtype.UUID) ([]GetGoalsByUserRow, error)
 	GetRefreshTokenByHash(ctx context.Context, tokenHash string) (RefreshToken, error)
 	GetSystemCategories(ctx context.Context) ([]Category, error)
+	GetTransactionByID(ctx context.Context, id pgtype.UUID) (Transaction, error)
+	GetTransactionBySyncID(ctx context.Context, syncID pgtype.UUID) (Transaction, error)
+	GetTransactionsByUser(ctx context.Context, arg GetTransactionsByUserParams) ([]Transaction, error)
 	GetUserByEmail(ctx context.Context, email pgtype.Text) (User, error)
 	GetUserByID(ctx context.Context, id pgtype.UUID) (User, error)
 	GetUserByPhone(ctx context.Context, phone pgtype.Text) (User, error)
@@ -25,11 +37,15 @@ type Querier interface {
 	GetWalletByID(ctx context.Context, id pgtype.UUID) (Wallet, error)
 	GetWalletsByUser(ctx context.Context, userID pgtype.UUID) ([]Wallet, error)
 	RevokeRefreshTokenByID(ctx context.Context, arg RevokeRefreshTokenByIDParams) error
+	SoftDeleteTransaction(ctx context.Context, arg SoftDeleteTransactionParams) error
 	SoftDeleteWallet(ctx context.Context, id pgtype.UUID) error
+	UpdateGoal(ctx context.Context, arg UpdateGoalParams) error
+	UpdateGoalSavedAmount(ctx context.Context, arg UpdateGoalSavedAmountParams) error
 	UpdateUserCategory(ctx context.Context, arg UpdateUserCategoryParams) error
 	UpdateUserPassword(ctx context.Context, arg UpdateUserPasswordParams) error
 	UpdateWalletBalance(ctx context.Context, arg UpdateWalletBalanceParams) error
 	UpdateWalletName(ctx context.Context, arg UpdateWalletNameParams) error
+	UpsertBudget(ctx context.Context, arg UpsertBudgetParams) (Budget, error)
 }
 
 var _ Querier = (*Queries)(nil)

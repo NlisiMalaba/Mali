@@ -11,6 +11,7 @@ type Dependencies struct {
 	CategoryHandler    *httpHandler.CategoryHandler
 	TransactionHandler *httpHandler.TransactionHandler
 	GoalHandler        *httpHandler.GoalHandler
+	BudgetHandler      *httpHandler.BudgetHandler
 	AuthRateLimiter    fiber.Handler
 	JWTAuthMiddleware  fiber.Handler
 }
@@ -24,5 +25,6 @@ func Register(app *fiber.App, deps Dependencies) {
 	registerCategoryRoutes(v1, deps)
 	registerTransactionRoutes(v1, deps)
 	registerGoalRoutes(v1, deps)
+	registerBudgetRoutes(v1, deps)
 }
 

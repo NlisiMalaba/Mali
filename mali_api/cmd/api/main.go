@@ -58,6 +58,7 @@ func main() {
 	categoryRepo := httpRepo.NewCategoryRepository(queries)
 	transactionRepo := httpRepo.NewTransactionRepository(dbPool)
 	goalRepo := httpRepo.NewGoalRepository(dbPool)
+	budgetRepo := httpRepo.NewBudgetRepository(queries)
 
 	authService, err := usecase.NewAuthService(userRepo, refreshRepo, cfg.JWTSecret, cfg.JWTRefreshSecret)
 	if err != nil {
@@ -84,6 +85,11 @@ func main() {
 		log.Fatalf("failed to initialize goal service: %v", err)
 	}
 	goalHandler := httpHandler.NewGoalHandler(goalService, validator.New())
+	budgetService, err := usecase.NewBudgetService(budgetRepo)
+	if err != nil {
+		log.Fatalf("failed to initialize budget service: %v", err)
+	}
+	budgetHandler := httpHandler.NewBudgetHandler(budgetService, validator.New())
 	redisOptions, err := redis.ParseURL(cfg.RedisURL)
 	if err != nil {
 		log.Fatalf("failed to parse redis url: %v", err)
@@ -95,6 +101,7 @@ func main() {
 		CategoryHandler:    categoryHandler,
 		TransactionHandler: transactionHandler,
 		GoalHandler:        goalHandler,
+		BudgetHandler:      budgetHandler,
 		AuthRateLimiter:    httpmiddleware.AuthRateLimit(redisClient, 10, time.Minute),
 		JWTAuthMiddleware:  httpmiddleware.JWTAuth(cfg.JWTSecret),
 	})
