@@ -134,6 +134,10 @@ type RefreshTokenOutput struct {
 	RefreshToken string
 }
 
+type LogoutInput struct {
+	RefreshToken string
+}
+
 func (s *AuthService) LoginUseCase(ctx context.Context, input LoginInput) (*LoginOutput, error) {
 	if s.userRepository == nil || s.refreshTokenRepository == nil {
 		return nil, fmt.Errorf("auth service dependencies are not configured")
@@ -282,6 +286,32 @@ func (s *AuthService) RefreshTokenUseCase(ctx context.Context, input RefreshToke
 		AccessToken:  accessToken,
 		RefreshToken: newRefreshToken,
 	}, nil
+}
+
+func (s *AuthService) LogoutUseCase(ctx context.Context, input LogoutInput) error {
+	if s.refreshTokenRepository == nil {
+		return fmt.Errorf("auth service dependencies are not configured")
+	}
+
+	refreshToken := strings.TrimSpace(input.RefreshToken)
+	if refreshToken == "" {
+		return fmt.Errorf("%w: refresh token is required", ErrValidation)
+	}
+
+	storedToken, err := s.refreshTokenRepository.FindByTokenHash(ctx, hashToken(refreshToken))
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			return fmt.Errorf("%w: refresh token not found", ErrUnauthorized)
+		}
+		return fmt.Errorf("find refresh token: %w", err)
+	}
+
+	now := s.now()
+	if err := s.refreshTokenRepository.RevokeByID(ctx, storedToken.ID, now); err != nil {
+		return fmt.Errorf("revoke refresh token: %w", err)
+	}
+
+	return nil
 }
 
 func (s *AuthService) findUserForLogin(ctx context.Context, email, phone *string) (*domain.User, error) {
