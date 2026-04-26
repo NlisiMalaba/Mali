@@ -9,6 +9,9 @@ func registerGoalRoutes(v1 fiber.Router, deps Dependencies) {
 
 	goalRoutes := v1.Group("/goals")
 	goalRoutes.Use(deps.JWTAuthMiddleware)
+	if deps.SyncLogMiddleware != nil {
+		goalRoutes.Use(deps.SyncLogMiddleware)
+	}
 
 	goalRoutes.Get("/", deps.GoalHandler.ListGoals)
 	goalRoutes.Post("/", deps.GoalHandler.CreateGoal)

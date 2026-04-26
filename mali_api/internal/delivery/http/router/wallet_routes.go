@@ -9,6 +9,9 @@ func registerWalletRoutes(v1 fiber.Router, deps Dependencies) {
 
 	walletRoutes := v1.Group("/wallets")
 	walletRoutes.Use(deps.JWTAuthMiddleware)
+	if deps.SyncLogMiddleware != nil {
+		walletRoutes.Use(deps.SyncLogMiddleware)
+	}
 
 	walletRoutes.Get("/", deps.WalletHandler.ListWallets)
 	walletRoutes.Post("/", deps.WalletHandler.CreateWallet)

@@ -14,8 +14,10 @@ type Dependencies struct {
 	BudgetHandler      *httpHandler.BudgetHandler
 	RateHandler        *httpHandler.RateHandler
 	AnalyticsHandler   *httpHandler.AnalyticsHandler
+	SyncHandler        *httpHandler.SyncHandler
 	AuthRateLimiter    fiber.Handler
 	JWTAuthMiddleware  fiber.Handler
+	SyncLogMiddleware  fiber.Handler
 }
 
 func Register(app *fiber.App, deps Dependencies) {
@@ -30,5 +32,6 @@ func Register(app *fiber.App, deps Dependencies) {
 	registerBudgetRoutes(v1, deps)
 	registerRateRoutes(v1, deps)
 	registerAnalyticsRoutes(v1, deps)
+	registerSyncRoutes(v1, deps)
 }
 

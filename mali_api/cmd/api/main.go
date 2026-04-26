@@ -67,6 +67,7 @@ func main() {
 	analyticsMVRepo := httpRepo.NewAnalyticsMVRepository(dbPool)
 	exchangeRateRepo := httpRepo.NewExchangeRateRepository(queries)
 	userAdminRepo := httpRepo.NewUserAdminRepository(queries)
+	syncLogRepo := httpRepo.NewSyncLogRepository(dbPool)
 
 	authService, err := usecase.NewAuthService(userRepo, refreshRepo, cfg.JWTSecret, cfg.JWTRefreshSecret)
 	if err != nil {
@@ -108,6 +109,11 @@ func main() {
 		log.Fatalf("failed to initialize analytics service: %v", err)
 	}
 	analyticsHandler := httpHandler.NewAnalyticsHandler(analyticsService, validator.New())
+	syncService, err := usecase.NewSyncService(transactionService, goalService, budgetService, walletService, syncLogRepo)
+	if err != nil {
+		log.Fatalf("failed to initialize sync service: %v", err)
+	}
+	syncHandler := httpHandler.NewSyncHandler(syncService, validator.New())
 	redisOptions, err := redis.ParseURL(cfg.RedisURL)
 	if err != nil {
 		log.Fatalf("failed to parse redis url: %v", err)
@@ -155,8 +161,10 @@ func main() {
 		BudgetHandler:      budgetHandler,
 		RateHandler:        rateHandler,
 		AnalyticsHandler:   analyticsHandler,
+		SyncHandler:        syncHandler,
 		AuthRateLimiter:    httpmiddleware.AuthRateLimit(redisClient, 10, time.Minute),
 		JWTAuthMiddleware:  httpmiddleware.JWTAuth(cfg.JWTSecret),
+		SyncLogMiddleware:  httpmiddleware.SyncLog(syncLogRepo),
 	})
 
 	if err := app.Listen(":" + cfg.Port); err != nil {

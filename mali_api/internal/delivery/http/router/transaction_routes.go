@@ -9,6 +9,9 @@ func registerTransactionRoutes(v1 fiber.Router, deps Dependencies) {
 
 	transactionRoutes := v1.Group("/transactions")
 	transactionRoutes.Use(deps.JWTAuthMiddleware)
+	if deps.SyncLogMiddleware != nil {
+		transactionRoutes.Use(deps.SyncLogMiddleware)
+	}
 
 	transactionRoutes.Post("/", deps.TransactionHandler.CreateTransaction)
 	transactionRoutes.Get("/", deps.TransactionHandler.ListTransactions)
