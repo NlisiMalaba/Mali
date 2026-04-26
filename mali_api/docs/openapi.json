@@ -2,13 +2,26 @@
   "openapi": "3.0.3",
   "info": {
     "title": "Mali API",
-    "version": "1.0.0",
-    "description": "Backend API for Mali personal finance."
+    "version": "1.2.0",
+    "description": "Production-grade API contract for Mali backend services. Endpoints are grouped by business domain and aligned with current request/response DTOs in handlers."
   },
   "servers": [
     {
-      "url": "http://localhost:8080"
+      "url": "http://localhost:8080",
+      "description": "Local development server"
     }
+  ],
+  "tags": [
+    { "name": "System", "description": "Operational and service utility endpoints." },
+    { "name": "Auth", "description": "User registration, authentication, refresh, and logout." },
+    { "name": "Wallets", "description": "Wallet CRUD operations." },
+    { "name": "Categories", "description": "Category listing and creation." },
+    { "name": "Transactions", "description": "Transaction creation, listing, retrieval, and deletion." },
+    { "name": "Goals", "description": "Savings goals and contributions." },
+    { "name": "Budgets", "description": "Budget upsert and monthly status views." },
+    { "name": "Rates", "description": "Exchange rate management and lookup." },
+    { "name": "Analytics", "description": "Monthly reports, trends, and category analytics." },
+    { "name": "Sync", "description": "Offline synchronization push/pull endpoints." }
   ],
   "components": {
     "securitySchemes": {
@@ -17,426 +30,1373 @@
         "scheme": "bearer",
         "bearerFormat": "JWT"
       }
+    },
+    "schemas": {
+      "ErrorEnvelope": {
+        "type": "object",
+        "properties": {
+          "error": {
+            "type": "object",
+            "properties": {
+              "code": { "type": "string", "example": "VALIDATION_ERROR" },
+              "message": { "type": "string", "example": "invalid request payload" }
+            },
+            "required": ["code", "message"]
+          }
+        },
+        "required": ["error"]
+      },
+      "MessageEnvelope": {
+        "type": "object",
+        "properties": {
+          "message": { "type": "string", "example": "operation completed successfully" }
+        },
+        "required": ["message"]
+      },
+      "UserProfile": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "email": { "type": "string", "format": "email", "nullable": true },
+          "phone": { "type": "string", "nullable": true },
+          "name": { "type": "string" },
+          "created_at": { "type": "string", "format": "date-time" }
+        },
+        "required": ["id", "name", "created_at"]
+      },
+      "AuthRegisterRequest": {
+        "type": "object",
+        "properties": {
+          "email": { "type": "string", "format": "email", "nullable": true },
+          "phone": { "type": "string", "nullable": true },
+          "name": { "type": "string" },
+          "password": { "type": "string", "minLength": 8 }
+        },
+        "required": ["name", "password"]
+      },
+      "AuthLoginRequest": {
+        "type": "object",
+        "properties": {
+          "email": { "type": "string", "format": "email", "nullable": true },
+          "phone": { "type": "string", "nullable": true },
+          "password": { "type": "string" },
+          "device_id": { "type": "string" }
+        },
+        "required": ["password", "device_id"]
+      },
+      "AuthRefreshRequest": {
+        "type": "object",
+        "properties": {
+          "refresh_token": { "type": "string" },
+          "device_id": { "type": "string" }
+        },
+        "required": ["device_id"]
+      },
+      "AuthLogoutRequest": {
+        "type": "object",
+        "properties": {
+          "refresh_token": { "type": "string" }
+        }
+      },
+      "AccessTokenEnvelope": {
+        "type": "object",
+        "properties": {
+          "access_token": { "type": "string" }
+        },
+        "required": ["access_token"]
+      },
+      "AuthRegisterResponse": {
+        "type": "object",
+        "properties": {
+          "user": { "$ref": "#/components/schemas/UserProfile" }
+        },
+        "required": ["user"]
+      },
+      "Wallet": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "name": { "type": "string" },
+          "currency": { "type": "string", "minLength": 3, "maxLength": 3 },
+          "wallet_type": { "type": "string" },
+          "balance": { "type": "string", "example": "100.0000" },
+          "running_balance": { "type": "string", "example": "100.0000" },
+          "is_active": { "type": "boolean" },
+          "created_at": { "type": "string", "format": "date-time" }
+        },
+        "required": ["id", "name", "currency", "wallet_type", "balance", "running_balance", "is_active", "created_at"]
+      },
+      "CreateWalletRequest": {
+        "type": "object",
+        "properties": {
+          "name": { "type": "string" },
+          "currency": { "type": "string", "minLength": 3, "maxLength": 3 },
+          "wallet_type": { "type": "string" },
+          "balance": { "type": "string", "example": "0" }
+        },
+        "required": ["name", "currency", "wallet_type"]
+      },
+      "UpdateWalletRequest": {
+        "type": "object",
+        "properties": {
+          "name": { "type": "string" }
+        },
+        "required": ["name"]
+      },
+      "WalletEnvelope": {
+        "type": "object",
+        "properties": {
+          "wallet": { "$ref": "#/components/schemas/Wallet" }
+        },
+        "required": ["wallet"]
+      },
+      "WalletListResponse": {
+        "type": "object",
+        "properties": {
+          "wallets": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/Wallet" }
+          }
+        },
+        "required": ["wallets"]
+      },
+      "Category": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "user_id": { "type": "string", "format": "uuid", "nullable": true },
+          "name": { "type": "string" },
+          "icon": { "type": "string" },
+          "color_hex": { "type": "string", "example": "#14B8A6" },
+          "type": { "type": "string", "enum": ["income", "expense"] }
+        },
+        "required": ["id", "name", "icon", "color_hex", "type"]
+      },
+      "CreateCategoryRequest": {
+        "type": "object",
+        "properties": {
+          "name": { "type": "string" },
+          "icon": { "type": "string" },
+          "color_hex": { "type": "string" },
+          "type": { "type": "string", "enum": ["income", "expense"] }
+        },
+        "required": ["name", "icon", "color_hex", "type"]
+      },
+      "CategoryEnvelope": {
+        "type": "object",
+        "properties": {
+          "category": { "$ref": "#/components/schemas/Category" }
+        },
+        "required": ["category"]
+      },
+      "CategoryListResponse": {
+        "type": "object",
+        "properties": {
+          "categories": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/Category" }
+          }
+        },
+        "required": ["categories"]
+      },
+      "Transaction": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "user_id": { "type": "string", "format": "uuid" },
+          "wallet_id": { "type": "string", "format": "uuid" },
+          "category_id": { "type": "string", "format": "uuid", "nullable": true },
+          "type": { "type": "string", "enum": ["income", "expense", "transfer"] },
+          "amount": { "type": "string", "example": "125.5000" },
+          "currency": { "type": "string", "minLength": 3, "maxLength": 3 },
+          "notes": { "type": "string", "nullable": true },
+          "source": { "type": "string" },
+          "transacted_at": { "type": "string", "format": "date-time" },
+          "created_at": { "type": "string", "format": "date-time" },
+          "sync_id": { "type": "string", "format": "uuid", "nullable": true },
+          "transfer_to_wallet_id": { "type": "string", "format": "uuid", "nullable": true },
+          "exchange_rate": { "type": "string", "nullable": true }
+        },
+        "required": ["id", "user_id", "wallet_id", "type", "amount", "currency", "source", "transacted_at", "created_at"]
+      },
+      "CreateTransactionRequest": {
+        "type": "object",
+        "properties": {
+          "wallet_id": { "type": "string", "format": "uuid" },
+          "category_id": { "type": "string", "format": "uuid", "nullable": true },
+          "type": { "type": "string", "enum": ["income", "expense", "transfer"] },
+          "amount": { "type": "string" },
+          "currency": { "type": "string", "minLength": 3, "maxLength": 3 },
+          "notes": { "type": "string" },
+          "source": { "type": "string" },
+          "transacted_at": { "type": "string", "format": "date-time" },
+          "sync_id": { "type": "string", "format": "uuid", "nullable": true },
+          "transfer_to_wallet_id": { "type": "string", "format": "uuid", "nullable": true },
+          "exchange_rate": { "type": "string" }
+        },
+        "required": ["wallet_id", "type", "amount", "currency", "source", "transacted_at"]
+      },
+      "TransactionEnvelope": {
+        "type": "object",
+        "properties": {
+          "transaction": { "$ref": "#/components/schemas/Transaction" }
+        },
+        "required": ["transaction"]
+      },
+      "TransactionCursor": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "transacted_at": { "type": "string", "format": "date-time" }
+        },
+        "required": ["id", "transacted_at"]
+      },
+      "TransactionListResponse": {
+        "type": "object",
+        "properties": {
+          "transactions": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/Transaction" }
+          },
+          "next_cursor": {
+            "$ref": "#/components/schemas/TransactionCursor"
+          }
+        },
+        "required": ["transactions"]
+      },
+      "Goal": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "user_id": { "type": "string", "format": "uuid" },
+          "name": { "type": "string" },
+          "emoji": { "type": "string", "nullable": true },
+          "goal_type": { "type": "string", "nullable": true },
+          "target_amount": { "type": "string" },
+          "currency": { "type": "string", "minLength": 3, "maxLength": 3 },
+          "saved_amount": { "type": "string" },
+          "required_monthly": { "type": "string" },
+          "deadline": { "type": "string", "format": "date-time", "nullable": true },
+          "priority": { "type": "integer" },
+          "is_completed": { "type": "boolean" },
+          "created_at": { "type": "string", "format": "date-time" }
+        },
+        "required": ["id", "user_id", "name", "target_amount", "currency", "saved_amount", "required_monthly", "priority", "is_completed", "created_at"]
+      },
+      "CreateGoalRequest": {
+        "type": "object",
+        "properties": {
+          "name": { "type": "string" },
+          "emoji": { "type": "string" },
+          "goal_type": { "type": "string" },
+          "target_amount": { "type": "string" },
+          "currency": { "type": "string", "minLength": 3, "maxLength": 3 },
+          "saved_amount": { "type": "string" },
+          "deadline": { "type": "string", "format": "date-time" },
+          "priority": { "type": "integer" }
+        },
+        "required": ["name", "target_amount", "currency", "deadline"]
+      },
+      "UpdateGoalRequest": {
+        "type": "object",
+        "properties": {
+          "name": { "type": "string" },
+          "emoji": { "type": "string" },
+          "goal_type": { "type": "string" },
+          "target_amount": { "type": "string" },
+          "currency": { "type": "string", "minLength": 3, "maxLength": 3 },
+          "deadline": { "type": "string", "format": "date-time" },
+          "priority": { "type": "integer" },
+          "is_completed": { "type": "boolean" }
+        },
+        "required": ["name", "target_amount", "currency", "deadline"]
+      },
+      "ContributeGoalRequest": {
+        "type": "object",
+        "properties": {
+          "amount": { "type": "string" },
+          "currency": { "type": "string", "minLength": 3, "maxLength": 3 },
+          "notes": { "type": "string" },
+          "contributed_at": { "type": "string", "format": "date-time" }
+        },
+        "required": ["amount"]
+      },
+      "GoalEnvelope": {
+        "type": "object",
+        "properties": {
+          "goal": { "$ref": "#/components/schemas/Goal" }
+        },
+        "required": ["goal"]
+      },
+      "GoalListResponse": {
+        "type": "object",
+        "properties": {
+          "goals": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/Goal" }
+          }
+        },
+        "required": ["goals"]
+      },
+      "Budget": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "user_id": { "type": "string", "format": "uuid" },
+          "category_id": { "type": "string", "format": "uuid" },
+          "currency": { "type": "string" },
+          "amount": { "type": "string" },
+          "month": { "type": "integer", "minimum": 1, "maximum": 12 },
+          "year": { "type": "integer", "minimum": 1 },
+          "rollover": { "type": "boolean" }
+        },
+        "required": ["id", "user_id", "category_id", "currency", "amount", "month", "year", "rollover"]
+      },
+      "UpsertBudgetRequest": {
+        "type": "object",
+        "properties": {
+          "category_id": { "type": "string", "format": "uuid" },
+          "currency": { "type": "string", "minLength": 3, "maxLength": 3 },
+          "amount": { "type": "string" },
+          "month": { "type": "integer", "minimum": 1, "maximum": 12 },
+          "year": { "type": "integer", "minimum": 1 },
+          "rollover": { "type": "boolean" }
+        },
+        "required": ["category_id", "currency", "amount", "month", "year"]
+      },
+      "BudgetEnvelope": {
+        "type": "object",
+        "properties": {
+          "budget": { "$ref": "#/components/schemas/Budget" }
+        },
+        "required": ["budget"]
+      },
+      "BudgetStatusItem": {
+        "type": "object",
+        "properties": {
+          "budget": { "$ref": "#/components/schemas/Budget" },
+          "spent": { "type": "string" },
+          "remaining": { "type": "string" },
+          "percent_used": { "type": "string" }
+        },
+        "required": ["budget", "spent", "remaining", "percent_used"]
+      },
+      "BudgetStatusListResponse": {
+        "type": "object",
+        "properties": {
+          "budgets": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/BudgetStatusItem" }
+          }
+        },
+        "required": ["budgets"]
+      },
+      "Rate": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "user_id": { "type": "string", "format": "uuid" },
+          "from_currency": { "type": "string" },
+          "to_currency": { "type": "string" },
+          "rate": { "type": "string" },
+          "source": { "type": "string" },
+          "valid_at": { "type": "string", "format": "date-time" }
+        },
+        "required": ["id", "user_id", "from_currency", "to_currency", "rate", "source", "valid_at"]
+      },
+      "SetManualRateRequest": {
+        "type": "object",
+        "properties": {
+          "from_currency": { "type": "string", "minLength": 3, "maxLength": 3 },
+          "to_currency": { "type": "string", "minLength": 3, "maxLength": 3 },
+          "rate": { "type": "string" },
+          "valid_at": { "type": "string", "format": "date-time" }
+        },
+        "required": ["from_currency", "to_currency", "rate"]
+      },
+      "RateEnvelope": {
+        "type": "object",
+        "properties": {
+          "rate": { "$ref": "#/components/schemas/Rate" }
+        },
+        "required": ["rate"]
+      },
+      "RateListResponse": {
+        "type": "object",
+        "properties": {
+          "rates": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/Rate" }
+          }
+        },
+        "required": ["rates"]
+      },
+      "AnalyticsMonthlyReportResponse": {
+        "type": "object",
+        "properties": {
+          "report": {
+            "type": "object",
+            "additionalProperties": true
+          }
+        },
+        "required": ["report"]
+      },
+      "AnalyticsTrendsResponse": {
+        "type": "object",
+        "properties": {
+          "trends": {
+            "type": "array",
+            "items": { "type": "object", "additionalProperties": true }
+          }
+        },
+        "required": ["trends"]
+      },
+      "AnalyticsCategoriesResponse": {
+        "type": "object",
+        "properties": {
+          "categories": {
+            "type": "array",
+            "items": { "type": "object", "additionalProperties": true }
+          }
+        },
+        "required": ["categories"]
+      },
+      "SyncChangeRequest": {
+        "type": "object",
+        "properties": {
+          "sync_id": { "type": "string", "format": "uuid" },
+          "entity": { "type": "string", "enum": ["transaction", "goal", "budget", "wallet"] },
+          "operation": { "type": "string" },
+          "payload": {
+            "type": "object",
+            "additionalProperties": true
+          }
+        },
+        "required": ["sync_id", "entity", "operation", "payload"]
+      },
+      "SyncPushRequest": {
+        "type": "object",
+        "properties": {
+          "changes": {
+            "type": "array",
+            "minItems": 1,
+            "maxItems": 100,
+            "items": { "$ref": "#/components/schemas/SyncChangeRequest" }
+          }
+        },
+        "required": ["changes"]
+      },
+      "SyncConflict": {
+        "type": "object",
+        "properties": {
+          "sync_id": { "type": "string" },
+          "entity": { "type": "string" },
+          "operation": { "type": "string" },
+          "reason": { "type": "string" }
+        },
+        "required": ["sync_id", "entity", "operation", "reason"]
+      },
+      "SyncPushResponse": {
+        "type": "object",
+        "properties": {
+          "accepted_ids": {
+            "type": "array",
+            "items": { "type": "string" }
+          },
+          "conflicts": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/SyncConflict" }
+          },
+          "summary": {
+            "type": "object",
+            "properties": {
+              "received": { "type": "integer" },
+              "accepted": { "type": "integer" },
+              "conflicts": { "type": "integer" }
+            },
+            "required": ["received", "accepted", "conflicts"]
+          }
+        },
+        "required": ["accepted_ids", "conflicts", "summary"]
+      },
+      "SyncDelta": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "string", "format": "uuid" },
+          "entity_type": { "type": "string" },
+          "entity_id": { "type": "string", "format": "uuid" },
+          "operation": { "type": "string" },
+          "payload": { "type": "object", "additionalProperties": true },
+          "synced_at": { "type": "string", "format": "date-time" }
+        },
+        "required": ["id", "entity_type", "entity_id", "operation", "payload", "synced_at"]
+      },
+      "SyncPullResponse": {
+        "type": "object",
+        "properties": {
+          "changes": {
+            "type": "array",
+            "items": { "$ref": "#/components/schemas/SyncDelta" }
+          },
+          "next_cursor": {
+            "type": "object",
+            "properties": {
+              "id": { "type": "string", "format": "uuid" },
+              "synced_at": { "type": "string", "format": "date-time" }
+            },
+            "required": ["id", "synced_at"]
+          }
+        },
+        "required": ["changes"]
+      }
+    },
+    "responses": {
+      "Unauthorized": {
+        "description": "Missing or invalid authentication credentials.",
+        "content": {
+          "application/json": {
+            "schema": { "$ref": "#/components/schemas/ErrorEnvelope" }
+          }
+        }
+      },
+      "ValidationError": {
+        "description": "Validation or request shape error.",
+        "content": {
+          "application/json": {
+            "schema": { "$ref": "#/components/schemas/ErrorEnvelope" }
+          }
+        }
+      },
+      "InternalError": {
+        "description": "Unexpected internal server error.",
+        "content": {
+          "application/json": {
+            "schema": { "$ref": "#/components/schemas/ErrorEnvelope" }
+          }
+        }
+      }
+    },
+    "parameters": {
+      "UUIDPathId": {
+        "name": "id",
+        "in": "path",
+        "required": true,
+        "schema": { "type": "string", "format": "uuid" }
+      }
     }
   },
   "paths": {
     "/health": {
       "get": {
-        "summary": "Health check",
+        "tags": ["System"],
+        "summary": "Service health probe",
         "responses": {
           "200": {
-            "description": "OK"
+            "description": "Service is healthy.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": { "type": "string", "example": "ok" }
+                  },
+                  "required": ["status"]
+                }
+              }
+            }
           }
         }
       }
     },
     "/v1/auth/register": {
       "post": {
-        "summary": "Register user",
+        "tags": ["Auth"],
+        "summary": "Register account",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/AuthRegisterRequest" },
+              "example": {
+                "email": "user@example.com",
+                "name": "Mali User",
+                "password": "StrongPass123"
+              }
+            }
+          }
+        },
         "responses": {
           "201": {
-            "description": "Created"
-          }
+            "description": "Registration successful.",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/AuthRegisterResponse" }
+              }
+            }
+          },
+          "400": { "$ref": "#/components/responses/ValidationError" },
+          "409": { "$ref": "#/components/responses/ValidationError" },
+          "500": { "$ref": "#/components/responses/InternalError" }
         }
       }
     },
     "/v1/auth/login": {
       "post": {
-        "summary": "Login",
+        "tags": ["Auth"],
+        "summary": "Authenticate user",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/AuthLoginRequest" },
+              "example": {
+                "email": "user@example.com",
+                "password": "StrongPass123",
+                "device_id": "ios-iphone-15"
+              }
+            }
+          }
+        },
         "responses": {
           "200": {
-            "description": "OK"
-          }
+            "description": "Login successful.",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/AccessTokenEnvelope" }
+              }
+            }
+          },
+          "400": { "$ref": "#/components/responses/ValidationError" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "500": { "$ref": "#/components/responses/InternalError" }
         }
       }
     },
     "/v1/auth/refresh": {
       "post": {
+        "tags": ["Auth"],
         "summary": "Refresh access token",
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/AuthRefreshRequest" },
+              "example": {
+                "refresh_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+                "device_id": "ios-iphone-15"
+              }
+            }
+          }
+        },
         "responses": {
           "200": {
-            "description": "OK"
-          }
+            "description": "Access token refreshed.",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/AccessTokenEnvelope" }
+              }
+            }
+          },
+          "400": { "$ref": "#/components/responses/ValidationError" },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "500": { "$ref": "#/components/responses/InternalError" }
         }
       }
     },
     "/v1/auth/logout": {
       "post": {
-        "summary": "Logout",
+        "tags": ["Auth"],
+        "summary": "Logout current session",
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/AuthLogoutRequest" },
+              "example": {
+                "refresh_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+              }
+            }
+          }
+        },
         "responses": {
           "200": {
-            "description": "OK"
-          }
+            "description": "Logout successful.",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/MessageEnvelope" }
+              }
+            }
+          },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "500": { "$ref": "#/components/responses/InternalError" }
         }
       }
     },
     "/v1/wallets": {
       "get": {
+        "tags": ["Wallets"],
         "summary": "List wallets",
-        "security": [
-          {
-            "bearerAuth": []
-          }
-        ],
+        "security": [{ "bearerAuth": [] }],
         "responses": {
           "200": {
-            "description": "OK"
-          }
+            "description": "Wallets returned.",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/WalletListResponse" }
+              }
+            }
+          },
+          "401": { "$ref": "#/components/responses/Unauthorized" },
+          "500": { "$ref": "#/components/responses/InternalError" }
         }
       },
       "post": {
+        "tags": ["Wallets"],
         "summary": "Create wallet",
-        "security": [
-          {
-            "bearerAuth": []
+        "security": [{ "bearerAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/CreateWalletRequest" },
+              "example": {
+                "name": "Cash Wallet",
+                "currency": "USD",
+                "wallet_type": "cash",
+                "balance": "500.0000"
+              }
+            }
           }
-        ],
+        },
         "responses": {
           "201": {
-            "description": "Created"
-          }
+            "description": "Wallet created.",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/WalletEnvelope" }
+              }
+            }
+          },
+          "400": { "$ref": "#/components/responses/ValidationError" },
+          "401": { "$ref": "#/components/responses/Unauthorized" }
         }
       }
     },
     "/v1/wallets/{id}": {
       "patch": {
-        "summary": "Update wallet",
-        "security": [
-          {
-            "bearerAuth": []
+        "tags": ["Wallets"],
+        "summary": "Update wallet name",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [{ "$ref": "#/components/parameters/UUIDPathId" }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/UpdateWalletRequest" },
+              "example": {
+                "name": "Emergency Wallet"
+              }
+            }
           }
-        ],
+        },
         "responses": {
           "200": {
-            "description": "OK"
-          }
+            "description": "Wallet updated.",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/MessageEnvelope" }
+              }
+            }
+          },
+          "400": { "$ref": "#/components/responses/ValidationError" },
+          "401": { "$ref": "#/components/responses/Unauthorized" }
         }
       },
       "delete": {
+        "tags": ["Wallets"],
         "summary": "Delete wallet",
-        "security": [
-          {
-            "bearerAuth": []
-          }
-        ],
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [{ "$ref": "#/components/parameters/UUIDPathId" }],
         "responses": {
           "200": {
-            "description": "OK"
-          }
+            "description": "Wallet deleted.",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/MessageEnvelope" }
+              }
+            }
+          },
+          "400": { "$ref": "#/components/responses/ValidationError" },
+          "401": { "$ref": "#/components/responses/Unauthorized" }
         }
       }
     },
     "/v1/categories": {
       "get": {
+        "tags": ["Categories"],
         "summary": "List categories",
-        "security": [
-          {
-            "bearerAuth": []
-          }
-        ],
+        "security": [{ "bearerAuth": [] }],
         "responses": {
           "200": {
-            "description": "OK"
-          }
+            "description": "Categories returned.",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/CategoryListResponse" }
+              }
+            }
+          },
+          "401": { "$ref": "#/components/responses/Unauthorized" }
         }
       },
       "post": {
+        "tags": ["Categories"],
         "summary": "Create category",
-        "security": [
-          {
-            "bearerAuth": []
+        "security": [{ "bearerAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/CreateCategoryRequest" },
+              "example": {
+                "name": "Groceries",
+                "icon": "shopping-cart",
+                "color_hex": "#16A34A",
+                "type": "expense"
+              }
+            }
           }
-        ],
+        },
         "responses": {
           "201": {
-            "description": "Created"
-          }
+            "description": "Category created.",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/CategoryEnvelope" }
+              }
+            }
+          },
+          "400": { "$ref": "#/components/responses/ValidationError" },
+          "401": { "$ref": "#/components/responses/Unauthorized" }
         }
       }
     },
     "/v1/transactions": {
       "get": {
+        "tags": ["Transactions"],
         "summary": "List transactions",
-        "security": [
-          {
-            "bearerAuth": []
-          }
+        "description": "Supports filtering by wallet/category/date/type and cursor pagination.",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          { "name": "wallet_id", "in": "query", "schema": { "type": "string", "format": "uuid" } },
+          { "name": "category_id", "in": "query", "schema": { "type": "string", "format": "uuid" } },
+          { "name": "date_from", "in": "query", "schema": { "type": "string", "format": "date-time" } },
+          { "name": "date_to", "in": "query", "schema": { "type": "string", "format": "date-time" } },
+          { "name": "type", "in": "query", "schema": { "type": "string", "enum": ["income", "expense", "transfer"] } },
+          { "name": "sort", "in": "query", "schema": { "type": "string", "enum": ["asc", "desc"] } },
+          { "name": "limit", "in": "query", "schema": { "type": "integer", "minimum": 1, "maximum": 200 } },
+          { "name": "cursor_id", "in": "query", "schema": { "type": "string", "format": "uuid" } },
+          { "name": "cursor_transacted_at", "in": "query", "schema": { "type": "string", "format": "date-time" } }
         ],
         "responses": {
           "200": {
-            "description": "OK"
-          }
+            "description": "Transactions returned.",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/TransactionListResponse" }
+              }
+            }
+          },
+          "400": { "$ref": "#/components/responses/ValidationError" },
+          "401": { "$ref": "#/components/responses/Unauthorized" }
         }
       },
       "post": {
+        "tags": ["Transactions"],
         "summary": "Create transaction",
-        "security": [
-          {
-            "bearerAuth": []
+        "security": [{ "bearerAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/CreateTransactionRequest" },
+              "example": {
+                "wallet_id": "11111111-1111-1111-1111-111111111111",
+                "category_id": "22222222-2222-2222-2222-222222222222",
+                "type": "expense",
+                "amount": "45.5000",
+                "currency": "USD",
+                "notes": "Weekly groceries",
+                "source": "mobile",
+                "transacted_at": "2026-04-26T08:00:00Z",
+                "sync_id": "33333333-3333-3333-3333-333333333333"
+              }
+            }
           }
-        ],
+        },
         "responses": {
           "201": {
-            "description": "Created"
-          }
+            "description": "Transaction created.",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/TransactionEnvelope" }
+              }
+            }
+          },
+          "200": {
+            "description": "Idempotent replay returned existing transaction.",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/TransactionEnvelope" }
+              }
+            }
+          },
+          "400": { "$ref": "#/components/responses/ValidationError" }
         }
       }
     },
     "/v1/transactions/{id}": {
       "get": {
-        "summary": "Get transaction",
-        "security": [
-          {
-            "bearerAuth": []
-          }
-        ],
+        "tags": ["Transactions"],
+        "summary": "Get transaction by ID",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [{ "$ref": "#/components/parameters/UUIDPathId" }],
         "responses": {
           "200": {
-            "description": "OK"
-          }
+            "description": "Transaction returned.",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/TransactionEnvelope" }
+              }
+            }
+          },
+          "400": { "$ref": "#/components/responses/ValidationError" }
         }
       },
       "delete": {
-        "summary": "Delete transaction",
-        "security": [
-          {
-            "bearerAuth": []
-          }
-        ],
+        "tags": ["Transactions"],
+        "summary": "Soft delete transaction",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [{ "$ref": "#/components/parameters/UUIDPathId" }],
         "responses": {
           "200": {
-            "description": "OK"
-          }
+            "description": "Transaction deleted.",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/MessageEnvelope" }
+              }
+            }
+          },
+          "400": { "$ref": "#/components/responses/ValidationError" }
         }
       }
     },
     "/v1/goals": {
       "get": {
+        "tags": ["Goals"],
         "summary": "List goals",
-        "security": [
-          {
-            "bearerAuth": []
-          }
-        ],
+        "security": [{ "bearerAuth": [] }],
         "responses": {
           "200": {
-            "description": "OK"
+            "description": "Goals returned.",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/GoalListResponse" }
+              }
+            }
           }
         }
       },
       "post": {
+        "tags": ["Goals"],
         "summary": "Create goal",
-        "security": [
-          {
-            "bearerAuth": []
+        "security": [{ "bearerAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/CreateGoalRequest" },
+              "example": {
+                "name": "New Laptop",
+                "emoji": "💻",
+                "goal_type": "device",
+                "target_amount": "2000.0000",
+                "currency": "USD",
+                "saved_amount": "200.0000",
+                "deadline": "2026-12-31T00:00:00Z",
+                "priority": 1
+              }
+            }
           }
-        ],
+        },
         "responses": {
           "201": {
-            "description": "Created"
-          }
+            "description": "Goal created.",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/GoalEnvelope" }
+              }
+            }
+          },
+          "400": { "$ref": "#/components/responses/ValidationError" }
         }
       }
     },
     "/v1/goals/{id}": {
       "get": {
-        "summary": "Get goal",
-        "security": [
-          {
-            "bearerAuth": []
-          }
-        ],
+        "tags": ["Goals"],
+        "summary": "Get goal by ID",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [{ "$ref": "#/components/parameters/UUIDPathId" }],
         "responses": {
           "200": {
-            "description": "OK"
+            "description": "Goal returned.",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/GoalEnvelope" }
+              }
+            }
           }
         }
       },
       "patch": {
+        "tags": ["Goals"],
         "summary": "Update goal",
-        "security": [
-          {
-            "bearerAuth": []
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [{ "$ref": "#/components/parameters/UUIDPathId" }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/UpdateGoalRequest" },
+              "example": {
+                "name": "New Laptop Pro",
+                "emoji": "💻",
+                "goal_type": "device",
+                "target_amount": "2500.0000",
+                "currency": "USD",
+                "deadline": "2027-03-31T00:00:00Z",
+                "priority": 1,
+                "is_completed": false
+              }
+            }
           }
-        ],
+        },
         "responses": {
           "200": {
-            "description": "OK"
+            "description": "Goal updated.",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/MessageEnvelope" }
+              }
+            }
           }
         }
       },
       "delete": {
+        "tags": ["Goals"],
         "summary": "Delete goal",
-        "security": [
-          {
-            "bearerAuth": []
-          }
-        ],
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [{ "$ref": "#/components/parameters/UUIDPathId" }],
         "responses": {
           "200": {
-            "description": "OK"
+            "description": "Goal deleted.",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/MessageEnvelope" }
+              }
+            }
           }
         }
       }
     },
     "/v1/goals/{id}/contribute": {
       "post": {
+        "tags": ["Goals"],
         "summary": "Contribute to goal",
-        "security": [
-          {
-            "bearerAuth": []
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [{ "$ref": "#/components/parameters/UUIDPathId" }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/ContributeGoalRequest" },
+              "example": {
+                "amount": "150.0000",
+                "currency": "USD",
+                "notes": "Monthly savings contribution",
+                "contributed_at": "2026-04-26T08:05:00Z"
+              }
+            }
           }
-        ],
+        },
         "responses": {
           "200": {
-            "description": "OK"
+            "description": "Goal contribution applied.",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/GoalEnvelope" }
+              }
+            }
           }
         }
       }
     },
     "/v1/budgets": {
       "get": {
-        "summary": "List budget status",
-        "security": [
-          {
-            "bearerAuth": []
-          }
+        "tags": ["Budgets"],
+        "summary": "List budget status for month",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          { "name": "month", "in": "query", "required": true, "schema": { "type": "integer", "minimum": 1, "maximum": 12 } },
+          { "name": "year", "in": "query", "required": true, "schema": { "type": "integer", "minimum": 1 } }
         ],
         "responses": {
           "200": {
-            "description": "OK"
-          }
+            "description": "Budget statuses returned.",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/BudgetStatusListResponse" }
+              }
+            }
+          },
+          "400": { "$ref": "#/components/responses/ValidationError" }
         }
       },
       "post": {
-        "summary": "Upsert budget",
-        "security": [
-          {
-            "bearerAuth": []
+        "tags": ["Budgets"],
+        "summary": "Create or update budget",
+        "security": [{ "bearerAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/UpsertBudgetRequest" },
+              "example": {
+                "category_id": "22222222-2222-2222-2222-222222222222",
+                "currency": "USD",
+                "amount": "600.0000",
+                "month": 4,
+                "year": 2026,
+                "rollover": true
+              }
+            }
           }
-        ],
+        },
         "responses": {
           "201": {
-            "description": "Created"
-          }
+            "description": "Budget upserted.",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/BudgetEnvelope" }
+              }
+            }
+          },
+          "400": { "$ref": "#/components/responses/ValidationError" }
         }
       }
     },
     "/v1/rates": {
       "get": {
+        "tags": ["Rates"],
         "summary": "List rates",
-        "security": [
-          {
-            "bearerAuth": []
-          }
-        ],
+        "security": [{ "bearerAuth": [] }],
         "responses": {
           "200": {
-            "description": "OK"
+            "description": "Rates returned.",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/RateListResponse" }
+              }
+            }
           }
         }
       },
       "post": {
+        "tags": ["Rates"],
         "summary": "Set manual rate",
-        "security": [
-          {
-            "bearerAuth": []
+        "security": [{ "bearerAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/SetManualRateRequest" },
+              "example": {
+                "from_currency": "USD",
+                "to_currency": "ZAR",
+                "rate": "18.25000000",
+                "valid_at": "2026-04-26T08:00:00Z"
+              }
+            }
           }
-        ],
+        },
         "responses": {
           "201": {
-            "description": "Created"
-          }
+            "description": "Rate created.",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/RateEnvelope" }
+              }
+            }
+          },
+          "400": { "$ref": "#/components/responses/ValidationError" }
         }
       }
     },
     "/v1/rates/latest": {
       "get": {
-        "summary": "Get latest rate for pair",
-        "security": [
-          {
-            "bearerAuth": []
-          }
+        "tags": ["Rates"],
+        "summary": "Get latest rate by currency pair",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          { "name": "from_currency", "in": "query", "required": true, "schema": { "type": "string" } },
+          { "name": "to_currency", "in": "query", "required": true, "schema": { "type": "string" } }
         ],
         "responses": {
           "200": {
-            "description": "OK"
-          }
+            "description": "Latest rate returned.",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/RateEnvelope" }
+              }
+            }
+          },
+          "400": { "$ref": "#/components/responses/ValidationError" }
         }
       }
     },
     "/v1/analytics/monthly": {
       "get": {
+        "tags": ["Analytics"],
         "summary": "Get monthly analytics report",
-        "security": [
-          {
-            "bearerAuth": []
-          }
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          { "name": "month", "in": "query", "required": true, "schema": { "type": "integer" } },
+          { "name": "year", "in": "query", "required": true, "schema": { "type": "integer" } },
+          { "name": "trend_months", "in": "query", "schema": { "type": "integer" } }
         ],
         "responses": {
           "200": {
-            "description": "OK"
-          }
+            "description": "Monthly report returned.",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/AnalyticsMonthlyReportResponse" }
+              }
+            }
+          },
+          "400": { "$ref": "#/components/responses/ValidationError" }
         }
       }
     },
     "/v1/analytics/trends": {
       "get": {
-        "summary": "Get monthly trends",
-        "security": [
-          {
-            "bearerAuth": []
-          }
+        "tags": ["Analytics"],
+        "summary": "Get monthly trend data",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          { "name": "month", "in": "query", "required": true, "schema": { "type": "integer" } },
+          { "name": "year", "in": "query", "required": true, "schema": { "type": "integer" } },
+          { "name": "months", "in": "query", "schema": { "type": "integer" } }
         ],
         "responses": {
           "200": {
-            "description": "OK"
-          }
+            "description": "Trend data returned.",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/AnalyticsTrendsResponse" }
+              }
+            }
+          },
+          "400": { "$ref": "#/components/responses/ValidationError" }
         }
       }
     },
     "/v1/analytics/categories": {
       "get": {
+        "tags": ["Analytics"],
         "summary": "Get category breakdown",
-        "security": [
-          {
-            "bearerAuth": []
-          }
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          { "name": "month", "in": "query", "required": true, "schema": { "type": "integer" } },
+          { "name": "year", "in": "query", "required": true, "schema": { "type": "integer" } },
+          { "name": "limit", "in": "query", "schema": { "type": "integer" } }
         ],
         "responses": {
           "200": {
-            "description": "OK"
-          }
+            "description": "Category breakdown returned.",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/AnalyticsCategoriesResponse" }
+              }
+            }
+          },
+          "400": { "$ref": "#/components/responses/ValidationError" }
         }
       }
     },
     "/v1/sync/push": {
       "post": {
-        "summary": "Push offline changes",
-        "security": [
-          {
-            "bearerAuth": []
+        "tags": ["Sync"],
+        "summary": "Push local offline changes",
+        "security": [{ "bearerAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/SyncPushRequest" },
+              "example": {
+                "changes": [
+                  {
+                    "sync_id": "44444444-4444-4444-4444-444444444444",
+                    "entity": "transaction",
+                    "operation": "create",
+                    "payload": {
+                      "wallet_id": "11111111-1111-1111-1111-111111111111",
+                      "type": "expense",
+                      "amount": "12.5000",
+                      "currency": "USD",
+                      "source": "mobile",
+                      "transacted_at": "2026-04-26T08:10:00Z"
+                    }
+                  }
+                ]
+              }
+            }
           }
-        ],
+        },
         "responses": {
           "200": {
-            "description": "OK"
-          }
+            "description": "Push processed with accepted IDs and conflict details.",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/SyncPushResponse" }
+              }
+            }
+          },
+          "400": { "$ref": "#/components/responses/ValidationError" }
         }
       }
     },
     "/v1/sync/pull": {
       "get": {
-        "summary": "Pull delta changes",
-        "security": [
-          {
-            "bearerAuth": []
-          }
+        "tags": ["Sync"],
+        "summary": "Pull server-side delta changes",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          { "name": "since", "in": "query", "required": true, "schema": { "type": "string", "format": "date-time" } },
+          { "name": "limit", "in": "query", "schema": { "type": "integer", "minimum": 1, "maximum": 100, "default": 50 } },
+          { "name": "cursor_id", "in": "query", "schema": { "type": "string", "format": "uuid" } },
+          { "name": "cursor_synced_at", "in": "query", "schema": { "type": "string", "format": "date-time" } }
         ],
         "responses": {
           "200": {
-            "description": "OK"
-          }
+            "description": "Delta page returned.",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/SyncPullResponse" }
+              }
+            }
+          },
+          "400": { "$ref": "#/components/responses/ValidationError" }
         }
       }
     }
