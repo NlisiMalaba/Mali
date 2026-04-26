@@ -63,6 +63,8 @@ func main() {
 	transactionRepo := httpRepo.NewTransactionRepository(dbPool)
 	goalRepo := httpRepo.NewGoalRepository(dbPool)
 	budgetRepo := httpRepo.NewBudgetRepository(queries)
+	analyticsRepo := httpRepo.NewAnalyticsRepository(queries)
+	analyticsMVRepo := httpRepo.NewAnalyticsMVRepository(dbPool)
 	exchangeRateRepo := httpRepo.NewExchangeRateRepository(queries)
 	userAdminRepo := httpRepo.NewUserAdminRepository(queries)
 
@@ -101,6 +103,11 @@ func main() {
 		log.Fatalf("failed to initialize rate service: %v", err)
 	}
 	rateHandler := httpHandler.NewRateHandler(rateService, validator.New())
+	analyticsService, err := usecase.NewAnalyticsService(analyticsRepo)
+	if err != nil {
+		log.Fatalf("failed to initialize analytics service: %v", err)
+	}
+	analyticsHandler := httpHandler.NewAnalyticsHandler(analyticsService, validator.New())
 	redisOptions, err := redis.ParseURL(cfg.RedisURL)
 	if err != nil {
 		log.Fatalf("failed to parse redis url: %v", err)
@@ -113,8 +120,10 @@ func main() {
 	}
 
 	rateFetchWorker := worker.NewRateFetchWorker(userAdminRepo, exchangeRateRepo, nil)
+	analyticsWorker := worker.NewAnalyticsWorker(analyticsMVRepo)
 	asynqMux := asynq.NewServeMux()
 	asynqMux.HandleFunc(worker.TaskFetchExchangeRates, rateFetchWorker.HandleFetchExchangeRatesTask)
+	asynqMux.HandleFunc(worker.TaskRefreshMonthlySummary, analyticsWorker.HandleRefreshMonthlySummaryTask)
 	asynqServer := asynq.NewServer(asynqRedisOpt, asynq.Config{
 		Concurrency: 5,
 	})
@@ -126,6 +135,9 @@ func main() {
 	scheduler := asynq.NewScheduler(asynqRedisOpt, &asynq.SchedulerOpts{})
 	if _, err := scheduler.Register("@every 6h", worker.NewFetchExchangeRatesTask()); err != nil {
 		log.Fatalf("failed to register rate fetch schedule: %v", err)
+	}
+	if _, err := scheduler.Register("0 2 * * *", worker.NewRefreshMonthlySummaryTask()); err != nil {
+		log.Fatalf("failed to register monthly summary refresh schedule: %v", err)
 	}
 	go func() {
 		if err := scheduler.Run(); err != nil {
@@ -142,6 +154,7 @@ func main() {
 		GoalHandler:        goalHandler,
 		BudgetHandler:      budgetHandler,
 		RateHandler:        rateHandler,
+		AnalyticsHandler:   analyticsHandler,
 		AuthRateLimiter:    httpmiddleware.AuthRateLimit(redisClient, 10, time.Minute),
 		JWTAuthMiddleware:  httpmiddleware.JWTAuth(cfg.JWTSecret),
 	})

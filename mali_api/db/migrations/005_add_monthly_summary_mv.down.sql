@@ -1,0 +1,2 @@
+DROP MATERIALIZED VIEW IF EXISTS mv_monthly_summary;
+
