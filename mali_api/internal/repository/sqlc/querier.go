@@ -20,11 +20,14 @@ type Querier interface {
 	CreateWallet(ctx context.Context, arg CreateWalletParams) (Wallet, error)
 	DeleteGoal(ctx context.Context, arg DeleteGoalParams) error
 	DeleteUserCategory(ctx context.Context, arg DeleteUserCategoryParams) error
+	GetAllRatesForUser(ctx context.Context, userID pgtype.UUID) ([]ExchangeRate, error)
+	GetAllUserIDs(ctx context.Context) ([]pgtype.UUID, error)
 	GetBudgetSpent(ctx context.Context, arg GetBudgetSpentParams) (pgtype.Numeric, error)
 	GetBudgetsByUserMonth(ctx context.Context, arg GetBudgetsByUserMonthParams) ([]Budget, error)
 	GetContributionsByGoal(ctx context.Context, arg GetContributionsByGoalParams) ([]GoalContribution, error)
 	GetGoalByID(ctx context.Context, arg GetGoalByIDParams) (GetGoalByIDRow, error)
 	GetGoalsByUser(ctx context.Context, userID pgtype.UUID) ([]GetGoalsByUserRow, error)
+	GetLatestRateForPair(ctx context.Context, arg GetLatestRateForPairParams) (ExchangeRate, error)
 	GetRefreshTokenByHash(ctx context.Context, tokenHash string) (RefreshToken, error)
 	GetSystemCategories(ctx context.Context) ([]Category, error)
 	GetTransactionByID(ctx context.Context, id pgtype.UUID) (Transaction, error)
@@ -46,6 +49,7 @@ type Querier interface {
 	UpdateWalletBalance(ctx context.Context, arg UpdateWalletBalanceParams) error
 	UpdateWalletName(ctx context.Context, arg UpdateWalletNameParams) error
 	UpsertBudget(ctx context.Context, arg UpsertBudgetParams) (Budget, error)
+	UpsertExchangeRate(ctx context.Context, arg UpsertExchangeRateParams) (UpsertExchangeRateRow, error)
 }
 
 var _ Querier = (*Queries)(nil)

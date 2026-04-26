@@ -44,6 +44,31 @@ func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (User, e
 	return i, err
 }
 
+const getAllUserIDs = `-- name: GetAllUserIDs :many
+SELECT id
+FROM users
+`
+
+func (q *Queries) GetAllUserIDs(ctx context.Context) ([]pgtype.UUID, error) {
+	rows, err := q.db.Query(ctx, getAllUserIDs)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []pgtype.UUID
+	for rows.Next() {
+		var id pgtype.UUID
+		if err := rows.Scan(&id); err != nil {
+			return nil, err
+		}
+		items = append(items, id)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const getUserByEmail = `-- name: GetUserByEmail :one
 SELECT id, email, phone, name, password_hash, created_at, updated_at
 FROM users
