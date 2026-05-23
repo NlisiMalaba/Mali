@@ -21,6 +21,13 @@ class SyncQueueDao extends DatabaseAccessor<AppDatabase>
         .get();
   }
 
+  Future<int> countPending() {
+    return customSelect(
+      'SELECT COUNT(*) AS count FROM sync_queue_table WHERE synced_at IS NULL',
+      readsFrom: {syncQueueTable},
+    ).map((row) => row.read<int>('count')).getSingle();
+  }
+
   Future<int> markSynced(int id) {
     return (update(syncQueueTable)..where((table) => table.id.equals(id))).write(
       SyncQueueTableCompanion(

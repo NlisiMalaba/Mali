@@ -59,6 +59,58 @@ class TransactionDao extends DatabaseAccessor<AppDatabase>
     )..where((table) => table.id.equals(id))).getSingleOrNull();
   }
 
+  Future<TransactionsTableData?> getBySyncId(String syncId) {
+    return (select(transactionsTable)
+          ..where((table) => table.syncId.equals(syncId)))
+        .getSingleOrNull();
+  }
+
+  Future<List<TransactionsTableData>> list({
+    String? walletId,
+    String? categoryId,
+    DateTime? dateFrom,
+    DateTime? dateTo,
+    String? type,
+    DateTime? cursorTransactionDate,
+    String? cursorTransactionId,
+    required int limit,
+  }) {
+    return (select(transactionsTable)
+          ..where((table) {
+            var predicate = table.deletedAt.isNull();
+
+            if (walletId != null) {
+              predicate = predicate & table.walletId.equals(walletId);
+            }
+            if (categoryId != null) {
+              predicate = predicate & table.categoryId.equals(categoryId);
+            }
+            if (dateFrom != null) {
+              predicate = predicate & table.transactionDate.isBiggerOrEqualValue(dateFrom);
+            }
+            if (dateTo != null) {
+              predicate = predicate & table.transactionDate.isSmallerOrEqualValue(dateTo);
+            }
+            if (type != null) {
+              predicate = predicate & table.type.equals(type);
+            }
+            if (cursorTransactionDate != null && cursorTransactionId != null) {
+              predicate = predicate &
+                  (table.transactionDate.isSmallerThanValue(cursorTransactionDate) |
+                      (table.transactionDate.equals(cursorTransactionDate) &
+                          table.id.isSmallerThanValue(cursorTransactionId)));
+            }
+
+            return predicate;
+          })
+          ..orderBy([
+            (table) => OrderingTerm.desc(table.transactionDate),
+            (table) => OrderingTerm.desc(table.id),
+          ])
+          ..limit(limit))
+        .get();
+  }
+
   Stream<List<TransactionsTableData>> watchByWallet(String walletId) {
     return (select(transactionsTable)
           ..where((table) => table.walletId.equals(walletId))
