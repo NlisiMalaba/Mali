@@ -158,17 +158,7 @@ func uuidFromPG(value pgtype.UUID) (uuid.UUID, error) {
 		return uuid.Nil, fmt.Errorf("uuid is null")
 	}
 
-	raw, err := value.Value()
-	if err != nil {
-		return uuid.Nil, err
-	}
-
-	u, ok := raw.([16]byte)
-	if !ok {
-		return uuid.Nil, fmt.Errorf("unexpected uuid value type: %T", raw)
-	}
-
-	return uuid.UUID(u), nil
+	return uuid.UUID(value.Bytes), nil
 }
 
 func timeFromPG(value pgtype.Timestamptz) (time.Time, error) {

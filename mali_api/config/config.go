@@ -8,12 +8,13 @@ import (
 )
 
 type Config struct {
-	DatabaseURL      string
-	RedisURL         string
-	JWTSecret        string
-	JWTRefreshSecret string
-	Port             string
-	Env              string
+	DatabaseURL         string
+	RedisURL            string
+	JWTSecret           string
+	JWTRefreshSecret    string
+	Port                string
+	Env                 string
+	CORSAllowedOrigins  string
 }
 
 func Load() (Config, error) {
@@ -31,12 +32,13 @@ func Load() (Config, error) {
 	}
 
 	cfg := Config{
-		DatabaseURL:      strings.TrimSpace(v.GetString("DATABASE_URL")),
-		RedisURL:         strings.TrimSpace(v.GetString("REDIS_URL")),
-		JWTSecret:        strings.TrimSpace(v.GetString("JWT_SECRET")),
-		JWTRefreshSecret: strings.TrimSpace(v.GetString("JWT_REFRESH_SECRET")),
-		Port:             strings.TrimSpace(v.GetString("PORT")),
-		Env:              strings.TrimSpace(v.GetString("ENV")),
+		DatabaseURL:        strings.TrimSpace(v.GetString("DATABASE_URL")),
+		RedisURL:           strings.TrimSpace(v.GetString("REDIS_URL")),
+		JWTSecret:          strings.TrimSpace(v.GetString("JWT_SECRET")),
+		JWTRefreshSecret:   strings.TrimSpace(v.GetString("JWT_REFRESH_SECRET")),
+		Port:               strings.TrimSpace(v.GetString("PORT")),
+		Env:                strings.TrimSpace(v.GetString("ENV")),
+		CORSAllowedOrigins: strings.TrimSpace(v.GetString("CORS_ALLOWED_ORIGINS")),
 	}
 
 	if cfg.Env == "" {

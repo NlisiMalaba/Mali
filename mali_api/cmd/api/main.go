@@ -44,6 +44,7 @@ func main() {
 	app := fiber.New()
 	logger := zerolog.New(os.Stdout).With().Timestamp().Logger()
 
+	app.Use(httpmiddleware.CORS(cfg.Env, cfg.CORSAllowedOrigins))
 	app.Use(httpmiddleware.RequestID())
 	app.Use(httpmiddleware.RequestLogger(logger))
 
