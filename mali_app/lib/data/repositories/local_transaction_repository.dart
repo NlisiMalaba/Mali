@@ -58,6 +58,21 @@ class LocalTransactionRepository implements ITransactionRepository {
   }
 
   @override
+  Stream<List<Transaction>> watchList({
+    required TransactionWatchQuery query,
+  }) {
+    return _transactionDao
+        .watchList(
+          walletId: query.walletId,
+          categoryId: query.categoryId,
+          dateFrom: query.dateFrom,
+          dateTo: query.dateTo,
+          limit: query.limit,
+        )
+        .map(TransactionMapper.toDomainList);
+  }
+
+  @override
   Future<List<Transaction>> listUnsynced() async {
     final rows = await _transactionDao.listUnsynced();
     return TransactionMapper.toDomainList(rows);

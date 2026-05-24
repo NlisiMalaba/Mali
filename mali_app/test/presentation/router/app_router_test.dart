@@ -89,7 +89,8 @@ void main() {
       await tester.pumpAndSettle();
 
       final routes = <String, String>{
-        '/home': 'Home',
+        '/home': 'Home screen',
+        '/transactions': 'No transactions yet.',
         '/add-transaction': 'Add Transaction',
         '/wallets': 'Wallets',
         '/goals': 'Goals',

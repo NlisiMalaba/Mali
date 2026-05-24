@@ -6,7 +6,9 @@ import 'package:mali_app/domain/usecases/convert_money_usecase.dart';
 import 'package:mali_app/domain/usecases/archive_wallet_usecase.dart';
 import 'package:mali_app/domain/usecases/create_wallet_usecase.dart';
 import 'package:mali_app/domain/usecases/get_monthly_summary_usecase.dart';
+import 'package:mali_app/domain/usecases/delete_transaction_usecase.dart';
 import 'package:mali_app/domain/usecases/log_transaction_usecase.dart';
+import 'package:mali_app/domain/usecases/restore_transaction_usecase.dart';
 import 'package:mali_app/domain/usecases/sync_usecase.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
@@ -61,6 +63,22 @@ GetMonthlySummaryUseCase getMonthlySummaryUseCase(Ref ref) {
 AllocateToGoalUseCase allocateToGoalUseCase(Ref ref) {
   return AllocateToGoalUseCase(
     goalRepository: ref.watch(goalRepositoryProvider),
+  );
+}
+
+@Riverpod(keepAlive: true)
+DeleteTransactionUseCase deleteTransactionUseCase(Ref ref) {
+  return DeleteTransactionUseCase(
+    transactionRepository: ref.watch(transactionRepositoryProvider),
+    walletRepository: ref.watch(walletRepositoryProvider),
+  );
+}
+
+@Riverpod(keepAlive: true)
+RestoreTransactionUseCase restoreTransactionUseCase(Ref ref) {
+  return RestoreTransactionUseCase(
+    transactionRepository: ref.watch(transactionRepositoryProvider),
+    walletRepository: ref.watch(walletRepositoryProvider),
   );
 }
 

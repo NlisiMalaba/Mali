@@ -8,9 +8,10 @@ import 'package:mali_app/presentation/screens/auth/register_screen.dart';
 import 'package:mali_app/presentation/screens/placeholder_screen.dart';
 import 'package:mali_app/presentation/screens/splash_screen.dart';
 import 'package:mali_app/presentation/screens/transaction/add_transaction_screen.dart';
+import 'package:mali_app/presentation/screens/transaction/transaction_list_screen.dart';
 import 'package:mali_app/presentation/screens/wallet/wallet_setup_screen.dart';
-import 'package:mali_app/presentation/screens/wallet/wallet_transactions_screen.dart';
 import 'package:mali_app/presentation/screens/wallet/wallets_screen.dart';
+import 'package:mali_app/presentation/widgets/app_shell.dart';
 
 final appRouterProvider = Provider<GoRouter>((ref) {
   final routerRefreshListenable = ValueNotifier<int>(0);
@@ -45,9 +46,19 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         path: '/wallet-setup',
         builder: (context, state) => const WalletSetupScreen(),
       ),
-      GoRoute(
-        path: '/home',
-        builder: (context, state) => const PlaceholderScreen(title: 'Home'),
+      ShellRoute(
+        builder: (context, state, child) => AppShell(child: child),
+        routes: [
+          GoRoute(
+            path: '/home',
+            builder: (context, state) =>
+                const PlaceholderScreen(title: 'Home'),
+          ),
+          GoRoute(
+            path: '/transactions',
+            builder: (context, state) => const TransactionListScreen(),
+          ),
+        ],
       ),
       GoRoute(
         path: '/add-transaction',
@@ -61,7 +72,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
             path: ':walletId',
             builder: (context, state) {
               final walletId = state.pathParameters['walletId'] ?? '';
-              return WalletTransactionsScreen(walletId: walletId);
+              return TransactionListScreen(walletId: walletId);
             },
           ),
         ],

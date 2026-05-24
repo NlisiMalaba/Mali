@@ -34,6 +34,8 @@ class SystemCategories {
     ),
   ];
 
+  static List<Category> get all => [...expense, ...income];
+
   static List<Category> forType(String type) {
     return switch (type) {
       'income' => income,

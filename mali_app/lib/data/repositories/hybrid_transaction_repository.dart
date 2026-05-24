@@ -60,6 +60,13 @@ class HybridTransactionRepository implements ITransactionRepository {
   }
 
   @override
+  Stream<List<Transaction>> watchList({
+    required TransactionWatchQuery query,
+  }) {
+    return _localRepository.watchList(query: query);
+  }
+
+  @override
   Future<List<Transaction>> listUnsynced() {
     return _localRepository.listUnsynced();
   }

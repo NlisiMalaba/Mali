@@ -13,6 +13,10 @@ abstract interface class ITransactionRepository {
 
   Stream<List<Transaction>> watchByWallet(String walletId);
 
+  Stream<List<Transaction>> watchList({
+    required TransactionWatchQuery query,
+  });
+
   Future<List<Transaction>> listUnsynced();
 
   Future<void> softDelete(String id);
@@ -46,4 +50,20 @@ class TransactionCursor {
 
   final DateTime transactionDate;
   final String transactionId;
+}
+
+class TransactionWatchQuery {
+  const TransactionWatchQuery({
+    this.walletId,
+    this.categoryId,
+    this.dateFrom,
+    this.dateTo,
+    this.limit = 50,
+  }) : assert(limit > 0, 'limit must be greater than zero');
+
+  final String? walletId;
+  final String? categoryId;
+  final DateTime? dateFrom;
+  final DateTime? dateTo;
+  final int limit;
 }

@@ -86,6 +86,47 @@ final class CategoriesForTypeFamily extends $Family
   String toString() => r'categoriesForTypeProvider';
 }
 
+@ProviderFor(allCategories)
+final allCategoriesProvider = AllCategoriesProvider._();
+
+final class AllCategoriesProvider
+    extends $FunctionalProvider<List<Category>, List<Category>, List<Category>>
+    with $Provider<List<Category>> {
+  AllCategoriesProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'allCategoriesProvider',
+        isAutoDispose: true,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$allCategoriesHash();
+
+  @$internal
+  @override
+  $ProviderElement<List<Category>> $createElement($ProviderPointer pointer) =>
+      $ProviderElement(pointer);
+
+  @override
+  List<Category> create(Ref ref) {
+    return allCategories(ref);
+  }
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(List<Category> value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<List<Category>>(value),
+    );
+  }
+}
+
+String _$allCategoriesHash() => r'131e9e82bcab32ff352e4832da0295842a27d2c0';
+
 @ProviderFor(categoryById)
 final categoryByIdProvider = CategoryByIdFamily._();
 

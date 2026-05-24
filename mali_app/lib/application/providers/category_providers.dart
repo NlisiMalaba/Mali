@@ -10,6 +10,11 @@ List<Category> categoriesForType(Ref ref, String type) {
 }
 
 @riverpod
+List<Category> allCategories(Ref ref) {
+  return SystemCategories.all;
+}
+
+@riverpod
 Category? categoryById(Ref ref, String categoryId) {
   for (final category in SystemCategories.expense) {
     if (category.id == categoryId) {

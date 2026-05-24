@@ -105,6 +105,18 @@ class MockITransactionRepository extends _i1.Mock
           as _i4.Stream<List<_i5.Transaction>>);
 
   @override
+  _i4.Stream<List<_i5.Transaction>> watchList({
+    required _i3.TransactionWatchQuery? query,
+  }) =>
+      (super.noSuchMethod(
+            Invocation.method(#watchList, [], {#query: query}),
+            returnValue: _i4.Stream<List<_i5.Transaction>>.empty(),
+            returnValueForMissingStub:
+                _i4.Stream<List<_i5.Transaction>>.empty(),
+          )
+          as _i4.Stream<List<_i5.Transaction>>);
+
+  @override
   _i4.Future<List<_i5.Transaction>> listUnsynced() =>
       (super.noSuchMethod(
             Invocation.method(#listUnsynced, []),

@@ -127,7 +127,7 @@ void main() {
       await tester.tap(find.text('Create account'));
       await tester.pumpAndSettle();
 
-      expect(find.text('Home'), findsOneWidget);
+      expect(find.text('Home screen'), findsOneWidget);
       expect(find.text('Register'), findsNothing);
     });
   });
