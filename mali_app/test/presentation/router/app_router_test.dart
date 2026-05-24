@@ -8,6 +8,8 @@ import 'package:mali_app/domain/entities/wallet.dart';
 import 'package:mali_app/presentation/router/app_router.dart';
 import 'package:mali_app/presentation/screens/splash_screen.dart';
 
+import '../home/home_test_overrides.dart';
+
 class _AuthenticatedAuth extends Auth {
   @override
   Future<User?> build() async {
@@ -73,6 +75,7 @@ void main() {
         overrides: [
           authProvider.overrideWith(_AuthenticatedAuth.new),
           activeWalletsProvider.overrideWith((ref) => _walletsWithOne()),
+          ...homeScreenTestOverrides(),
         ],
       );
       addTearDown(container.dispose);
@@ -88,21 +91,21 @@ void main() {
       await tester.pump(SplashScreen.minimumDisplayDuration);
       await tester.pumpAndSettle();
 
-      final routes = <String, String>{
-        '/home': 'Home screen',
-        '/transactions': 'No transactions yet.',
-        '/add-transaction': 'Add Transaction',
-        '/wallets': 'Wallets',
-        '/goals': 'Goals',
-        '/goals/goal-1': 'Goal goal-1',
-        '/analytics': 'Analytics',
-        '/settings': 'Settings',
+      final routes = <String, Finder>{
+        '/home': find.byKey(const Key('home-screen')),
+        '/transactions': find.text('No transactions yet.'),
+        '/add-transaction': find.text('Add Transaction'),
+        '/wallets': find.text('Wallets'),
+        '/goals': find.text('Goals'),
+        '/goals/goal-1': find.text('Goal goal-1'),
+        '/analytics': find.text('Analytics'),
+        '/settings': find.text('Settings'),
       };
 
       for (final entry in routes.entries) {
         router.go(entry.key);
         await tester.pumpAndSettle();
-        expect(find.text(entry.value), findsOneWidget);
+        expect(entry.value, findsOneWidget);
       }
     });
 

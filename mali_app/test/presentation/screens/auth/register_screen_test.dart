@@ -2,10 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mali_app/application/providers/auth_provider.dart';
+import 'package:mali_app/application/providers/wallet_providers.dart';
 import 'package:mali_app/domain/entities/user.dart';
+import 'package:mali_app/domain/entities/wallet.dart';
 import 'package:mali_app/domain/repositories/auth_repository.dart';
 import 'package:mali_app/presentation/router/app_router.dart';
 import 'package:mali_app/presentation/screens/auth/register_screen.dart';
+
+import '../../home/home_test_overrides.dart';
 
 class _UnauthenticatedAuth extends Auth {
   @override
@@ -31,15 +35,40 @@ class _RegisterSuccessAuth extends Auth {
   }
 }
 
+Stream<List<Wallet>> _registerTestWallets() {
+  return Stream.value([
+    Wallet(
+      id: 'w-1',
+      userId: 'user-new',
+      name: 'Cash',
+      currencyCode: 'USD',
+      balance: '0',
+      isArchived: false,
+      isSynced: false,
+      createdAt: DateTime.utc(2026, 1, 1),
+      updatedAt: DateTime.utc(2026, 1, 1),
+    ),
+  ]);
+}
+
 Future<void> _pumpRegisterScreen(
   WidgetTester tester, {
   required Auth Function() authOverride,
   bool useRouter = false,
 }) async {
+  final overrides = [
+    authProvider.overrideWith(authOverride),
+  ];
+
+  if (useRouter) {
+    overrides.addAll([
+      activeWalletsProvider.overrideWith((ref) => _registerTestWallets()),
+      ...homeScreenTestOverrides(),
+    ]);
+  }
+
   final container = ProviderContainer(
-    overrides: [
-      authProvider.overrideWith(authOverride),
-    ],
+    overrides: overrides,
   );
   addTearDown(container.dispose);
 
@@ -127,7 +156,7 @@ void main() {
       await tester.tap(find.text('Create account'));
       await tester.pumpAndSettle();
 
-      expect(find.text('Home screen'), findsOneWidget);
+      expect(find.byKey(const Key('home-screen')), findsOneWidget);
       expect(find.text('Register'), findsNothing);
     });
   });

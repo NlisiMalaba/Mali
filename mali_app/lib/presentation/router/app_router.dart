@@ -5,6 +5,7 @@ import 'package:mali_app/application/providers/auth_provider.dart';
 import 'package:mali_app/application/providers/wallet_providers.dart';
 import 'package:mali_app/presentation/screens/auth/login_screen.dart';
 import 'package:mali_app/presentation/screens/auth/register_screen.dart';
+import 'package:mali_app/presentation/screens/home/home_screen.dart';
 import 'package:mali_app/presentation/screens/placeholder_screen.dart';
 import 'package:mali_app/presentation/screens/splash_screen.dart';
 import 'package:mali_app/presentation/screens/transaction/add_transaction_screen.dart';
@@ -51,8 +52,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         routes: [
           GoRoute(
             path: '/home',
-            builder: (context, state) =>
-                const PlaceholderScreen(title: 'Home'),
+            builder: (context, state) => const HomeScreen(),
           ),
           GoRoute(
             path: '/transactions',
