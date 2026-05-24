@@ -2,7 +2,10 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mali_app/application/providers/auth_provider.dart';
+import 'package:mali_app/presentation/screens/auth/login_screen.dart';
+import 'package:mali_app/presentation/screens/auth/register_screen.dart';
 import 'package:mali_app/presentation/screens/placeholder_screen.dart';
+import 'package:mali_app/presentation/screens/splash_screen.dart';
 
 final appRouterProvider = Provider<GoRouter>((ref) {
   final routerRefreshListenable = ValueNotifier<int>(0);
@@ -18,15 +21,15 @@ final appRouterProvider = Provider<GoRouter>((ref) {
     routes: [
       GoRoute(
         path: '/',
-        builder: (context, state) => const PlaceholderScreen(title: 'Splash'),
+        builder: (context, state) => const SplashScreen(),
       ),
       GoRoute(
         path: '/auth/login',
-        builder: (context, state) => const PlaceholderScreen(title: 'Login'),
+        builder: (context, state) => const LoginScreen(),
       ),
       GoRoute(
         path: '/auth/register',
-        builder: (context, state) => const PlaceholderScreen(title: 'Register'),
+        builder: (context, state) => const RegisterScreen(),
       ),
       GoRoute(
         path: '/home',
@@ -69,7 +72,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           location == '/auth/login' || location == '/auth/register';
 
       if (auth.isLoading) {
-        if (location != '/') {
+        if (location != '/' && !isAuthPage) {
           return '/';
         }
         return null;
@@ -85,11 +88,11 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       final user = auth.value;
       final isAuthenticated = user != null;
 
-      if (!isAuthenticated && !isAuthPage) {
+      if (!isAuthenticated && !isAuthPage && location != '/') {
         return '/auth/login';
       }
 
-      if (isAuthenticated && (location == '/' || isAuthPage)) {
+      if (isAuthenticated && isAuthPage) {
         return '/home';
       }
 
