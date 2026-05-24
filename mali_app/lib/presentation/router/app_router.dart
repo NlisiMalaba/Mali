@@ -2,12 +2,18 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mali_app/application/providers/auth_provider.dart';
+import 'package:mali_app/application/providers/pin_lock_providers.dart';
 import 'package:mali_app/application/providers/wallet_providers.dart';
+import 'package:mali_app/presentation/screens/security/pin_entry_screen.dart';
+import 'package:mali_app/presentation/screens/security/pin_setup_screen.dart';
+import 'package:mali_app/presentation/screens/settings/security_settings_screen.dart';
 import 'package:mali_app/presentation/screens/budget/budgets_screen.dart';
 import 'package:mali_app/presentation/screens/auth/login_screen.dart';
 import 'package:mali_app/presentation/screens/auth/register_screen.dart';
 import 'package:mali_app/presentation/screens/home/home_screen.dart';
 import 'package:mali_app/presentation/screens/placeholder_screen.dart';
+import 'package:mali_app/presentation/screens/settings/exchange_rates_settings_screen.dart';
+import 'package:mali_app/presentation/screens/settings/settings_screen.dart';
 import 'package:mali_app/presentation/screens/splash_screen.dart';
 import 'package:mali_app/presentation/screens/transaction/add_transaction_screen.dart';
 import 'package:mali_app/presentation/screens/transaction/transaction_list_screen.dart';
@@ -23,6 +29,11 @@ final appRouterProvider = Provider<GoRouter>((ref) {
     }
   });
   ref.listen(activeWalletsProvider, (previous, next) {
+    if (previous != next) {
+      routerRefreshListenable.value++;
+    }
+  });
+  ref.listen(pinLockControllerProvider, (previous, next) {
     if (previous != next) {
       routerRefreshListenable.value++;
     }
@@ -47,6 +58,10 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/wallet-setup',
         builder: (context, state) => const WalletSetupScreen(),
+      ),
+      GoRoute(
+        path: '/lock/pin',
+        builder: (context, state) => const PinEntryScreen(),
       ),
       ShellRoute(
         builder: (context, state, child) => AppShell(child: child),
@@ -100,7 +115,30 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: '/settings',
-        builder: (context, state) => const PlaceholderScreen(title: 'Settings'),
+        builder: (context, state) => const SettingsScreen(),
+        routes: [
+          GoRoute(
+            path: 'exchange-rates',
+            builder: (context, state) =>
+                const ExchangeRatesSettingsScreen(),
+          ),
+          GoRoute(
+            path: 'notifications',
+            builder: (context, state) => const PlaceholderScreen(
+              title: 'Notifications',
+            ),
+          ),
+          GoRoute(
+            path: 'security',
+            builder: (context, state) => const SecuritySettingsScreen(),
+            routes: [
+              GoRoute(
+                path: 'pin-setup',
+                builder: (context, state) => const PinSetupScreen(),
+              ),
+            ],
+          ),
+        ],
       ),
     ],
     redirect: (context, state) {
@@ -109,6 +147,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       final isAuthPage =
           location == '/auth/login' || location == '/auth/register';
       final isWalletSetup = location == '/wallet-setup';
+      final isLockRoute = location.startsWith('/lock');
 
       if (auth.isLoading) {
         if (location != '/' && !isAuthPage) {
@@ -143,6 +182,19 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         }
 
         if (!needsSetup && isWalletSetup) {
+          return '/home';
+        }
+
+        final pinLock = ref.read(pinLockControllerProvider).value;
+        if (pinLock != null &&
+            pinLock.needsUnlock &&
+            !isLockRoute &&
+            !isWalletSetup &&
+            location != '/') {
+          return '/lock/pin';
+        }
+
+        if (pinLock != null && !pinLock.needsUnlock && location == '/lock/pin') {
           return '/home';
         }
       }

@@ -69,7 +69,20 @@ class HomeScreen extends ConsumerWidget {
               SliverPadding(
                 padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
                 sliver: SliverToBoxAdapter(
-                  child: HomeGreetingHeader(userName: userName),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(
+                        child: HomeGreetingHeader(userName: userName),
+                      ),
+                      IconButton(
+                        key: const Key('home-settings-button'),
+                        icon: const Icon(Icons.settings_outlined),
+                        tooltip: 'Settings',
+                        onPressed: () => context.push('/settings'),
+                      ),
+                    ],
+                  ),
                 ),
               ),
               const SliverToBoxAdapter(child: SizedBox(height: 20)),

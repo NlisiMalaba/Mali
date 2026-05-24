@@ -10,7 +10,16 @@ import 'package:mali_app/domain/usecases/create_wallet_usecase.dart';
 import 'package:mali_app/domain/usecases/get_monthly_summary_usecase.dart';
 import 'package:mali_app/domain/usecases/delete_transaction_usecase.dart';
 import 'package:mali_app/domain/usecases/log_transaction_usecase.dart';
+import 'package:mali_app/application/providers/biometric_providers.dart';
+import 'package:mali_app/application/providers/pin_lock_store_providers.dart';
+import 'package:mali_app/domain/usecases/authenticate_with_biometric_usecase.dart';
+import 'package:mali_app/domain/usecases/disable_pin_lock_usecase.dart';
+import 'package:mali_app/domain/usecases/set_biometric_unlock_usecase.dart';
+import 'package:mali_app/domain/usecases/refresh_exchange_rates_usecase.dart';
+import 'package:mali_app/domain/usecases/set_pin_usecase.dart';
+import 'package:mali_app/domain/usecases/verify_pin_usecase.dart';
 import 'package:mali_app/domain/usecases/restore_transaction_usecase.dart';
+import 'package:mali_app/domain/usecases/set_manual_exchange_rate_usecase.dart';
 import 'package:mali_app/domain/usecases/sync_usecase.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
@@ -103,5 +112,57 @@ SyncUseCase syncUseCase(Ref ref) {
     transactionRepository: ref.watch(transactionRepositoryProvider),
     syncPushGateway: ref.watch(transactionSyncPushGatewayProvider),
     syncPullGateway: ref.watch(syncPullGatewayProvider),
+  );
+}
+
+@Riverpod(keepAlive: true)
+SetManualExchangeRateUseCase setManualExchangeRateUseCase(Ref ref) {
+  return SetManualExchangeRateUseCase(
+    exchangeRateRepository: ref.watch(exchangeRateRepositoryProvider),
+  );
+}
+
+@Riverpod(keepAlive: true)
+RefreshExchangeRatesUseCase refreshExchangeRatesUseCase(Ref ref) {
+  return RefreshExchangeRatesUseCase(
+    exchangeRateRepository: ref.watch(exchangeRateRepositoryProvider),
+    exchangeRateFetcher: ref.watch(exchangeRateFetcherProvider),
+  );
+}
+
+@Riverpod(keepAlive: true)
+SetPinUseCase setPinUseCase(Ref ref) {
+  return SetPinUseCase(
+    pinLockRepository: ref.watch(pinLockRepositoryProvider),
+  );
+}
+
+@Riverpod(keepAlive: true)
+VerifyPinUseCase verifyPinUseCase(Ref ref) {
+  return VerifyPinUseCase(
+    pinLockRepository: ref.watch(pinLockRepositoryProvider),
+  );
+}
+
+@Riverpod(keepAlive: true)
+DisablePinLockUseCase disablePinLockUseCase(Ref ref) {
+  return DisablePinLockUseCase(
+    pinLockRepository: ref.watch(pinLockRepositoryProvider),
+    verifyPinUseCase: ref.watch(verifyPinUseCaseProvider),
+  );
+}
+
+@Riverpod(keepAlive: true)
+AuthenticateWithBiometricUseCase authenticateWithBiometricUseCase(Ref ref) {
+  return AuthenticateWithBiometricUseCase(
+    biometricAuthenticator: ref.watch(biometricAuthenticatorProvider),
+  );
+}
+
+@Riverpod(keepAlive: true)
+SetBiometricUnlockUseCase setBiometricUnlockUseCase(Ref ref) {
+  return SetBiometricUnlockUseCase(
+    pinLockRepository: ref.watch(pinLockRepositoryProvider),
+    biometricAuthenticator: ref.watch(biometricAuthenticatorProvider),
   );
 }

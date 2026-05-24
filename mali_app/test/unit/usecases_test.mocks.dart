@@ -3,24 +3,32 @@
 // Do not manually edit this file.
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
-import 'dart:async' as _i4;
+import 'dart:async' as _i5;
 
-import 'package:mali_app/domain/entities/budget.dart' as _i9;
-import 'package:mali_app/domain/entities/exchange_rate.dart' as _i14;
-import 'package:mali_app/domain/entities/goal_contribution.dart' as _i12;
-import 'package:mali_app/domain/entities/savings_goal.dart' as _i11;
-import 'package:mali_app/domain/entities/transaction.dart' as _i5;
-import 'package:mali_app/domain/entities/wallet.dart' as _i7;
-import 'package:mali_app/domain/repositories/budget_repository.dart' as _i8;
+import 'package:fpdart/fpdart.dart' as _i18;
+import 'package:mali_app/core/error/failure.dart' as _i19;
+import 'package:mali_app/domain/entities/budget.dart' as _i10;
+import 'package:mali_app/domain/entities/exchange_rate.dart' as _i15;
+import 'package:mali_app/domain/entities/goal_contribution.dart' as _i13;
+import 'package:mali_app/domain/entities/savings_goal.dart' as _i12;
+import 'package:mali_app/domain/entities/transaction.dart' as _i6;
+import 'package:mali_app/domain/entities/wallet.dart' as _i8;
+import 'package:mali_app/domain/repositories/biometric_authenticator.dart'
+    as _i2;
+import 'package:mali_app/domain/repositories/budget_repository.dart' as _i9;
+import 'package:mali_app/domain/repositories/exchange_rate_fetcher.dart'
+    as _i17;
 import 'package:mali_app/domain/repositories/exchange_rate_repository.dart'
-    as _i13;
-import 'package:mali_app/domain/repositories/goal_repository.dart' as _i10;
+    as _i14;
+import 'package:mali_app/domain/repositories/goal_repository.dart' as _i11;
+import 'package:mali_app/domain/repositories/pin_lock_repository.dart' as _i21;
 import 'package:mali_app/domain/repositories/transaction_repository.dart'
-    as _i3;
-import 'package:mali_app/domain/repositories/wallet_repository.dart' as _i6;
-import 'package:mali_app/domain/usecases/sync_usecase.dart' as _i2;
-import 'package:mali_app/domain/value_objects/currency_code.dart' as _i15;
+    as _i4;
+import 'package:mali_app/domain/repositories/wallet_repository.dart' as _i7;
+import 'package:mali_app/domain/usecases/sync_usecase.dart' as _i3;
+import 'package:mali_app/domain/value_objects/currency_code.dart' as _i16;
 import 'package:mockito/mockito.dart' as _i1;
+import 'package:mockito/src/dummies.dart' as _i20;
 
 // ignore_for_file: type=lint
 // ignore_for_file: avoid_redundant_argument_values
@@ -37,13 +45,25 @@ import 'package:mockito/mockito.dart' as _i1;
 // ignore_for_file: subtype_of_sealed_class
 // ignore_for_file: invalid_use_of_internal_member
 
-class _FakePushResult_0 extends _i1.SmartFake implements _i2.PushResult {
-  _FakePushResult_0(Object parent, Invocation parentInvocation)
+class _FakeBiometricCapability_0 extends _i1.SmartFake
+    implements _i2.BiometricCapability {
+  _FakeBiometricCapability_0(Object parent, Invocation parentInvocation)
     : super(parent, parentInvocation);
 }
 
-class _FakePullResult_1 extends _i1.SmartFake implements _i2.PullResult {
-  _FakePullResult_1(Object parent, Invocation parentInvocation)
+class _FakeBiometricAuthResult_1 extends _i1.SmartFake
+    implements _i2.BiometricAuthResult {
+  _FakeBiometricAuthResult_1(Object parent, Invocation parentInvocation)
+    : super(parent, parentInvocation);
+}
+
+class _FakePushResult_2 extends _i1.SmartFake implements _i3.PushResult {
+  _FakePushResult_2(Object parent, Invocation parentInvocation)
+    : super(parent, parentInvocation);
+}
+
+class _FakePullResult_3 extends _i1.SmartFake implements _i3.PullResult {
+  _FakePullResult_3(Object parent, Invocation parentInvocation)
     : super(parent, parentInvocation);
 }
 
@@ -51,127 +71,127 @@ class _FakePullResult_1 extends _i1.SmartFake implements _i2.PullResult {
 ///
 /// See the documentation for Mockito's code generation for more information.
 class MockITransactionRepository extends _i1.Mock
-    implements _i3.ITransactionRepository {
+    implements _i4.ITransactionRepository {
   @override
-  _i4.Future<void> save(_i5.Transaction? transaction) =>
+  _i5.Future<void> save(_i6.Transaction? transaction) =>
       (super.noSuchMethod(
             Invocation.method(#save, [transaction]),
-            returnValue: _i4.Future<void>.value(),
-            returnValueForMissingStub: _i4.Future<void>.value(),
+            returnValue: _i5.Future<void>.value(),
+            returnValueForMissingStub: _i5.Future<void>.value(),
           )
-          as _i4.Future<void>);
+          as _i5.Future<void>);
 
   @override
-  _i4.Future<_i5.Transaction?> findById(String? id) =>
+  _i5.Future<_i6.Transaction?> findById(String? id) =>
       (super.noSuchMethod(
             Invocation.method(#findById, [id]),
-            returnValue: _i4.Future<_i5.Transaction?>.value(),
-            returnValueForMissingStub: _i4.Future<_i5.Transaction?>.value(),
+            returnValue: _i5.Future<_i6.Transaction?>.value(),
+            returnValueForMissingStub: _i5.Future<_i6.Transaction?>.value(),
           )
-          as _i4.Future<_i5.Transaction?>);
+          as _i5.Future<_i6.Transaction?>);
 
   @override
-  _i4.Future<_i5.Transaction?> findBySyncId(String? syncId) =>
+  _i5.Future<_i6.Transaction?> findBySyncId(String? syncId) =>
       (super.noSuchMethod(
             Invocation.method(#findBySyncId, [syncId]),
-            returnValue: _i4.Future<_i5.Transaction?>.value(),
-            returnValueForMissingStub: _i4.Future<_i5.Transaction?>.value(),
+            returnValue: _i5.Future<_i6.Transaction?>.value(),
+            returnValueForMissingStub: _i5.Future<_i6.Transaction?>.value(),
           )
-          as _i4.Future<_i5.Transaction?>);
+          as _i5.Future<_i6.Transaction?>);
 
   @override
-  _i4.Future<List<_i5.Transaction>> list({
-    required _i3.TransactionQuery? query,
+  _i5.Future<List<_i6.Transaction>> list({
+    required _i4.TransactionQuery? query,
   }) =>
       (super.noSuchMethod(
             Invocation.method(#list, [], {#query: query}),
-            returnValue: _i4.Future<List<_i5.Transaction>>.value(
-              <_i5.Transaction>[],
+            returnValue: _i5.Future<List<_i6.Transaction>>.value(
+              <_i6.Transaction>[],
             ),
-            returnValueForMissingStub: _i4.Future<List<_i5.Transaction>>.value(
-              <_i5.Transaction>[],
+            returnValueForMissingStub: _i5.Future<List<_i6.Transaction>>.value(
+              <_i6.Transaction>[],
             ),
           )
-          as _i4.Future<List<_i5.Transaction>>);
+          as _i5.Future<List<_i6.Transaction>>);
 
   @override
-  _i4.Stream<List<_i5.Transaction>> watchByWallet(String? walletId) =>
+  _i5.Stream<List<_i6.Transaction>> watchByWallet(String? walletId) =>
       (super.noSuchMethod(
             Invocation.method(#watchByWallet, [walletId]),
-            returnValue: _i4.Stream<List<_i5.Transaction>>.empty(),
+            returnValue: _i5.Stream<List<_i6.Transaction>>.empty(),
             returnValueForMissingStub:
-                _i4.Stream<List<_i5.Transaction>>.empty(),
+                _i5.Stream<List<_i6.Transaction>>.empty(),
           )
-          as _i4.Stream<List<_i5.Transaction>>);
+          as _i5.Stream<List<_i6.Transaction>>);
 
   @override
-  _i4.Stream<List<_i5.Transaction>> watchList({
-    required _i3.TransactionWatchQuery? query,
+  _i5.Stream<List<_i6.Transaction>> watchList({
+    required _i4.TransactionWatchQuery? query,
   }) =>
       (super.noSuchMethod(
             Invocation.method(#watchList, [], {#query: query}),
-            returnValue: _i4.Stream<List<_i5.Transaction>>.empty(),
+            returnValue: _i5.Stream<List<_i6.Transaction>>.empty(),
             returnValueForMissingStub:
-                _i4.Stream<List<_i5.Transaction>>.empty(),
+                _i5.Stream<List<_i6.Transaction>>.empty(),
           )
-          as _i4.Stream<List<_i5.Transaction>>);
+          as _i5.Stream<List<_i6.Transaction>>);
 
   @override
-  _i4.Future<List<_i5.Transaction>> listUnsynced() =>
+  _i5.Future<List<_i6.Transaction>> listUnsynced() =>
       (super.noSuchMethod(
             Invocation.method(#listUnsynced, []),
-            returnValue: _i4.Future<List<_i5.Transaction>>.value(
-              <_i5.Transaction>[],
+            returnValue: _i5.Future<List<_i6.Transaction>>.value(
+              <_i6.Transaction>[],
             ),
-            returnValueForMissingStub: _i4.Future<List<_i5.Transaction>>.value(
-              <_i5.Transaction>[],
+            returnValueForMissingStub: _i5.Future<List<_i6.Transaction>>.value(
+              <_i6.Transaction>[],
             ),
           )
-          as _i4.Future<List<_i5.Transaction>>);
+          as _i5.Future<List<_i6.Transaction>>);
 
   @override
-  _i4.Future<void> softDelete(String? id) =>
+  _i5.Future<void> softDelete(String? id) =>
       (super.noSuchMethod(
             Invocation.method(#softDelete, [id]),
-            returnValue: _i4.Future<void>.value(),
-            returnValueForMissingStub: _i4.Future<void>.value(),
+            returnValue: _i5.Future<void>.value(),
+            returnValueForMissingStub: _i5.Future<void>.value(),
           )
-          as _i4.Future<void>);
+          as _i5.Future<void>);
 }
 
 /// A class which mocks [IWalletRepository].
 ///
 /// See the documentation for Mockito's code generation for more information.
-class MockIWalletRepository extends _i1.Mock implements _i6.IWalletRepository {
+class MockIWalletRepository extends _i1.Mock implements _i7.IWalletRepository {
   @override
-  _i4.Future<void> save(_i7.Wallet? wallet) =>
+  _i5.Future<void> save(_i8.Wallet? wallet) =>
       (super.noSuchMethod(
             Invocation.method(#save, [wallet]),
-            returnValue: _i4.Future<void>.value(),
-            returnValueForMissingStub: _i4.Future<void>.value(),
+            returnValue: _i5.Future<void>.value(),
+            returnValueForMissingStub: _i5.Future<void>.value(),
           )
-          as _i4.Future<void>);
+          as _i5.Future<void>);
 
   @override
-  _i4.Future<_i7.Wallet?> findById(String? id) =>
+  _i5.Future<_i8.Wallet?> findById(String? id) =>
       (super.noSuchMethod(
             Invocation.method(#findById, [id]),
-            returnValue: _i4.Future<_i7.Wallet?>.value(),
-            returnValueForMissingStub: _i4.Future<_i7.Wallet?>.value(),
+            returnValue: _i5.Future<_i8.Wallet?>.value(),
+            returnValueForMissingStub: _i5.Future<_i8.Wallet?>.value(),
           )
-          as _i4.Future<_i7.Wallet?>);
+          as _i5.Future<_i8.Wallet?>);
 
   @override
-  _i4.Stream<List<_i7.Wallet>> watchActive() =>
+  _i5.Stream<List<_i8.Wallet>> watchActive() =>
       (super.noSuchMethod(
             Invocation.method(#watchActive, []),
-            returnValue: _i4.Stream<List<_i7.Wallet>>.empty(),
-            returnValueForMissingStub: _i4.Stream<List<_i7.Wallet>>.empty(),
+            returnValue: _i5.Stream<List<_i8.Wallet>>.empty(),
+            returnValueForMissingStub: _i5.Stream<List<_i8.Wallet>>.empty(),
           )
-          as _i4.Stream<List<_i7.Wallet>>);
+          as _i5.Stream<List<_i8.Wallet>>);
 
   @override
-  _i4.Future<void> updateBalance({
+  _i5.Future<void> updateBalance({
     required String? walletId,
     required String? balance,
   }) =>
@@ -180,36 +200,36 @@ class MockIWalletRepository extends _i1.Mock implements _i6.IWalletRepository {
               #walletId: walletId,
               #balance: balance,
             }),
-            returnValue: _i4.Future<void>.value(),
-            returnValueForMissingStub: _i4.Future<void>.value(),
+            returnValue: _i5.Future<void>.value(),
+            returnValueForMissingStub: _i5.Future<void>.value(),
           )
-          as _i4.Future<void>);
+          as _i5.Future<void>);
 
   @override
-  _i4.Future<void> archive({required String? walletId}) =>
+  _i5.Future<void> archive({required String? walletId}) =>
       (super.noSuchMethod(
             Invocation.method(#archive, [], {#walletId: walletId}),
-            returnValue: _i4.Future<void>.value(),
-            returnValueForMissingStub: _i4.Future<void>.value(),
+            returnValue: _i5.Future<void>.value(),
+            returnValueForMissingStub: _i5.Future<void>.value(),
           )
-          as _i4.Future<void>);
+          as _i5.Future<void>);
 }
 
 /// A class which mocks [IBudgetRepository].
 ///
 /// See the documentation for Mockito's code generation for more information.
-class MockIBudgetRepository extends _i1.Mock implements _i8.IBudgetRepository {
+class MockIBudgetRepository extends _i1.Mock implements _i9.IBudgetRepository {
   @override
-  _i4.Future<void> save(_i9.Budget? budget) =>
+  _i5.Future<void> save(_i10.Budget? budget) =>
       (super.noSuchMethod(
             Invocation.method(#save, [budget]),
-            returnValue: _i4.Future<void>.value(),
-            returnValueForMissingStub: _i4.Future<void>.value(),
+            returnValue: _i5.Future<void>.value(),
+            returnValueForMissingStub: _i5.Future<void>.value(),
           )
-          as _i4.Future<void>);
+          as _i5.Future<void>);
 
   @override
-  _i4.Stream<List<_i9.Budget>> watchMonthBudgets({
+  _i5.Stream<List<_i10.Budget>> watchMonthBudgets({
     required int? year,
     required int? month,
   }) =>
@@ -218,13 +238,13 @@ class MockIBudgetRepository extends _i1.Mock implements _i8.IBudgetRepository {
               #year: year,
               #month: month,
             }),
-            returnValue: _i4.Stream<List<_i9.Budget>>.empty(),
-            returnValueForMissingStub: _i4.Stream<List<_i9.Budget>>.empty(),
+            returnValue: _i5.Stream<List<_i10.Budget>>.empty(),
+            returnValueForMissingStub: _i5.Stream<List<_i10.Budget>>.empty(),
           )
-          as _i4.Stream<List<_i9.Budget>>);
+          as _i5.Stream<List<_i10.Budget>>);
 
   @override
-  _i4.Future<void> updateSpentAmount({
+  _i5.Future<void> updateSpentAmount({
     required String? budgetId,
     required String? spentAmount,
   }) =>
@@ -233,141 +253,287 @@ class MockIBudgetRepository extends _i1.Mock implements _i8.IBudgetRepository {
               #budgetId: budgetId,
               #spentAmount: spentAmount,
             }),
-            returnValue: _i4.Future<void>.value(),
-            returnValueForMissingStub: _i4.Future<void>.value(),
+            returnValue: _i5.Future<void>.value(),
+            returnValueForMissingStub: _i5.Future<void>.value(),
           )
-          as _i4.Future<void>);
+          as _i5.Future<void>);
 }
 
 /// A class which mocks [IGoalRepository].
 ///
 /// See the documentation for Mockito's code generation for more information.
-class MockIGoalRepository extends _i1.Mock implements _i10.IGoalRepository {
+class MockIGoalRepository extends _i1.Mock implements _i11.IGoalRepository {
   @override
-  _i4.Future<void> saveGoal(_i11.SavingsGoal? goal) =>
+  _i5.Future<void> saveGoal(_i12.SavingsGoal? goal) =>
       (super.noSuchMethod(
             Invocation.method(#saveGoal, [goal]),
-            returnValue: _i4.Future<void>.value(),
-            returnValueForMissingStub: _i4.Future<void>.value(),
+            returnValue: _i5.Future<void>.value(),
+            returnValueForMissingStub: _i5.Future<void>.value(),
           )
-          as _i4.Future<void>);
+          as _i5.Future<void>);
 
   @override
-  _i4.Stream<List<_i11.SavingsGoal>> watchActiveGoals() =>
+  _i5.Stream<List<_i12.SavingsGoal>> watchActiveGoals() =>
       (super.noSuchMethod(
             Invocation.method(#watchActiveGoals, []),
-            returnValue: _i4.Stream<List<_i11.SavingsGoal>>.empty(),
+            returnValue: _i5.Stream<List<_i12.SavingsGoal>>.empty(),
             returnValueForMissingStub:
-                _i4.Stream<List<_i11.SavingsGoal>>.empty(),
+                _i5.Stream<List<_i12.SavingsGoal>>.empty(),
           )
-          as _i4.Stream<List<_i11.SavingsGoal>>);
+          as _i5.Stream<List<_i12.SavingsGoal>>);
 
   @override
-  _i4.Future<void> addContribution(_i12.GoalContribution? contribution) =>
+  _i5.Future<void> addContribution(_i13.GoalContribution? contribution) =>
       (super.noSuchMethod(
             Invocation.method(#addContribution, [contribution]),
-            returnValue: _i4.Future<void>.value(),
-            returnValueForMissingStub: _i4.Future<void>.value(),
+            returnValue: _i5.Future<void>.value(),
+            returnValueForMissingStub: _i5.Future<void>.value(),
           )
-          as _i4.Future<void>);
+          as _i5.Future<void>);
 
   @override
-  _i4.Stream<List<_i12.GoalContribution>> watchContributions(String? goalId) =>
+  _i5.Stream<List<_i13.GoalContribution>> watchContributions(String? goalId) =>
       (super.noSuchMethod(
             Invocation.method(#watchContributions, [goalId]),
-            returnValue: _i4.Stream<List<_i12.GoalContribution>>.empty(),
+            returnValue: _i5.Stream<List<_i13.GoalContribution>>.empty(),
             returnValueForMissingStub:
-                _i4.Stream<List<_i12.GoalContribution>>.empty(),
+                _i5.Stream<List<_i13.GoalContribution>>.empty(),
           )
-          as _i4.Stream<List<_i12.GoalContribution>>);
+          as _i5.Stream<List<_i13.GoalContribution>>);
 }
 
 /// A class which mocks [IExchangeRateRepository].
 ///
 /// See the documentation for Mockito's code generation for more information.
 class MockIExchangeRateRepository extends _i1.Mock
-    implements _i13.IExchangeRateRepository {
+    implements _i14.IExchangeRateRepository {
   @override
-  _i4.Future<void> save(_i14.ExchangeRate? rate) =>
+  _i5.Future<void> save(_i15.ExchangeRate? rate) =>
       (super.noSuchMethod(
             Invocation.method(#save, [rate]),
-            returnValue: _i4.Future<void>.value(),
-            returnValueForMissingStub: _i4.Future<void>.value(),
+            returnValue: _i5.Future<void>.value(),
+            returnValueForMissingStub: _i5.Future<void>.value(),
           )
-          as _i4.Future<void>);
+          as _i5.Future<void>);
 
   @override
-  _i4.Future<_i14.ExchangeRate?> getRate({
-    required _i15.CurrencyCode? baseCurrencyCode,
-    required _i15.CurrencyCode? quoteCurrencyCode,
+  _i5.Future<_i15.ExchangeRate?> getRate({
+    required _i16.CurrencyCode? baseCurrencyCode,
+    required _i16.CurrencyCode? quoteCurrencyCode,
   }) =>
       (super.noSuchMethod(
             Invocation.method(#getRate, [], {
               #baseCurrencyCode: baseCurrencyCode,
               #quoteCurrencyCode: quoteCurrencyCode,
             }),
-            returnValue: _i4.Future<_i14.ExchangeRate?>.value(),
-            returnValueForMissingStub: _i4.Future<_i14.ExchangeRate?>.value(),
+            returnValue: _i5.Future<_i15.ExchangeRate?>.value(),
+            returnValueForMissingStub: _i5.Future<_i15.ExchangeRate?>.value(),
           )
-          as _i4.Future<_i14.ExchangeRate?>);
+          as _i5.Future<_i15.ExchangeRate?>);
 
   @override
-  _i4.Stream<List<_i14.ExchangeRate>> watchAllRates() =>
+  _i5.Stream<List<_i15.ExchangeRate>> watchAllRates() =>
       (super.noSuchMethod(
             Invocation.method(#watchAllRates, []),
-            returnValue: _i4.Stream<List<_i14.ExchangeRate>>.empty(),
+            returnValue: _i5.Stream<List<_i15.ExchangeRate>>.empty(),
             returnValueForMissingStub:
-                _i4.Stream<List<_i14.ExchangeRate>>.empty(),
+                _i5.Stream<List<_i15.ExchangeRate>>.empty(),
           )
-          as _i4.Stream<List<_i14.ExchangeRate>>);
+          as _i5.Stream<List<_i15.ExchangeRate>>);
+}
+
+/// A class which mocks [IExchangeRateFetcher].
+///
+/// See the documentation for Mockito's code generation for more information.
+class MockIExchangeRateFetcher extends _i1.Mock
+    implements _i17.IExchangeRateFetcher {
+  @override
+  _i5.Future<_i18.Either<_i19.Failure, List<_i17.FetchedExchangeRate>>>
+  fetchLatestRates() =>
+      (super.noSuchMethod(
+            Invocation.method(#fetchLatestRates, []),
+            returnValue:
+                _i5.Future<
+                  _i18.Either<_i19.Failure, List<_i17.FetchedExchangeRate>>
+                >.value(
+                  _i20.dummyValue<
+                    _i18.Either<_i19.Failure, List<_i17.FetchedExchangeRate>>
+                  >(this, Invocation.method(#fetchLatestRates, [])),
+                ),
+            returnValueForMissingStub:
+                _i5.Future<
+                  _i18.Either<_i19.Failure, List<_i17.FetchedExchangeRate>>
+                >.value(
+                  _i20.dummyValue<
+                    _i18.Either<_i19.Failure, List<_i17.FetchedExchangeRate>>
+                  >(this, Invocation.method(#fetchLatestRates, [])),
+                ),
+          )
+          as _i5.Future<
+            _i18.Either<_i19.Failure, List<_i17.FetchedExchangeRate>>
+          >);
+}
+
+/// A class which mocks [IPinLockRepository].
+///
+/// See the documentation for Mockito's code generation for more information.
+class MockIPinLockRepository extends _i1.Mock
+    implements _i21.IPinLockRepository {
+  @override
+  _i5.Future<bool> isEnabled() =>
+      (super.noSuchMethod(
+            Invocation.method(#isEnabled, []),
+            returnValue: _i5.Future<bool>.value(false),
+            returnValueForMissingStub: _i5.Future<bool>.value(false),
+          )
+          as _i5.Future<bool>);
+
+  @override
+  _i5.Future<bool> isBiometricEnabled() =>
+      (super.noSuchMethod(
+            Invocation.method(#isBiometricEnabled, []),
+            returnValue: _i5.Future<bool>.value(false),
+            returnValueForMissingStub: _i5.Future<bool>.value(false),
+          )
+          as _i5.Future<bool>);
+
+  @override
+  _i5.Future<void> savePin(String? pin) =>
+      (super.noSuchMethod(
+            Invocation.method(#savePin, [pin]),
+            returnValue: _i5.Future<void>.value(),
+            returnValueForMissingStub: _i5.Future<void>.value(),
+          )
+          as _i5.Future<void>);
+
+  @override
+  _i5.Future<bool> verifyPin(String? pin) =>
+      (super.noSuchMethod(
+            Invocation.method(#verifyPin, [pin]),
+            returnValue: _i5.Future<bool>.value(false),
+            returnValueForMissingStub: _i5.Future<bool>.value(false),
+          )
+          as _i5.Future<bool>);
+
+  @override
+  _i5.Future<void> setBiometricEnabled(bool? enabled) =>
+      (super.noSuchMethod(
+            Invocation.method(#setBiometricEnabled, [enabled]),
+            returnValue: _i5.Future<void>.value(),
+            returnValueForMissingStub: _i5.Future<void>.value(),
+          )
+          as _i5.Future<void>);
+
+  @override
+  _i5.Future<void> disable() =>
+      (super.noSuchMethod(
+            Invocation.method(#disable, []),
+            returnValue: _i5.Future<void>.value(),
+            returnValueForMissingStub: _i5.Future<void>.value(),
+          )
+          as _i5.Future<void>);
+}
+
+/// A class which mocks [IBiometricAuthenticator].
+///
+/// See the documentation for Mockito's code generation for more information.
+class MockIBiometricAuthenticator extends _i1.Mock
+    implements _i2.IBiometricAuthenticator {
+  @override
+  _i5.Future<_i2.BiometricCapability> getCapability() =>
+      (super.noSuchMethod(
+            Invocation.method(#getCapability, []),
+            returnValue: _i5.Future<_i2.BiometricCapability>.value(
+              _FakeBiometricCapability_0(
+                this,
+                Invocation.method(#getCapability, []),
+              ),
+            ),
+            returnValueForMissingStub:
+                _i5.Future<_i2.BiometricCapability>.value(
+                  _FakeBiometricCapability_0(
+                    this,
+                    Invocation.method(#getCapability, []),
+                  ),
+                ),
+          )
+          as _i5.Future<_i2.BiometricCapability>);
+
+  @override
+  _i5.Future<_i2.BiometricAuthResult> authenticate({
+    required String? localizedReason,
+  }) =>
+      (super.noSuchMethod(
+            Invocation.method(#authenticate, [], {
+              #localizedReason: localizedReason,
+            }),
+            returnValue: _i5.Future<_i2.BiometricAuthResult>.value(
+              _FakeBiometricAuthResult_1(
+                this,
+                Invocation.method(#authenticate, [], {
+                  #localizedReason: localizedReason,
+                }),
+              ),
+            ),
+            returnValueForMissingStub:
+                _i5.Future<_i2.BiometricAuthResult>.value(
+                  _FakeBiometricAuthResult_1(
+                    this,
+                    Invocation.method(#authenticate, [], {
+                      #localizedReason: localizedReason,
+                    }),
+                  ),
+                ),
+          )
+          as _i5.Future<_i2.BiometricAuthResult>);
 }
 
 /// A class which mocks [ISyncPushGateway].
 ///
 /// See the documentation for Mockito's code generation for more information.
-class MockISyncPushGateway extends _i1.Mock implements _i2.ISyncPushGateway {
+class MockISyncPushGateway extends _i1.Mock implements _i3.ISyncPushGateway {
   @override
-  _i4.Future<_i2.PushResult> pushTransactions(
-    List<_i5.Transaction>? transactions,
+  _i5.Future<_i3.PushResult> pushTransactions(
+    List<_i6.Transaction>? transactions,
   ) =>
       (super.noSuchMethod(
             Invocation.method(#pushTransactions, [transactions]),
-            returnValue: _i4.Future<_i2.PushResult>.value(
-              _FakePushResult_0(
+            returnValue: _i5.Future<_i3.PushResult>.value(
+              _FakePushResult_2(
                 this,
                 Invocation.method(#pushTransactions, [transactions]),
               ),
             ),
-            returnValueForMissingStub: _i4.Future<_i2.PushResult>.value(
-              _FakePushResult_0(
+            returnValueForMissingStub: _i5.Future<_i3.PushResult>.value(
+              _FakePushResult_2(
                 this,
                 Invocation.method(#pushTransactions, [transactions]),
               ),
             ),
           )
-          as _i4.Future<_i2.PushResult>);
+          as _i5.Future<_i3.PushResult>);
 }
 
 /// A class which mocks [ISyncPullGateway].
 ///
 /// See the documentation for Mockito's code generation for more information.
-class MockISyncPullGateway extends _i1.Mock implements _i2.ISyncPullGateway {
+class MockISyncPullGateway extends _i1.Mock implements _i3.ISyncPullGateway {
   @override
-  _i4.Future<_i2.PullResult> pullChanges({required DateTime? since}) =>
+  _i5.Future<_i3.PullResult> pullChanges({required DateTime? since}) =>
       (super.noSuchMethod(
             Invocation.method(#pullChanges, [], {#since: since}),
-            returnValue: _i4.Future<_i2.PullResult>.value(
-              _FakePullResult_1(
+            returnValue: _i5.Future<_i3.PullResult>.value(
+              _FakePullResult_3(
                 this,
                 Invocation.method(#pullChanges, [], {#since: since}),
               ),
             ),
-            returnValueForMissingStub: _i4.Future<_i2.PullResult>.value(
-              _FakePullResult_1(
+            returnValueForMissingStub: _i5.Future<_i3.PullResult>.value(
+              _FakePullResult_3(
                 this,
                 Invocation.method(#pullChanges, [], {#since: since}),
               ),
             ),
           )
-          as _i4.Future<_i2.PullResult>);
+          as _i5.Future<_i3.PullResult>);
 }

@@ -7,6 +7,7 @@ import 'package:mali_app/domain/entities/user.dart';
 import 'package:mali_app/domain/entities/wallet.dart';
 import 'package:mali_app/presentation/router/app_router.dart';
 import 'package:mali_app/presentation/screens/budget/budgets_screen.dart';
+import 'package:mali_app/presentation/screens/settings/settings_screen.dart';
 import 'package:mali_app/presentation/screens/splash_screen.dart';
 
 import '../home/home_test_overrides.dart';
@@ -101,7 +102,7 @@ void main() {
         '/goals': find.text('Goals'),
         '/goals/goal-1': find.text('Goal goal-1'),
         '/analytics': find.text('Analytics'),
-        '/settings': find.text('Settings'),
+        '/settings': find.byKey(SettingsScreen.screenKey),
       };
 
       for (final entry in routes.entries) {

@@ -577,3 +577,335 @@ final class SyncUseCaseProvider
 }
 
 String _$syncUseCaseHash() => r'6d4efae273c6a8b8fe21ce28cefa9c4de309b4c6';
+
+@ProviderFor(setManualExchangeRateUseCase)
+final setManualExchangeRateUseCaseProvider =
+    SetManualExchangeRateUseCaseProvider._();
+
+final class SetManualExchangeRateUseCaseProvider
+    extends
+        $FunctionalProvider<
+          SetManualExchangeRateUseCase,
+          SetManualExchangeRateUseCase,
+          SetManualExchangeRateUseCase
+        >
+    with $Provider<SetManualExchangeRateUseCase> {
+  SetManualExchangeRateUseCaseProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'setManualExchangeRateUseCaseProvider',
+        isAutoDispose: false,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$setManualExchangeRateUseCaseHash();
+
+  @$internal
+  @override
+  $ProviderElement<SetManualExchangeRateUseCase> $createElement(
+    $ProviderPointer pointer,
+  ) => $ProviderElement(pointer);
+
+  @override
+  SetManualExchangeRateUseCase create(Ref ref) {
+    return setManualExchangeRateUseCase(ref);
+  }
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(SetManualExchangeRateUseCase value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<SetManualExchangeRateUseCase>(value),
+    );
+  }
+}
+
+String _$setManualExchangeRateUseCaseHash() =>
+    r'ed09b235ac240fbaedf9c201ebe5a4161dd97089';
+
+@ProviderFor(refreshExchangeRatesUseCase)
+final refreshExchangeRatesUseCaseProvider =
+    RefreshExchangeRatesUseCaseProvider._();
+
+final class RefreshExchangeRatesUseCaseProvider
+    extends
+        $FunctionalProvider<
+          RefreshExchangeRatesUseCase,
+          RefreshExchangeRatesUseCase,
+          RefreshExchangeRatesUseCase
+        >
+    with $Provider<RefreshExchangeRatesUseCase> {
+  RefreshExchangeRatesUseCaseProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'refreshExchangeRatesUseCaseProvider',
+        isAutoDispose: false,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$refreshExchangeRatesUseCaseHash();
+
+  @$internal
+  @override
+  $ProviderElement<RefreshExchangeRatesUseCase> $createElement(
+    $ProviderPointer pointer,
+  ) => $ProviderElement(pointer);
+
+  @override
+  RefreshExchangeRatesUseCase create(Ref ref) {
+    return refreshExchangeRatesUseCase(ref);
+  }
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(RefreshExchangeRatesUseCase value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<RefreshExchangeRatesUseCase>(value),
+    );
+  }
+}
+
+String _$refreshExchangeRatesUseCaseHash() =>
+    r'0b852c50be4e0d6dd6277756b68a3dca44c70f24';
+
+@ProviderFor(setPinUseCase)
+final setPinUseCaseProvider = SetPinUseCaseProvider._();
+
+final class SetPinUseCaseProvider
+    extends $FunctionalProvider<SetPinUseCase, SetPinUseCase, SetPinUseCase>
+    with $Provider<SetPinUseCase> {
+  SetPinUseCaseProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'setPinUseCaseProvider',
+        isAutoDispose: false,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$setPinUseCaseHash();
+
+  @$internal
+  @override
+  $ProviderElement<SetPinUseCase> $createElement($ProviderPointer pointer) =>
+      $ProviderElement(pointer);
+
+  @override
+  SetPinUseCase create(Ref ref) {
+    return setPinUseCase(ref);
+  }
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(SetPinUseCase value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<SetPinUseCase>(value),
+    );
+  }
+}
+
+String _$setPinUseCaseHash() => r'ca22ea05738b44a78d2dc861e6102f02c31b8c7e';
+
+@ProviderFor(verifyPinUseCase)
+final verifyPinUseCaseProvider = VerifyPinUseCaseProvider._();
+
+final class VerifyPinUseCaseProvider
+    extends
+        $FunctionalProvider<
+          VerifyPinUseCase,
+          VerifyPinUseCase,
+          VerifyPinUseCase
+        >
+    with $Provider<VerifyPinUseCase> {
+  VerifyPinUseCaseProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'verifyPinUseCaseProvider',
+        isAutoDispose: false,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$verifyPinUseCaseHash();
+
+  @$internal
+  @override
+  $ProviderElement<VerifyPinUseCase> $createElement($ProviderPointer pointer) =>
+      $ProviderElement(pointer);
+
+  @override
+  VerifyPinUseCase create(Ref ref) {
+    return verifyPinUseCase(ref);
+  }
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(VerifyPinUseCase value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<VerifyPinUseCase>(value),
+    );
+  }
+}
+
+String _$verifyPinUseCaseHash() => r'86237965fb2dbe373e12188638b28fb72115d683';
+
+@ProviderFor(disablePinLockUseCase)
+final disablePinLockUseCaseProvider = DisablePinLockUseCaseProvider._();
+
+final class DisablePinLockUseCaseProvider
+    extends
+        $FunctionalProvider<
+          DisablePinLockUseCase,
+          DisablePinLockUseCase,
+          DisablePinLockUseCase
+        >
+    with $Provider<DisablePinLockUseCase> {
+  DisablePinLockUseCaseProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'disablePinLockUseCaseProvider',
+        isAutoDispose: false,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$disablePinLockUseCaseHash();
+
+  @$internal
+  @override
+  $ProviderElement<DisablePinLockUseCase> $createElement(
+    $ProviderPointer pointer,
+  ) => $ProviderElement(pointer);
+
+  @override
+  DisablePinLockUseCase create(Ref ref) {
+    return disablePinLockUseCase(ref);
+  }
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(DisablePinLockUseCase value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<DisablePinLockUseCase>(value),
+    );
+  }
+}
+
+String _$disablePinLockUseCaseHash() =>
+    r'8017d3fa17ebb317320b908b9358ffaab1bd6f15';
+
+@ProviderFor(authenticateWithBiometricUseCase)
+final authenticateWithBiometricUseCaseProvider =
+    AuthenticateWithBiometricUseCaseProvider._();
+
+final class AuthenticateWithBiometricUseCaseProvider
+    extends
+        $FunctionalProvider<
+          AuthenticateWithBiometricUseCase,
+          AuthenticateWithBiometricUseCase,
+          AuthenticateWithBiometricUseCase
+        >
+    with $Provider<AuthenticateWithBiometricUseCase> {
+  AuthenticateWithBiometricUseCaseProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'authenticateWithBiometricUseCaseProvider',
+        isAutoDispose: false,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$authenticateWithBiometricUseCaseHash();
+
+  @$internal
+  @override
+  $ProviderElement<AuthenticateWithBiometricUseCase> $createElement(
+    $ProviderPointer pointer,
+  ) => $ProviderElement(pointer);
+
+  @override
+  AuthenticateWithBiometricUseCase create(Ref ref) {
+    return authenticateWithBiometricUseCase(ref);
+  }
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(AuthenticateWithBiometricUseCase value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<AuthenticateWithBiometricUseCase>(
+        value,
+      ),
+    );
+  }
+}
+
+String _$authenticateWithBiometricUseCaseHash() =>
+    r'671b0694138e2fdca6b436a780794f346d64be36';
+
+@ProviderFor(setBiometricUnlockUseCase)
+final setBiometricUnlockUseCaseProvider = SetBiometricUnlockUseCaseProvider._();
+
+final class SetBiometricUnlockUseCaseProvider
+    extends
+        $FunctionalProvider<
+          SetBiometricUnlockUseCase,
+          SetBiometricUnlockUseCase,
+          SetBiometricUnlockUseCase
+        >
+    with $Provider<SetBiometricUnlockUseCase> {
+  SetBiometricUnlockUseCaseProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'setBiometricUnlockUseCaseProvider',
+        isAutoDispose: false,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$setBiometricUnlockUseCaseHash();
+
+  @$internal
+  @override
+  $ProviderElement<SetBiometricUnlockUseCase> $createElement(
+    $ProviderPointer pointer,
+  ) => $ProviderElement(pointer);
+
+  @override
+  SetBiometricUnlockUseCase create(Ref ref) {
+    return setBiometricUnlockUseCase(ref);
+  }
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(SetBiometricUnlockUseCase value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<SetBiometricUnlockUseCase>(value),
+    );
+  }
+}
+
+String _$setBiometricUnlockUseCaseHash() =>
+    r'85dae339715dbcde4ca98dc3779349447dc4771b';

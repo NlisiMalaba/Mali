@@ -10,7 +10,10 @@ import 'package:mali_app/domain/entities/savings_goal.dart';
 import 'package:mali_app/domain/entities/transaction.dart';
 import 'package:mali_app/domain/entities/wallet.dart';
 import 'package:mali_app/domain/repositories/budget_repository.dart';
+import 'package:mali_app/domain/repositories/exchange_rate_fetcher.dart';
 import 'package:mali_app/domain/repositories/exchange_rate_repository.dart';
+import 'package:mali_app/domain/repositories/biometric_authenticator.dart';
+import 'package:mali_app/domain/repositories/pin_lock_repository.dart';
 import 'package:mali_app/domain/repositories/goal_repository.dart';
 import 'package:mali_app/domain/repositories/transaction_repository.dart';
 import 'package:mali_app/domain/repositories/wallet_repository.dart';
@@ -24,7 +27,14 @@ import 'package:mali_app/domain/usecases/create_budget_usecase.dart';
 import 'package:mali_app/domain/usecases/create_wallet_usecase.dart';
 import 'package:mali_app/domain/usecases/get_monthly_summary_usecase.dart';
 import 'package:mali_app/domain/usecases/log_transaction_usecase.dart';
+import 'package:mali_app/domain/usecases/refresh_exchange_rates_usecase.dart';
+import 'package:mali_app/domain/usecases/disable_pin_lock_usecase.dart';
+import 'package:mali_app/domain/usecases/set_manual_exchange_rate_usecase.dart';
+import 'package:mali_app/domain/usecases/set_biometric_unlock_usecase.dart';
+import 'package:mali_app/domain/usecases/set_pin_usecase.dart';
+import 'package:mali_app/domain/usecases/verify_pin_usecase.dart';
 import 'package:mali_app/domain/usecases/sync_usecase.dart';
+import 'package:fpdart/fpdart.dart';
 import 'package:mali_app/domain/value_objects/currency_code.dart';
 import 'package:mali_app/domain/value_objects/money.dart';
 
@@ -36,10 +46,17 @@ import 'usecases_test.mocks.dart';
   MockSpec<IBudgetRepository>(),
   MockSpec<IGoalRepository>(),
   MockSpec<IExchangeRateRepository>(),
+  MockSpec<IExchangeRateFetcher>(),
+  MockSpec<IPinLockRepository>(),
+  MockSpec<IBiometricAuthenticator>(),
   MockSpec<ISyncPushGateway>(),
   MockSpec<ISyncPullGateway>(),
 ])
 void main() {
+  provideDummy<Either<Failure, List<FetchedExchangeRate>>>(
+    right(const <FetchedExchangeRate>[]),
+  );
+
   group('LogTransactionUseCase', () {
     late MockITransactionRepository transactionRepository;
     late MockIWalletRepository walletRepository;
@@ -582,6 +599,279 @@ void main() {
           isA<NetworkFailure>());
     });
   });
+
+  group('SetBiometricUnlockUseCase', () {
+    late MockIPinLockRepository pinLockRepository;
+    late MockIBiometricAuthenticator biometricAuthenticator;
+    late SetBiometricUnlockUseCase useCase;
+
+    setUp(() {
+      pinLockRepository = MockIPinLockRepository();
+      biometricAuthenticator = MockIBiometricAuthenticator();
+      useCase = SetBiometricUnlockUseCase(
+        pinLockRepository: pinLockRepository,
+        biometricAuthenticator: biometricAuthenticator,
+      );
+    });
+
+    test('requires pin lock before enabling biometrics', () async {
+      when(pinLockRepository.isEnabled()).thenAnswer((_) async => false);
+
+      final result = await useCase(const SetBiometricUnlockParams(enabled: true));
+
+      expect(result.isLeft(), isTrue);
+      verifyNever(biometricAuthenticator.authenticate(localizedReason: anyNamed('localizedReason')));
+    });
+
+    test('enables biometrics after successful confirmation', () async {
+      when(pinLockRepository.isEnabled()).thenAnswer((_) async => true);
+      when(biometricAuthenticator.getCapability()).thenAnswer(
+        (_) async => const BiometricCapability(
+          isAvailable: true,
+          hasFace: false,
+          hasFingerprint: true,
+          hasIris: false,
+        ),
+      );
+      when(
+        biometricAuthenticator.authenticate(
+          localizedReason: anyNamed('localizedReason'),
+        ),
+      ).thenAnswer(
+        (_) async => const BiometricAuthResult(outcome: BiometricAuthOutcome.success),
+      );
+      when(pinLockRepository.setBiometricEnabled(true)).thenAnswer((_) async {});
+
+      final result = await useCase(const SetBiometricUnlockParams(enabled: true));
+
+      expect(result.isRight(), isTrue);
+      verify(pinLockRepository.setBiometricEnabled(true)).called(1);
+    });
+
+    test('disables biometrics without authentication', () async {
+      when(pinLockRepository.isEnabled()).thenAnswer((_) async => true);
+      when(pinLockRepository.setBiometricEnabled(false)).thenAnswer((_) async {});
+
+      final result = await useCase(const SetBiometricUnlockParams(enabled: false));
+
+      expect(result.isRight(), isTrue);
+      verifyNever(biometricAuthenticator.authenticate(localizedReason: anyNamed('localizedReason')));
+    });
+  });
+
+  group('SetPinUseCase', () {
+    late MockIPinLockRepository pinLockRepository;
+    late SetPinUseCase useCase;
+
+    setUp(() {
+      pinLockRepository = MockIPinLockRepository();
+      useCase = SetPinUseCase(pinLockRepository: pinLockRepository);
+    });
+
+    test('rejects mismatched confirmation', () async {
+      final result = await useCase(
+        const SetPinParams(pin: '1234', confirmPin: '4321'),
+      );
+
+      expect(result.isLeft(), isTrue);
+      verifyNever(pinLockRepository.savePin(any));
+    });
+
+    test('saves valid pin', () async {
+      when(pinLockRepository.savePin('1234')).thenAnswer((_) async {});
+
+      final result = await useCase(
+        const SetPinParams(pin: '1234', confirmPin: '1234'),
+      );
+
+      expect(result.isRight(), isTrue);
+      verify(pinLockRepository.savePin('1234')).called(1);
+    });
+  });
+
+  group('VerifyPinUseCase', () {
+    late MockIPinLockRepository pinLockRepository;
+    late VerifyPinUseCase useCase;
+
+    setUp(() {
+      pinLockRepository = MockIPinLockRepository();
+      useCase = VerifyPinUseCase(pinLockRepository: pinLockRepository);
+    });
+
+    test('returns auth failure when pin is wrong', () async {
+      when(pinLockRepository.verifyPin('1234')).thenAnswer((_) async => false);
+
+      final result = await useCase('1234');
+
+      expect(result.isLeft(), isTrue);
+      expect(result.getLeft().toNullable(), isA<AuthFailure>());
+    });
+  });
+
+  group('DisablePinLockUseCase', () {
+    late MockIPinLockRepository pinLockRepository;
+    late DisablePinLockUseCase useCase;
+
+    setUp(() {
+      pinLockRepository = MockIPinLockRepository();
+      useCase = DisablePinLockUseCase(
+        pinLockRepository: pinLockRepository,
+        verifyPinUseCase: VerifyPinUseCase(
+          pinLockRepository: pinLockRepository,
+        ),
+      );
+    });
+
+    test('disables after successful verification', () async {
+      when(pinLockRepository.verifyPin('1234')).thenAnswer((_) async => true);
+      when(pinLockRepository.disable()).thenAnswer((_) async {});
+
+      final result = await useCase('1234');
+
+      expect(result.isRight(), isTrue);
+      verify(pinLockRepository.disable()).called(1);
+    });
+  });
+
+  group('SetManualExchangeRateUseCase', () {
+    late MockIExchangeRateRepository exchangeRateRepository;
+    late SetManualExchangeRateUseCase useCase;
+
+    setUp(() {
+      exchangeRateRepository = MockIExchangeRateRepository();
+      useCase = SetManualExchangeRateUseCase(
+        exchangeRateRepository: exchangeRateRepository,
+      );
+    });
+
+    test('rejects invalid rate', () async {
+      final result = await useCase(
+        const SetManualExchangeRateParams(
+          baseCurrency: CurrencyCode.usd,
+          quoteCurrency: CurrencyCode.zwg,
+          rate: '0',
+        ),
+      );
+
+      expect(result.isLeft(), isTrue);
+      expect(
+        result.getLeft().toNullable(),
+        isA<ValidationFailure>(),
+      );
+    });
+
+    test('saves manual rate', () async {
+      when(
+        exchangeRateRepository.getRate(
+          baseCurrencyCode: CurrencyCode.usd,
+          quoteCurrencyCode: CurrencyCode.zwg,
+        ),
+      ).thenAnswer((_) async => null);
+
+      final result = await useCase(
+        const SetManualExchangeRateParams(
+          baseCurrency: CurrencyCode.usd,
+          quoteCurrency: CurrencyCode.zwg,
+          rate: '25.5',
+        ),
+      );
+
+      expect(result.isRight(), isTrue);
+      final saved = result.getOrElse((_) => throw StateError('expected right'));
+      expect(saved.isManual, isTrue);
+      expect(saved.rate, '25.5');
+      verify(exchangeRateRepository.save(any)).called(1);
+    });
+  });
+
+  group('RefreshExchangeRatesUseCase', () {
+    late MockIExchangeRateRepository exchangeRateRepository;
+    late MockIExchangeRateFetcher exchangeRateFetcher;
+    late RefreshExchangeRatesUseCase useCase;
+
+    setUp(() {
+      exchangeRateRepository = MockIExchangeRateRepository();
+      exchangeRateFetcher = MockIExchangeRateFetcher();
+      useCase = RefreshExchangeRatesUseCase(
+        exchangeRateRepository: exchangeRateRepository,
+        exchangeRateFetcher: exchangeRateFetcher,
+      );
+    });
+
+    test('returns failure when fetch fails', () async {
+      when(exchangeRateFetcher.fetchLatestRates()).thenAnswer(
+        (_) async => left(
+          const NetworkFailure(message: 'offline'),
+        ),
+      );
+
+      final result = await useCase();
+
+      expect(result.isLeft(), isTrue);
+    });
+
+    test('saves fetched and inverse rates', () async {
+      when(exchangeRateFetcher.fetchLatestRates()).thenAnswer(
+        (_) async => right([
+          const FetchedExchangeRate(
+            base: CurrencyCode.usd,
+            quote: CurrencyCode.zar,
+            rate: '18.5',
+          ),
+        ]),
+      );
+      when(
+        exchangeRateRepository.getRate(
+          baseCurrencyCode: anyNamed('baseCurrencyCode'),
+          quoteCurrencyCode: anyNamed('quoteCurrencyCode'),
+        ),
+      ).thenAnswer((_) async => null);
+
+      final result = await useCase();
+
+      expect(result.isRight(), isTrue);
+      expect(
+        result.getOrElse((_) => throw StateError('expected right')).updatedPairCount,
+        2,
+      );
+      verify(exchangeRateRepository.save(any)).called(2);
+    });
+
+    test('skips manual rates', () async {
+      when(exchangeRateFetcher.fetchLatestRates()).thenAnswer(
+        (_) async => right([
+          const FetchedExchangeRate(
+            base: CurrencyCode.usd,
+            quote: CurrencyCode.zar,
+            rate: '18.5',
+          ),
+        ]),
+      );
+      when(
+        exchangeRateRepository.getRate(
+          baseCurrencyCode: CurrencyCode.usd,
+          quoteCurrencyCode: CurrencyCode.zar,
+        ),
+      ).thenAnswer(
+        (_) async => _rate(base: 'USD', quote: 'ZAR', rate: '20', isManual: true),
+      );
+      when(
+        exchangeRateRepository.getRate(
+          baseCurrencyCode: CurrencyCode.zar,
+          quoteCurrencyCode: CurrencyCode.usd,
+        ),
+      ).thenAnswer((_) async => null);
+
+      final result = await useCase();
+
+      expect(result.isRight(), isTrue);
+      expect(
+        result.getOrElse((_) => throw StateError('expected right')).skippedManualPairCount,
+        1,
+      );
+      verify(exchangeRateRepository.save(any)).called(1);
+    });
+  });
 }
 
 Transaction _transaction({
@@ -710,6 +1000,7 @@ ExchangeRate _rate({
   required String base,
   required String quote,
   required String rate,
+  bool isManual = false,
 }) {
   final now = DateTime(2026, 4, 1);
   return ExchangeRate(
@@ -717,7 +1008,7 @@ ExchangeRate _rate({
     baseCurrencyCode: base,
     quoteCurrencyCode: quote,
     rate: rate,
-    isManual: false,
+    isManual: isManual,
     rateDate: now,
     isSynced: true,
     createdAt: now,

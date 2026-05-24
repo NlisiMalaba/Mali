@@ -1,7 +1,6 @@
 import 'package:decimal/decimal.dart';
 import 'package:fpdart/fpdart.dart';
 import 'package:mali_app/core/error/failure.dart';
-import 'package:mali_app/domain/entities/budget.dart';
 import 'package:mali_app/domain/entities/transaction.dart';
 import 'package:mali_app/domain/entities/wallet.dart';
 import 'package:mali_app/domain/events/budget_exceeded_event.dart';

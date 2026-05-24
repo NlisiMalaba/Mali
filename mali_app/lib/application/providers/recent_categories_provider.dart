@@ -1,4 +1,3 @@
-import 'package:mali_app/application/providers/category_providers.dart';
 import 'package:mali_app/core/storage/recent_category_store.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 

@@ -9,6 +9,54 @@ part of 'gateway_providers.dart';
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // ignore_for_file: type=lint, type=warning
 
+@ProviderFor(exchangeRateFetcher)
+final exchangeRateFetcherProvider = ExchangeRateFetcherProvider._();
+
+final class ExchangeRateFetcherProvider
+    extends
+        $FunctionalProvider<
+          IExchangeRateFetcher,
+          IExchangeRateFetcher,
+          IExchangeRateFetcher
+        >
+    with $Provider<IExchangeRateFetcher> {
+  ExchangeRateFetcherProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'exchangeRateFetcherProvider',
+        isAutoDispose: false,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$exchangeRateFetcherHash();
+
+  @$internal
+  @override
+  $ProviderElement<IExchangeRateFetcher> $createElement(
+    $ProviderPointer pointer,
+  ) => $ProviderElement(pointer);
+
+  @override
+  IExchangeRateFetcher create(Ref ref) {
+    return exchangeRateFetcher(ref);
+  }
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(IExchangeRateFetcher value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<IExchangeRateFetcher>(value),
+    );
+  }
+}
+
+String _$exchangeRateFetcherHash() =>
+    r'3b8aa5af0b7289c5264e2d454d70c1f445e38e3c';
+
 @ProviderFor(remoteSyncPushGateway)
 final remoteSyncPushGatewayProvider = RemoteSyncPushGatewayProvider._();
 
