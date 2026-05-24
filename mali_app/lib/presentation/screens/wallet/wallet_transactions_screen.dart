@@ -6,6 +6,7 @@ import 'package:mali_app/domain/value_objects/currency_code.dart';
 import 'package:mali_app/presentation/utils/currency_display.dart';
 import 'package:mali_app/presentation/utils/money_display.dart';
 import 'package:mali_app/presentation/theme/app_colors.dart';
+import 'package:mali_app/presentation/widgets/transaction/add_transaction_sheet.dart';
 
 class WalletTransactionsScreen extends ConsumerWidget {
   const WalletTransactionsScreen({
@@ -45,6 +46,14 @@ class WalletTransactionsScreen extends ConsumerWidget {
           loading: () => const Text('Wallet'),
           error: (_, __) => const Text('Wallet'),
         ),
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () => AddTransactionSheet.show(
+          context,
+          initialWalletId: walletId,
+        ),
+        tooltip: 'Add transaction',
+        child: const Icon(Icons.add),
       ),
       body: transactionsAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),

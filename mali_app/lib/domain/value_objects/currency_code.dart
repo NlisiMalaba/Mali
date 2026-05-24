@@ -26,6 +26,12 @@ class CurrencyCode {
 
   bool get isUsd => this == usd;
 
+  /// Number of fractional digits used when entering and displaying amounts.
+  int get decimalPlaces => switch (value) {
+        'USD' || 'ZWG' || 'ZAR' || 'BWP' => 2,
+        _ => 2,
+      };
+
   @override
   String toString() => value;
 

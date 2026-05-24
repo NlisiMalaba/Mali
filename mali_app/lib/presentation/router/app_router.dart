@@ -7,6 +7,7 @@ import 'package:mali_app/presentation/screens/auth/login_screen.dart';
 import 'package:mali_app/presentation/screens/auth/register_screen.dart';
 import 'package:mali_app/presentation/screens/placeholder_screen.dart';
 import 'package:mali_app/presentation/screens/splash_screen.dart';
+import 'package:mali_app/presentation/screens/transaction/add_transaction_screen.dart';
 import 'package:mali_app/presentation/screens/wallet/wallet_setup_screen.dart';
 import 'package:mali_app/presentation/screens/wallet/wallet_transactions_screen.dart';
 import 'package:mali_app/presentation/screens/wallet/wallets_screen.dart';
@@ -50,8 +51,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: '/add-transaction',
-        builder: (context, state) =>
-            const PlaceholderScreen(title: 'Add Transaction'),
+        builder: (context, state) => const AddTransactionScreen(),
       ),
       GoRoute(
         path: '/wallets',
