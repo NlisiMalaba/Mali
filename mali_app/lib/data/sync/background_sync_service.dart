@@ -1,5 +1,6 @@
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:mali_app/core/error/failure.dart';
+import 'package:mali_app/core/network/connectivity_monitor.dart';
 import 'package:mali_app/data/sync/last_sync_store.dart';
 import 'package:mali_app/data/sync/sync_queue_manager.dart';
 import 'package:mali_app/domain/usecases/sync_usecase.dart';
@@ -60,7 +61,7 @@ class BackgroundSyncService {
 
   Future<bool> _isOnline() async {
     final statuses = await _connectivity.checkConnectivity();
-    return statuses.any((status) => status != ConnectivityResult.none);
+    return ConnectivityMonitor.isOnline(statuses);
   }
 }
 

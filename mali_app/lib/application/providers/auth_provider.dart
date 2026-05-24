@@ -1,24 +1,34 @@
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:mali_app/application/providers/auth_repository_provider.dart';
+import 'package:mali_app/domain/entities/user.dart';
+import 'package:mali_app/domain/repositories/auth_repository.dart';
+import 'package:riverpod_annotation/riverpod_annotation.dart';
 
-enum AuthStatus {
-  authenticated,
-  unauthenticated,
-}
+part 'auth_provider.g.dart';
 
-final authStatusProvider =
-    NotifierProvider<AuthStatusNotifier, AuthStatus>(AuthStatusNotifier.new);
-
-class AuthStatusNotifier extends Notifier<AuthStatus> {
+@Riverpod(keepAlive: true)
+class Auth extends _$Auth {
   @override
-  AuthStatus build() {
-    return AuthStatus.unauthenticated;
+  Future<User?> build() {
+    return ref.read(authRepositoryProvider).loadPersistedSession();
   }
 
-  void signIn() {
-    state = AuthStatus.authenticated;
+  Future<void> login(LoginInput input) async {
+    state = const AsyncLoading();
+    state = await AsyncValue.guard(() => ref.read(authRepositoryProvider).login(input));
   }
 
-  void signOut() {
-    state = AuthStatus.unauthenticated;
+  Future<void> register(RegisterInput input) async {
+    state = const AsyncLoading();
+    state = await AsyncValue.guard(
+      () => ref.read(authRepositoryProvider).register(input),
+    );
+  }
+
+  Future<void> logout() async {
+    state = const AsyncLoading();
+    state = await AsyncValue.guard(() async {
+      await ref.read(authRepositoryProvider).logout();
+      return null;
+    });
   }
 }

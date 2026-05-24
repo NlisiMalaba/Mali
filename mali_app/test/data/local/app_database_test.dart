@@ -14,6 +14,26 @@ void main() {
     await database.close();
   });
 
+  test('creates all tables on first launch', () async {
+    await database.customSelect('SELECT 1').get();
+
+    final tableNames = database.allTables.map((table) => table.actualTableName).toSet();
+
+    expect(
+      tableNames,
+      equals({
+        'transactions_table',
+        'wallets_table',
+        'categories_table',
+        'savings_goals_table',
+        'goal_contributions_table',
+        'budgets_table',
+        'exchange_rates_table',
+        'sync_queue_table',
+      }),
+    );
+  });
+
   test(
     'insert transaction updates wallet balance',
     () async {

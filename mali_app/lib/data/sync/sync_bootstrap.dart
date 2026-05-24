@@ -1,6 +1,5 @@
-import 'package:dio/dio.dart';
-import 'package:mali_app/core/config/api_config.dart';
 import 'package:mali_app/data/local/app_database.dart';
+import 'package:mali_app/data/remote/api_client.dart';
 import 'package:mali_app/data/remote/sync_pull_gateway.dart';
 import 'package:mali_app/data/remote/sync_push_gateway.dart' as remote_sync;
 import 'package:mali_app/data/remote/transaction_list_sync_push_gateway.dart';
@@ -13,7 +12,7 @@ import 'package:mali_app/data/sync/sync_queue_manager.dart';
 import 'package:mali_app/domain/usecases/sync_usecase.dart';
 
 class SyncBootstrap {
-  SyncBootstrap._({
+  SyncBootstrap({
     required this.database,
     required this.syncUseCase,
     required this.syncQueueManager,
@@ -25,15 +24,10 @@ class SyncBootstrap {
   final SyncQueueManager syncQueueManager;
   final BackgroundSyncService backgroundSyncService;
 
-  static Future<SyncBootstrap> create() async {
+  /// Used by background isolates that cannot access [ProviderContainer].
+  static Future<SyncBootstrap> createForBackgroundIsolate() async {
     final database = AppDatabase();
-    final dio = Dio(
-      BaseOptions(
-        baseUrl: ApiConfig.baseUrl,
-        connectTimeout: const Duration(seconds: 10),
-        receiveTimeout: const Duration(seconds: 30),
-      ),
-    );
+    final dio = ApiClient().dio;
 
     final localTransactionRepository = LocalTransactionRepository(
       transactionDao: database.transactionDao,
@@ -60,7 +54,7 @@ class SyncBootstrap {
       lastSyncStore: const LastSyncStore(),
     );
 
-    return SyncBootstrap._(
+    return SyncBootstrap(
       database: database,
       syncUseCase: syncUseCase,
       syncQueueManager: syncQueueManager,

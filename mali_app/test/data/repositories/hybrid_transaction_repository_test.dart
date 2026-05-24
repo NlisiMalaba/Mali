@@ -1,8 +1,6 @@
 import 'package:drift/native.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mali_app/data/local/app_database.dart';
-import 'package:mali_app/data/local/dao/sync_queue_dao.dart';
-import 'package:mali_app/data/local/tables/tables.dart';
 import 'package:mali_app/data/remote/dto/sync_dto.dart';
 import 'package:mali_app/data/remote/sync_push_gateway.dart';
 import 'package:mali_app/data/repositories/hybrid_transaction_repository.dart';

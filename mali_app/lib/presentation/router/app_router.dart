@@ -6,7 +6,7 @@ import 'package:mali_app/presentation/screens/placeholder_screen.dart';
 
 final appRouterProvider = Provider<GoRouter>((ref) {
   final routerRefreshListenable = ValueNotifier<int>(0);
-  ref.listen<AuthStatus>(authStatusProvider, (previous, next) {
+  ref.listen(authProvider, (previous, next) {
     if (previous != next) {
       routerRefreshListenable.value++;
     }
@@ -63,11 +63,27 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       ),
     ],
     redirect: (context, state) {
-      final authStatus = ref.read(authStatusProvider);
-      final isAuthenticated = authStatus == AuthStatus.authenticated;
+      final auth = ref.read(authProvider);
       final location = state.uri.path;
       final isAuthPage =
           location == '/auth/login' || location == '/auth/register';
+
+      if (auth.isLoading) {
+        if (location != '/') {
+          return '/';
+        }
+        return null;
+      }
+
+      if (auth.hasError) {
+        if (!isAuthPage && location != '/') {
+          return '/auth/login';
+        }
+        return null;
+      }
+
+      final user = auth.value;
+      final isAuthenticated = user != null;
 
       if (!isAuthenticated && !isAuthPage) {
         return '/auth/login';

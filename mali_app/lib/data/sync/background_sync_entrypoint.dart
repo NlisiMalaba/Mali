@@ -12,7 +12,7 @@ void backgroundSyncDispatcher() {
 
     WidgetsFlutterBinding.ensureInitialized();
 
-    final bootstrap = await SyncBootstrap.create();
+    final bootstrap = await SyncBootstrap.createForBackgroundIsolate();
     try {
       final result = await bootstrap.backgroundSyncService.runSyncIfOnline();
       return result.status == BackgroundSyncStatus.succeeded ||

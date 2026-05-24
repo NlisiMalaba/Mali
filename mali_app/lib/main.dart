@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:mali_app/application/providers/auth_session_listener_provider.dart';
+import 'package:mali_app/application/providers/connectivity_sync_listener_provider.dart';
+import 'package:mali_app/application/providers/sync_providers.dart';
 import 'package:mali_app/data/sync/background_sync_entrypoint.dart';
-import 'package:mali_app/data/sync/sync_bootstrap.dart';
 import 'package:mali_app/presentation/router/app_router.dart';
 import 'package:mali_app/presentation/theme/app_theme.dart';
 import 'package:workmanager/workmanager.dart';
@@ -11,10 +13,16 @@ Future<void> main() async {
 
   await Workmanager().initialize(backgroundSyncDispatcher);
 
-  final bootstrap = await SyncBootstrap.create();
+  final container = ProviderContainer();
+  final bootstrap = container.read(syncBootstrapProvider);
   await bootstrap.backgroundSyncService.registerPeriodicSync();
 
-  runApp(const ProviderScope(child: MaliApp()));
+  runApp(
+    UncontrolledProviderScope(
+      container: container,
+      child: const MaliApp(),
+    ),
+  );
 }
 
 class MaliApp extends ConsumerWidget {
@@ -22,6 +30,8 @@ class MaliApp extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    ref.watch(authSessionListenerProvider);
+    ref.watch(connectivitySyncListenerProvider);
     final router = ref.watch(appRouterProvider);
 
     return MaterialApp.router(
