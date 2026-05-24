@@ -18,7 +18,6 @@ class MonthSummaryCard extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final theme = Theme.of(context);
     final summaryAsync = ref.watch(homeMonthlySummaryDisplayProvider);
     final selectedMonth = ref.watch(homeSelectedMonthProvider);
     final monthNotifier = ref.read(homeSelectedMonthProvider.notifier);

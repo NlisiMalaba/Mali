@@ -105,6 +105,102 @@ final class CreateWalletUseCaseProvider
 String _$createWalletUseCaseHash() =>
     r'4d53483ed8c5a9f6c9218e3f3f6e2a13cf9e486e';
 
+@ProviderFor(createBudgetUseCase)
+final createBudgetUseCaseProvider = CreateBudgetUseCaseProvider._();
+
+final class CreateBudgetUseCaseProvider
+    extends
+        $FunctionalProvider<
+          CreateBudgetUseCase,
+          CreateBudgetUseCase,
+          CreateBudgetUseCase
+        >
+    with $Provider<CreateBudgetUseCase> {
+  CreateBudgetUseCaseProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'createBudgetUseCaseProvider',
+        isAutoDispose: false,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$createBudgetUseCaseHash();
+
+  @$internal
+  @override
+  $ProviderElement<CreateBudgetUseCase> $createElement(
+    $ProviderPointer pointer,
+  ) => $ProviderElement(pointer);
+
+  @override
+  CreateBudgetUseCase create(Ref ref) {
+    return createBudgetUseCase(ref);
+  }
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(CreateBudgetUseCase value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<CreateBudgetUseCase>(value),
+    );
+  }
+}
+
+String _$createBudgetUseCaseHash() =>
+    r'0e6683e980ee2d41240af4a60c1f532751c8ef48';
+
+@ProviderFor(budgetExceededEventBus)
+final budgetExceededEventBusProvider = BudgetExceededEventBusProvider._();
+
+final class BudgetExceededEventBusProvider
+    extends
+        $FunctionalProvider<
+          BudgetExceededEventBus,
+          BudgetExceededEventBus,
+          BudgetExceededEventBus
+        >
+    with $Provider<BudgetExceededEventBus> {
+  BudgetExceededEventBusProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'budgetExceededEventBusProvider',
+        isAutoDispose: false,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$budgetExceededEventBusHash();
+
+  @$internal
+  @override
+  $ProviderElement<BudgetExceededEventBus> $createElement(
+    $ProviderPointer pointer,
+  ) => $ProviderElement(pointer);
+
+  @override
+  BudgetExceededEventBus create(Ref ref) {
+    return budgetExceededEventBus(ref);
+  }
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(BudgetExceededEventBus value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<BudgetExceededEventBus>(value),
+    );
+  }
+}
+
+String _$budgetExceededEventBusHash() =>
+    r'a6e101aaa71fbba25ec6d9bf05fc04b956dae6e7';
+
 @ProviderFor(logTransactionUseCase)
 final logTransactionUseCaseProvider = LogTransactionUseCaseProvider._();
 
@@ -151,7 +247,7 @@ final class LogTransactionUseCaseProvider
 }
 
 String _$logTransactionUseCaseHash() =>
-    r'31762a3d7c06d8cd6cccf287589cbf9bbbb4d9d9';
+    r'ae44ef50288d4a7a86b65b2b10520b894425dd4f';
 
 @ProviderFor(convertMoneyUseCase)
 final convertMoneyUseCaseProvider = ConvertMoneyUseCaseProvider._();

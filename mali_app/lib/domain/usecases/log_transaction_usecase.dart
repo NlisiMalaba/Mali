@@ -4,22 +4,27 @@ import 'package:mali_app/core/error/failure.dart';
 import 'package:mali_app/domain/entities/budget.dart';
 import 'package:mali_app/domain/entities/transaction.dart';
 import 'package:mali_app/domain/entities/wallet.dart';
+import 'package:mali_app/domain/events/budget_exceeded_event.dart';
 import 'package:mali_app/domain/repositories/budget_repository.dart';
 import 'package:mali_app/domain/repositories/transaction_repository.dart';
 import 'package:mali_app/domain/repositories/wallet_repository.dart';
+import 'package:mali_app/domain/services/budget_exceeded_event_publisher.dart';
 
 class LogTransactionUseCase {
   const LogTransactionUseCase({
     required ITransactionRepository transactionRepository,
     required IWalletRepository walletRepository,
     required IBudgetRepository budgetRepository,
+    required IBudgetExceededEventPublisher budgetExceededEventPublisher,
   })  : _transactionRepository = transactionRepository,
         _walletRepository = walletRepository,
-        _budgetRepository = budgetRepository;
+        _budgetRepository = budgetRepository,
+        _budgetExceededEventPublisher = budgetExceededEventPublisher;
 
   final ITransactionRepository _transactionRepository;
   final IWalletRepository _walletRepository;
   final IBudgetRepository _budgetRepository;
+  final IBudgetExceededEventPublisher _budgetExceededEventPublisher;
 
   Future<Either<Failure, LogTransactionResult>> call(Transaction transaction) async {
     final amount = _parseMoney(transaction.amount);
@@ -62,19 +67,23 @@ class LogTransactionUseCase {
       );
       await _transactionRepository.save(transaction);
 
-      BudgetThresholdAlert? alert;
+      BudgetExceededEvent? budgetExceededEvent;
       if (transaction.type == 'expense' && transaction.categoryId != null) {
-        alert = await _updateBudgetAndCheckThreshold(
+        budgetExceededEvent = await _updateBudgetAndCheckThreshold(
           wallet: wallet,
           transaction: transaction,
           expenseAmount: amount,
         );
       }
 
+      if (budgetExceededEvent != null) {
+        _budgetExceededEventPublisher.publish(budgetExceededEvent);
+      }
+
       return right(
         LogTransactionResult(
           updatedWallet: wallet.copyWith(balance: updatedBalance.toString()),
-          budgetThresholdAlert: alert,
+          budgetExceededEvent: budgetExceededEvent,
         ),
       );
     } catch (error) {
@@ -106,7 +115,7 @@ class LogTransactionUseCase {
     }
   }
 
-  Future<BudgetThresholdAlert?> _updateBudgetAndCheckThreshold({
+  Future<BudgetExceededEvent?> _updateBudgetAndCheckThreshold({
     required Wallet wallet,
     required Transaction transaction,
     required Decimal expenseAmount,
@@ -139,23 +148,28 @@ class LogTransactionUseCase {
       spentAmount: nextSpent.toString(),
     );
 
+    final updatedBudget = targetBudget.copyWith(spentAmount: nextSpent.toString());
+
     final previousAt100 = spentAmount >= budgetAmount;
     final currentAt100 = nextSpent >= budgetAmount;
     if (!previousAt100 && currentAt100) {
-      return BudgetThresholdAlert(
-        budget: targetBudget.copyWith(spentAmount: nextSpent.toString()),
-        threshold: Decimal.parse('1'),
+      return BudgetExceededEvent(
+        budget: updatedBudget,
+        thresholdRatio: BudgetExceededEvent.exceededThresholdRatio,
       );
     }
-    final eightyPercentAmount = budgetAmount * Decimal.parse('0.8');
+
+    final eightyPercentAmount =
+        budgetAmount * BudgetExceededEvent.warningThresholdRatio;
     final previousAt80 = spentAmount >= eightyPercentAmount;
     final currentAt80 = nextSpent >= eightyPercentAmount;
     if (!previousAt80 && currentAt80) {
-      return BudgetThresholdAlert(
-        budget: targetBudget.copyWith(spentAmount: nextSpent.toString()),
-        threshold: Decimal.parse('0.8'),
+      return BudgetExceededEvent(
+        budget: updatedBudget,
+        thresholdRatio: BudgetExceededEvent.warningThresholdRatio,
       );
     }
+
     return null;
   }
 
@@ -171,19 +185,9 @@ class LogTransactionUseCase {
 class LogTransactionResult {
   const LogTransactionResult({
     required this.updatedWallet,
-    this.budgetThresholdAlert,
+    this.budgetExceededEvent,
   });
 
   final Wallet updatedWallet;
-  final BudgetThresholdAlert? budgetThresholdAlert;
-}
-
-class BudgetThresholdAlert {
-  const BudgetThresholdAlert({
-    required this.budget,
-    required this.threshold,
-  });
-
-  final Budget budget;
-  final Decimal threshold;
+  final BudgetExceededEvent? budgetExceededEvent;
 }

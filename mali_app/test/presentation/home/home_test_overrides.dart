@@ -1,5 +1,6 @@
 import 'package:decimal/decimal.dart';
 import 'package:mali_app/application/models/home_monthly_summary_display.dart';
+import 'package:mali_app/application/providers/budget_providers.dart';
 import 'package:mali_app/application/providers/home_providers.dart';
 import 'package:mali_app/domain/usecases/calculate_net_worth_usecase.dart';
 import 'package:mali_app/domain/value_objects/currency_code.dart';
@@ -28,6 +29,9 @@ List<dynamic> homeScreenTestOverrides() {
       (ref) => Stream.value(const []),
     ),
     homeTopBudgetsProvider.overrideWith(
+      (ref) => Stream.value(const []),
+    ),
+    currentMonthBudgetsProvider.overrideWith(
       (ref) => Stream.value(const []),
     ),
     homeTopGoalsProvider.overrideWith(

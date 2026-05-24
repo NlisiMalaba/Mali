@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mali_app/application/providers/auth_provider.dart';
 import 'package:mali_app/application/providers/wallet_providers.dart';
+import 'package:mali_app/presentation/screens/budget/budgets_screen.dart';
 import 'package:mali_app/presentation/screens/auth/login_screen.dart';
 import 'package:mali_app/presentation/screens/auth/register_screen.dart';
 import 'package:mali_app/presentation/screens/home/home_screen.dart';
@@ -63,6 +64,10 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: '/add-transaction',
         builder: (context, state) => const AddTransactionScreen(),
+      ),
+      GoRoute(
+        path: '/budgets',
+        builder: (context, state) => const BudgetsScreen(),
       ),
       GoRoute(
         path: '/wallets',

@@ -6,6 +6,7 @@ import 'package:mali_app/application/providers/wallet_providers.dart';
 import 'package:mali_app/domain/entities/user.dart';
 import 'package:mali_app/domain/entities/wallet.dart';
 import 'package:mali_app/presentation/router/app_router.dart';
+import 'package:mali_app/presentation/screens/budget/budgets_screen.dart';
 import 'package:mali_app/presentation/screens/splash_screen.dart';
 
 import '../home/home_test_overrides.dart';
@@ -95,6 +96,7 @@ void main() {
         '/home': find.byKey(const Key('home-screen')),
         '/transactions': find.text('No transactions yet.'),
         '/add-transaction': find.text('Add Transaction'),
+        '/budgets': find.byKey(BudgetsScreen.screenKey),
         '/wallets': find.text('Wallets'),
         '/goals': find.text('Goals'),
         '/goals/goal-1': find.text('Goal goal-1'),

@@ -105,6 +105,8 @@ class HomeScreen extends ConsumerWidget {
                 sliver: SliverToBoxAdapter(
                   child: HomeSectionHeader(
                     title: 'Budgets',
+                    actionLabel: 'See all',
+                    onAction: () => context.push('/budgets'),
                   ),
                 ),
               ),

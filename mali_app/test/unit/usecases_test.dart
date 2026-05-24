@@ -14,10 +14,13 @@ import 'package:mali_app/domain/repositories/exchange_rate_repository.dart';
 import 'package:mali_app/domain/repositories/goal_repository.dart';
 import 'package:mali_app/domain/repositories/transaction_repository.dart';
 import 'package:mali_app/domain/repositories/wallet_repository.dart';
+import 'package:mali_app/domain/events/budget_exceeded_event.dart';
+import 'package:mali_app/domain/services/budget_exceeded_event_publisher.dart';
 import 'package:mali_app/domain/usecases/allocate_to_goal_usecase.dart';
 import 'package:mali_app/domain/usecases/calculate_net_worth_usecase.dart';
 import 'package:mali_app/domain/usecases/convert_money_usecase.dart';
 import 'package:mali_app/domain/usecases/archive_wallet_usecase.dart';
+import 'package:mali_app/domain/usecases/create_budget_usecase.dart';
 import 'package:mali_app/domain/usecases/create_wallet_usecase.dart';
 import 'package:mali_app/domain/usecases/get_monthly_summary_usecase.dart';
 import 'package:mali_app/domain/usecases/log_transaction_usecase.dart';
@@ -41,16 +44,19 @@ void main() {
     late MockITransactionRepository transactionRepository;
     late MockIWalletRepository walletRepository;
     late MockIBudgetRepository budgetRepository;
+    late _RecordingBudgetExceededEventPublisher eventPublisher;
     late LogTransactionUseCase useCase;
 
     setUp(() {
       transactionRepository = MockITransactionRepository();
       walletRepository = MockIWalletRepository();
       budgetRepository = MockIBudgetRepository();
+      eventPublisher = _RecordingBudgetExceededEventPublisher();
       useCase = LogTransactionUseCase(
         transactionRepository: transactionRepository,
         walletRepository: walletRepository,
         budgetRepository: budgetRepository,
+        budgetExceededEventPublisher: eventPublisher,
       );
     });
 
@@ -66,7 +72,7 @@ void main() {
           isA<NotFoundFailure>());
     });
 
-    test('updates wallet, saves transaction, and emits 80% budget alert', () async {
+    test('updates wallet, saves transaction, and fires 80% budget event', () async {
       when(walletRepository.findById('w-1')).thenAnswer((_) async => _wallet(balance: '100'));
       when(walletRepository.updateBalance(walletId: 'w-1', balance: '90'))
           .thenAnswer((_) async {});
@@ -81,7 +87,54 @@ void main() {
       expect(result.isRight(), isTrue);
       final value = result.getOrElse((_) => LogTransactionResult(updatedWallet: _wallet()));
       expect(value.updatedWallet.balance, '90');
-      expect(value.budgetThresholdAlert, isNotNull);
+      expect(value.budgetExceededEvent, isNotNull);
+      expect(value.budgetExceededEvent!.isWarning, isTrue);
+      expect(eventPublisher.published, hasLength(1));
+      expect(
+        eventPublisher.published.single.thresholdRatio,
+        BudgetExceededEvent.warningThresholdRatio,
+      );
+    });
+
+    test('fires 100% budget event when spending reaches budget limit', () async {
+      when(walletRepository.findById('w-1')).thenAnswer((_) async => _wallet(balance: '100'));
+      when(walletRepository.updateBalance(walletId: 'w-1', balance: '85'))
+          .thenAnswer((_) async {});
+      when(transactionRepository.save(_transaction(type: 'expense', amount: '15')))
+          .thenAnswer((_) async {});
+      when(budgetRepository.watchMonthBudgets(year: 2026, month: 4))
+          .thenAnswer((_) => Stream.value([_budget(amount: '100', spentAmount: '85')]));
+      when(budgetRepository.updateSpentAmount(budgetId: 'b-1', spentAmount: '100'))
+          .thenAnswer((_) async {});
+
+      final result = await useCase(_transaction(type: 'expense', amount: '15'));
+      expect(result.isRight(), isTrue);
+      final value = result.getOrElse((_) => LogTransactionResult(updatedWallet: _wallet()));
+      expect(value.budgetExceededEvent, isNotNull);
+      expect(value.budgetExceededEvent!.isExceeded, isTrue);
+      expect(eventPublisher.published, hasLength(1));
+      expect(
+        eventPublisher.published.single.thresholdRatio,
+        BudgetExceededEvent.exceededThresholdRatio,
+      );
+    });
+
+    test('does not fire budget event when threshold was already crossed', () async {
+      when(walletRepository.findById('w-1')).thenAnswer((_) async => _wallet(balance: '100'));
+      when(walletRepository.updateBalance(walletId: 'w-1', balance: '90'))
+          .thenAnswer((_) async {});
+      when(transactionRepository.save(_transaction(type: 'expense', amount: '10')))
+          .thenAnswer((_) async {});
+      when(budgetRepository.watchMonthBudgets(year: 2026, month: 4))
+          .thenAnswer((_) => Stream.value([_budget(amount: '100', spentAmount: '85')]));
+      when(budgetRepository.updateSpentAmount(budgetId: 'b-1', spentAmount: '95'))
+          .thenAnswer((_) async {});
+
+      final result = await useCase(_transaction(type: 'expense', amount: '10'));
+      expect(result.isRight(), isTrue);
+      final value = result.getOrElse((_) => LogTransactionResult(updatedWallet: _wallet()));
+      expect(value.budgetExceededEvent, isNull);
+      expect(eventPublisher.published, isEmpty);
     });
   });
 
@@ -201,6 +254,102 @@ void main() {
       );
 
       expect(result.getOrElse((_) => throw StateError('expected right')).balance, '0');
+    });
+  });
+
+  group('CreateBudgetUseCase', () {
+    late MockIBudgetRepository budgetRepository;
+    late CreateBudgetUseCase useCase;
+
+    setUp(() {
+      budgetRepository = MockIBudgetRepository();
+      useCase = CreateBudgetUseCase(budgetRepository: budgetRepository);
+    });
+
+    test('returns validation failure when amount is not positive', () async {
+      when(
+        budgetRepository.watchMonthBudgets(year: 2026, month: 5),
+      ).thenAnswer((_) => Stream.value(const []));
+
+      final result = await useCase(
+        const CreateBudgetParams(
+          userId: 'u-1',
+          categoryId: 'cat-food',
+          currencyCode: CurrencyCode.usd,
+          amount: '0',
+          month: 5,
+          year: 2026,
+          rolloverEnabled: false,
+        ),
+      );
+
+      expect(result.isLeft(), isTrue);
+      expect(
+        result.getLeft().toNullable(),
+        isA<ValidationFailure>().having((f) => f.field, 'field', 'amount'),
+      );
+    });
+
+    test('returns validation failure when duplicate category and currency exists',
+        () async {
+      when(
+        budgetRepository.watchMonthBudgets(year: 2026, month: 5),
+      ).thenAnswer(
+        (_) => Stream.value([
+          _budget(
+            categoryId: 'cat-food',
+            currencyCode: 'USD',
+            month: 5,
+            year: 2026,
+          ),
+        ]),
+      );
+
+      final result = await useCase(
+        const CreateBudgetParams(
+          userId: 'u-1',
+          categoryId: 'cat-food',
+          currencyCode: CurrencyCode.usd,
+          amount: '100',
+          month: 5,
+          year: 2026,
+          rolloverEnabled: true,
+        ),
+      );
+
+      expect(result.isLeft(), isTrue);
+      expect(
+        result.getLeft().toNullable(),
+        isA<ValidationFailure>().having((f) => f.field, 'field', 'categoryId'),
+      );
+    });
+
+    test('saves budget with rollover flag', () async {
+      when(
+        budgetRepository.watchMonthBudgets(year: 2026, month: 5),
+      ).thenAnswer((_) => Stream.value(const []));
+      when(budgetRepository.save(any)).thenAnswer((_) async {});
+
+      final result = await useCase(
+        const CreateBudgetParams(
+          userId: 'u-1',
+          categoryId: 'cat-food',
+          currencyCode: CurrencyCode.usd,
+          amount: '250',
+          month: 5,
+          year: 2026,
+          rolloverEnabled: true,
+        ),
+      );
+
+      expect(result.isRight(), isTrue);
+      final budget = result.getOrElse((_) => throw StateError('expected right'));
+      expect(budget.amount, '250');
+      expect(budget.spentAmount, '0');
+      expect(budget.rolloverEnabled, isTrue);
+      expect(budget.month, 5);
+      expect(budget.year, 2026);
+      verify(budgetRepository.save(any)).called(1);
     });
   });
 
@@ -497,6 +646,8 @@ Budget _budget({
   String currencyCode = 'USD',
   String amount = '100',
   String spentAmount = '70',
+  int month = 4,
+  int year = 2026,
 }) {
   final now = DateTime(2026, 4, 1);
   return Budget(
@@ -506,8 +657,8 @@ Budget _budget({
     currencyCode: currencyCode,
     amount: amount,
     spentAmount: spentAmount,
-    month: 4,
-    year: 2026,
+    month: month,
+    year: year,
     rolloverEnabled: false,
     isSynced: false,
     createdAt: now,
@@ -572,4 +723,14 @@ ExchangeRate _rate({
     createdAt: now,
     updatedAt: now,
   );
+}
+
+class _RecordingBudgetExceededEventPublisher
+    implements IBudgetExceededEventPublisher {
+  final published = <BudgetExceededEvent>[];
+
+  @override
+  void publish(BudgetExceededEvent event) {
+    published.add(event);
+  }
 }

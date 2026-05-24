@@ -1,45 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mali_app/application/providers/category_providers.dart';
-import 'package:mali_app/application/providers/home_providers.dart';
 import 'package:mali_app/domain/entities/budget.dart';
+import 'package:mali_app/presentation/theme/app_colors.dart';
 import 'package:mali_app/presentation/utils/budget_usage.dart';
 import 'package:mali_app/presentation/utils/category_icons.dart';
 import 'package:mali_app/presentation/utils/money_display.dart';
 import 'package:mali_app/presentation/widgets/budget/budget_bar.dart';
 
-class BudgetOverviewRow extends ConsumerWidget {
-  const BudgetOverviewRow({super.key});
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final budgetsAsync = ref.watch(homeTopBudgetsProvider);
-
-    return budgetsAsync.when(
-      loading: () => const Center(child: CircularProgressIndicator()),
-      error: (error, _) => Text('Could not load budgets: $error'),
-      data: (budgets) {
-        if (budgets.isEmpty) {
-          return const _EmptySectionMessage(
-            message: 'No budgets set for this month.',
-          );
-        }
-
-        return Column(
-          children: [
-            for (var index = 0; index < budgets.length; index++) ...[
-              if (index > 0) const SizedBox(height: 12),
-              _BudgetOverviewTile(budget: budgets[index]),
-            ],
-          ],
-        );
-      },
-    );
-  }
-}
-
-class _BudgetOverviewTile extends ConsumerWidget {
-  const _BudgetOverviewTile({required this.budget});
+class BudgetListTile extends ConsumerWidget {
+  const BudgetListTile({
+    required this.budget,
+    super.key,
+  });
 
   final Budget budget;
 
@@ -48,6 +21,8 @@ class _BudgetOverviewTile extends ConsumerWidget {
     final theme = Theme.of(context);
     final category = ref.watch(categoryByIdProvider(budget.categoryId));
     final usage = BudgetUsage.ratio(budget);
+    final remaining = BudgetUsage.remainingAmount(budget);
+    final isOver = BudgetUsage.isOverBudget(budget);
 
     final categoryColor = category == null
         ? theme.colorScheme.primary
@@ -57,14 +32,25 @@ class _BudgetOverviewTile extends ConsumerWidget {
         : CategoryIcons.fromKey(category.iconKey);
     final categoryName = category?.name ?? 'Budget';
 
+    final remainingLabel = isOver
+        ? '${MoneyDisplay.withCurrency(
+            amount: remaining.abs().toString(),
+            currencyCode: budget.currencyCode,
+          )} over'
+        : '${MoneyDisplay.withCurrency(
+            amount: remaining.toString(),
+            currencyCode: budget.currencyCode,
+          )} remaining';
+
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             CircleAvatar(
               backgroundColor: categoryColor.withValues(alpha: 0.15),
-              child: Icon(categoryIcon, color: categoryColor, size: 20),
+              child: Icon(categoryIcon, color: categoryColor, size: 22),
             ),
             const SizedBox(width: 12),
             Expanded(
@@ -77,20 +63,28 @@ class _BudgetOverviewTile extends ConsumerWidget {
                       fontWeight: FontWeight.w600,
                     ),
                   ),
-                  const SizedBox(height: 8),
+                  const SizedBox(height: 10),
                   BudgetBar(usage: usage),
-                  const SizedBox(height: 6),
+                  const SizedBox(height: 10),
                   Text(
                     '${MoneyDisplay.withCurrency(
                       amount: budget.spentAmount,
                       currencyCode: budget.currencyCode,
-                    )} of '
+                    )} spent · '
                     '${MoneyDisplay.withCurrency(
                       amount: budget.amount,
                       currencyCode: budget.currencyCode,
-                    )}',
+                    )} budget',
                     style: theme.textTheme.bodySmall?.copyWith(
                       color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    remainingLabel,
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      fontWeight: FontWeight.w600,
+                      color: isOver ? AppColors.error : AppColors.success,
                     ),
                   ),
                 ],
@@ -98,23 +92,6 @@ class _BudgetOverviewTile extends ConsumerWidget {
             ),
           ],
         ),
-      ),
-    );
-  }
-}
-
-class _EmptySectionMessage extends StatelessWidget {
-  const _EmptySectionMessage({required this.message});
-
-  final String message;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return Text(
-      message,
-      style: theme.textTheme.bodyMedium?.copyWith(
-        color: theme.colorScheme.onSurface.withValues(alpha: 0.65),
       ),
     );
   }

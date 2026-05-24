@@ -1,9 +1,11 @@
+import 'package:mali_app/application/events/budget_exceeded_event_bus.dart';
 import 'package:mali_app/application/providers/gateway_providers.dart';
 import 'package:mali_app/application/providers/repository_providers.dart';
 import 'package:mali_app/domain/usecases/allocate_to_goal_usecase.dart';
 import 'package:mali_app/domain/usecases/calculate_net_worth_usecase.dart';
 import 'package:mali_app/domain/usecases/convert_money_usecase.dart';
 import 'package:mali_app/domain/usecases/archive_wallet_usecase.dart';
+import 'package:mali_app/domain/usecases/create_budget_usecase.dart';
 import 'package:mali_app/domain/usecases/create_wallet_usecase.dart';
 import 'package:mali_app/domain/usecases/get_monthly_summary_usecase.dart';
 import 'package:mali_app/domain/usecases/delete_transaction_usecase.dart';
@@ -29,11 +31,24 @@ CreateWalletUseCase createWalletUseCase(Ref ref) {
 }
 
 @Riverpod(keepAlive: true)
+CreateBudgetUseCase createBudgetUseCase(Ref ref) {
+  return CreateBudgetUseCase(
+    budgetRepository: ref.watch(budgetRepositoryProvider),
+  );
+}
+
+@Riverpod(keepAlive: true)
+BudgetExceededEventBus budgetExceededEventBus(Ref ref) {
+  return BudgetExceededEventBus.instance;
+}
+
+@Riverpod(keepAlive: true)
 LogTransactionUseCase logTransactionUseCase(Ref ref) {
   return LogTransactionUseCase(
     transactionRepository: ref.watch(transactionRepositoryProvider),
     walletRepository: ref.watch(walletRepositoryProvider),
     budgetRepository: ref.watch(budgetRepositoryProvider),
+    budgetExceededEventPublisher: ref.watch(budgetExceededEventBusProvider),
   );
 }
 
