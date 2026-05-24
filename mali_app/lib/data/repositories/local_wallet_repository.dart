@@ -36,4 +36,9 @@ class LocalWalletRepository implements IWalletRepository {
   }) {
     return _walletDao.updateBalance(walletId: walletId, balance: balance);
   }
+
+  @override
+  Future<void> archive({required String walletId}) {
+    return _walletDao.archiveWallet(walletId);
+  }
 }

@@ -2,20 +2,20 @@ import 'package:decimal/decimal.dart';
 import 'package:fpdart/fpdart.dart';
 import 'package:mali_app/core/error/failure.dart';
 import 'package:mali_app/domain/entities/wallet.dart';
-import 'package:mali_app/domain/repositories/exchange_rate_repository.dart';
 import 'package:mali_app/domain/repositories/wallet_repository.dart';
+import 'package:mali_app/domain/usecases/convert_money_usecase.dart';
 import 'package:mali_app/domain/value_objects/currency_code.dart';
 import 'package:mali_app/domain/value_objects/money.dart';
 
 class CalculateNetWorthUseCase {
   const CalculateNetWorthUseCase({
     required IWalletRepository walletRepository,
-    required IExchangeRateRepository exchangeRateRepository,
+    required ConvertMoneyUseCase convertMoneyUseCase,
   })  : _walletRepository = walletRepository,
-        _exchangeRateRepository = exchangeRateRepository;
+        _convertMoneyUseCase = convertMoneyUseCase;
 
   final IWalletRepository _walletRepository;
-  final IExchangeRateRepository _exchangeRateRepository;
+  final ConvertMoneyUseCase _convertMoneyUseCase;
 
   Future<Either<Failure, CalculateNetWorthResult>> call({
     required CurrencyCode displayCurrency,
@@ -36,16 +36,16 @@ class CalculateNetWorthUseCase {
       }
 
       final sourceMoney = Money(amount: sourceAmount, currency: sourceCurrency);
-      final converted = await _convert(sourceMoney, displayCurrency);
-      if (converted == null) {
-        return left(
-          NotFoundFailure(
-            message:
-                'Missing exchange rate from ${sourceCurrency.value} to ${displayCurrency.value}.',
-            resource: 'exchange_rate',
-          ),
-        );
+      final convertedResult = await _convertMoneyUseCase(
+        money: sourceMoney,
+        targetCurrency: displayCurrency,
+      );
+
+      if (convertedResult.isLeft()) {
+        return left(convertedResult.getLeft().toNullable()!);
       }
+
+      final converted = convertedResult.getOrElse((_) => throw StateError('expected right'));
       total = total + converted;
       convertedWallets.add(
         ConvertedWalletBalance(
@@ -61,29 +61,6 @@ class CalculateNetWorthUseCase {
         walletBreakdown: convertedWallets,
       ),
     );
-  }
-
-  Future<Money?> _convert(Money money, CurrencyCode targetCurrency) async {
-    if (money.currency == targetCurrency) {
-      return money;
-    }
-
-    final directRate = await _exchangeRateRepository.getRate(
-      baseCurrencyCode: money.currency,
-      quoteCurrencyCode: targetCurrency,
-    );
-    if (directRate != null) {
-      final parsedRate = _parseDecimal(directRate.rate);
-      if (parsedRate != null) {
-        return Money(
-          amount: money.amount * parsedRate,
-          currency: targetCurrency,
-        );
-      }
-      return null;
-    }
-
-    return null;
   }
 
   Decimal? _parseDecimal(String value) {

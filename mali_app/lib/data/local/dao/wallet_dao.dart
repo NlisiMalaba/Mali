@@ -37,4 +37,14 @@ class WalletDao extends DatabaseAccessor<AppDatabase> with _$WalletDaoMixin {
       ),
     );
   }
+
+  Future<int> archiveWallet(String walletId) {
+    return (update(walletsTable)..where((table) => table.id.equals(walletId)))
+        .write(
+      WalletsTableCompanion(
+        isArchived: const Value(true),
+        updatedAt: Value(DateTime.now()),
+      ),
+    );
+  }
 }

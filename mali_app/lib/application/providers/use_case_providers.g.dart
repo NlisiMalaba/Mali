@@ -9,6 +9,102 @@ part of 'use_case_providers.dart';
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // ignore_for_file: type=lint, type=warning
 
+@ProviderFor(archiveWalletUseCase)
+final archiveWalletUseCaseProvider = ArchiveWalletUseCaseProvider._();
+
+final class ArchiveWalletUseCaseProvider
+    extends
+        $FunctionalProvider<
+          ArchiveWalletUseCase,
+          ArchiveWalletUseCase,
+          ArchiveWalletUseCase
+        >
+    with $Provider<ArchiveWalletUseCase> {
+  ArchiveWalletUseCaseProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'archiveWalletUseCaseProvider',
+        isAutoDispose: false,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$archiveWalletUseCaseHash();
+
+  @$internal
+  @override
+  $ProviderElement<ArchiveWalletUseCase> $createElement(
+    $ProviderPointer pointer,
+  ) => $ProviderElement(pointer);
+
+  @override
+  ArchiveWalletUseCase create(Ref ref) {
+    return archiveWalletUseCase(ref);
+  }
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(ArchiveWalletUseCase value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<ArchiveWalletUseCase>(value),
+    );
+  }
+}
+
+String _$archiveWalletUseCaseHash() =>
+    r'9679e519f610de80a63c95c33425729243998df0';
+
+@ProviderFor(createWalletUseCase)
+final createWalletUseCaseProvider = CreateWalletUseCaseProvider._();
+
+final class CreateWalletUseCaseProvider
+    extends
+        $FunctionalProvider<
+          CreateWalletUseCase,
+          CreateWalletUseCase,
+          CreateWalletUseCase
+        >
+    with $Provider<CreateWalletUseCase> {
+  CreateWalletUseCaseProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'createWalletUseCaseProvider',
+        isAutoDispose: false,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$createWalletUseCaseHash();
+
+  @$internal
+  @override
+  $ProviderElement<CreateWalletUseCase> $createElement(
+    $ProviderPointer pointer,
+  ) => $ProviderElement(pointer);
+
+  @override
+  CreateWalletUseCase create(Ref ref) {
+    return createWalletUseCase(ref);
+  }
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(CreateWalletUseCase value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<CreateWalletUseCase>(value),
+    );
+  }
+}
+
+String _$createWalletUseCaseHash() =>
+    r'4d53483ed8c5a9f6c9218e3f3f6e2a13cf9e486e';
+
 @ProviderFor(logTransactionUseCase)
 final logTransactionUseCaseProvider = LogTransactionUseCaseProvider._();
 
@@ -57,6 +153,54 @@ final class LogTransactionUseCaseProvider
 String _$logTransactionUseCaseHash() =>
     r'31762a3d7c06d8cd6cccf287589cbf9bbbb4d9d9';
 
+@ProviderFor(convertMoneyUseCase)
+final convertMoneyUseCaseProvider = ConvertMoneyUseCaseProvider._();
+
+final class ConvertMoneyUseCaseProvider
+    extends
+        $FunctionalProvider<
+          ConvertMoneyUseCase,
+          ConvertMoneyUseCase,
+          ConvertMoneyUseCase
+        >
+    with $Provider<ConvertMoneyUseCase> {
+  ConvertMoneyUseCaseProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'convertMoneyUseCaseProvider',
+        isAutoDispose: false,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$convertMoneyUseCaseHash();
+
+  @$internal
+  @override
+  $ProviderElement<ConvertMoneyUseCase> $createElement(
+    $ProviderPointer pointer,
+  ) => $ProviderElement(pointer);
+
+  @override
+  ConvertMoneyUseCase create(Ref ref) {
+    return convertMoneyUseCase(ref);
+  }
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(ConvertMoneyUseCase value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<ConvertMoneyUseCase>(value),
+    );
+  }
+}
+
+String _$convertMoneyUseCaseHash() =>
+    r'a94ee98c6052f0b3e025b736cda5896cca1874ea';
+
 @ProviderFor(calculateNetWorthUseCase)
 final calculateNetWorthUseCaseProvider = CalculateNetWorthUseCaseProvider._();
 
@@ -103,7 +247,7 @@ final class CalculateNetWorthUseCaseProvider
 }
 
 String _$calculateNetWorthUseCaseHash() =>
-    r'a16e0ff587947368ce1b18d9cde888ee565850cd';
+    r'9f873c9c7ca803137d071e4b1c97536bd1b8daf6';
 
 @ProviderFor(getMonthlySummaryUseCase)
 final getMonthlySummaryUseCaseProvider = GetMonthlySummaryUseCaseProvider._();

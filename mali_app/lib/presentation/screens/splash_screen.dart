@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mali_app/application/providers/auth_provider.dart';
+import 'package:mali_app/application/providers/wallet_providers.dart';
 import 'package:mali_app/presentation/widgets/mali_logo.dart';
 
 class SplashScreen extends ConsumerStatefulWidget {
@@ -46,13 +47,24 @@ class _SplashScreenState extends ConsumerState<SplashScreen> {
     }
 
     final isAuthenticated = auth.hasValue && auth.value != null;
-    context.go(isAuthenticated ? '/home' : '/auth/login');
+    if (!isAuthenticated) {
+      context.go('/auth/login');
+      return;
+    }
+
+    final needsSetup = ref.read(needsWalletSetupProvider);
+    context.go(needsSetup ? '/wallet-setup' : '/home');
   }
 
   @override
   Widget build(BuildContext context) {
     ref.listen(authProvider, (previous, next) {
       if (!next.isLoading) {
+        _tryNavigate();
+      }
+    });
+    ref.listen(activeWalletsProvider, (previous, next) {
+      if (next.hasValue) {
         _tryNavigate();
       }
     });

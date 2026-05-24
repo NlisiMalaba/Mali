@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mali_app/application/providers/auth_provider.dart';
+import 'package:mali_app/application/providers/wallet_providers.dart';
 import 'package:mali_app/domain/entities/user.dart';
+import 'package:mali_app/domain/entities/wallet.dart';
 import 'package:mali_app/presentation/router/app_router.dart';
 import 'package:mali_app/presentation/screens/splash_screen.dart';
 
@@ -22,6 +24,24 @@ class _ImmediateUnauthenticatedAuth extends Auth {
   @override
   Future<User?> build() async => null;
 }
+
+Stream<List<Wallet>> _walletsWithOne() {
+  return Stream.value([
+    Wallet(
+      id: 'w-1',
+      userId: 'user-1',
+      name: 'Cash',
+      currencyCode: 'USD',
+      balance: '0',
+      isArchived: false,
+      isSynced: false,
+      createdAt: DateTime.utc(2026, 1, 1),
+      updatedAt: DateTime.utc(2026, 1, 1),
+    ),
+  ]);
+}
+
+Stream<List<Wallet>> _emptyWallets() => Stream.value(const <Wallet>[]);
 
 void main() {
   group('GoRouter', () {
@@ -52,6 +72,7 @@ void main() {
       final container = ProviderContainer(
         overrides: [
           authProvider.overrideWith(_AuthenticatedAuth.new),
+          activeWalletsProvider.overrideWith((ref) => _walletsWithOne()),
         ],
       );
       addTearDown(container.dispose);
@@ -107,6 +128,30 @@ void main() {
       }
 
       expect(find.text('Register'), findsOneWidget);
+    });
+
+    testWidgets('redirects authenticated users without wallets to wallet setup',
+        (tester) async {
+      final container = ProviderContainer(
+        overrides: [
+          authProvider.overrideWith(_AuthenticatedAuth.new),
+          activeWalletsProvider.overrideWith((ref) => _emptyWallets()),
+        ],
+      );
+      addTearDown(container.dispose);
+
+      final router = container.read(appRouterProvider);
+      await tester.pumpWidget(
+        UncontrolledProviderScope(
+          container: container,
+          child: MaterialApp.router(routerConfig: router),
+        ),
+      );
+      await tester.pump();
+      await tester.pump(SplashScreen.minimumDisplayDuration);
+      await tester.pumpAndSettle();
+
+      expect(find.text('Set up wallets'), findsOneWidget);
     });
   });
 }

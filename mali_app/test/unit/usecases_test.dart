@@ -16,10 +16,14 @@ import 'package:mali_app/domain/repositories/transaction_repository.dart';
 import 'package:mali_app/domain/repositories/wallet_repository.dart';
 import 'package:mali_app/domain/usecases/allocate_to_goal_usecase.dart';
 import 'package:mali_app/domain/usecases/calculate_net_worth_usecase.dart';
+import 'package:mali_app/domain/usecases/convert_money_usecase.dart';
+import 'package:mali_app/domain/usecases/archive_wallet_usecase.dart';
+import 'package:mali_app/domain/usecases/create_wallet_usecase.dart';
 import 'package:mali_app/domain/usecases/get_monthly_summary_usecase.dart';
 import 'package:mali_app/domain/usecases/log_transaction_usecase.dart';
 import 'package:mali_app/domain/usecases/sync_usecase.dart';
 import 'package:mali_app/domain/value_objects/currency_code.dart';
+import 'package:mali_app/domain/value_objects/money.dart';
 
 import 'usecases_test.mocks.dart';
 
@@ -120,6 +124,158 @@ void main() {
     });
   });
 
+  group('CreateWalletUseCase', () {
+    late MockIWalletRepository walletRepository;
+    late CreateWalletUseCase useCase;
+
+    setUp(() {
+      walletRepository = MockIWalletRepository();
+      useCase = CreateWalletUseCase(walletRepository: walletRepository);
+    });
+
+    test('returns validation failure when name is empty', () async {
+      final result = await useCase(
+        const CreateWalletParams(
+          userId: 'u-1',
+          name: '   ',
+          currencyCode: CurrencyCode.usd,
+          openingBalance: '10',
+        ),
+      );
+
+      expect(result.isLeft(), isTrue);
+      expect(
+        result.getLeft().toNullable(),
+        isA<ValidationFailure>().having((f) => f.field, 'field', 'name'),
+      );
+    });
+
+    test('returns validation failure for invalid opening balance', () async {
+      final result = await useCase(
+        const CreateWalletParams(
+          userId: 'u-1',
+          name: 'EcoCash USD',
+          currencyCode: CurrencyCode.usd,
+          openingBalance: 'not-a-number',
+        ),
+      );
+
+      expect(result.isLeft(), isTrue);
+      expect(
+        result.getLeft().toNullable(),
+        isA<ValidationFailure>().having((f) => f.field, 'field', 'openingBalance'),
+      );
+    });
+
+    test('saves wallet with parsed balance', () async {
+      when(walletRepository.save(any)).thenAnswer((_) async {});
+
+      final result = await useCase(
+        const CreateWalletParams(
+          userId: 'u-1',
+          name: 'EcoCash USD',
+          currencyCode: CurrencyCode.usd,
+          openingBalance: '25.50',
+        ),
+      );
+
+      expect(result.isRight(), isTrue);
+      final wallet = result.getOrElse((_) => throw StateError('expected right'));
+      expect(wallet.name, 'EcoCash USD');
+      expect(wallet.currencyCode, 'USD');
+      expect(wallet.balance, '25.5');
+      expect(wallet.userId, 'u-1');
+      verify(walletRepository.save(any)).called(1);
+    });
+
+    test('treats empty opening balance as zero', () async {
+      when(walletRepository.save(any)).thenAnswer((_) async {});
+
+      final result = await useCase(
+        const CreateWalletParams(
+          userId: 'u-1',
+          name: 'Cash',
+          currencyCode: CurrencyCode.zar,
+          openingBalance: '',
+        ),
+      );
+
+      expect(result.getOrElse((_) => throw StateError('expected right')).balance, '0');
+    });
+  });
+
+  group('ArchiveWalletUseCase', () {
+    late MockIWalletRepository walletRepository;
+    late ArchiveWalletUseCase useCase;
+
+    setUp(() {
+      walletRepository = MockIWalletRepository();
+      useCase = ArchiveWalletUseCase(walletRepository: walletRepository);
+    });
+
+    test('returns not found when wallet is missing', () async {
+      when(walletRepository.findById('missing')).thenAnswer((_) async => null);
+
+      final result = await useCase.call(walletId: 'missing');
+      expect(result.isLeft(), isTrue);
+      verifyNever(walletRepository.archive(walletId: anyNamed('walletId')));
+    });
+
+    test('archives wallet when found', () async {
+      when(walletRepository.findById('w-1')).thenAnswer((_) async => _wallet());
+      when(walletRepository.archive(walletId: 'w-1')).thenAnswer((_) async {});
+
+      final result = await useCase.call(walletId: 'w-1');
+
+      expect(result.isRight(), isTrue);
+      expect(
+        result.getOrElse((_) => throw StateError('expected right')).isArchived,
+        isTrue,
+      );
+      verify(walletRepository.archive(walletId: 'w-1')).called(1);
+    });
+  });
+
+  group('ConvertMoneyUseCase', () {
+    late MockIExchangeRateRepository exchangeRateRepository;
+    late ConvertMoneyUseCase useCase;
+
+    setUp(() {
+      exchangeRateRepository = MockIExchangeRateRepository();
+      useCase = ConvertMoneyUseCase(
+        exchangeRateRepository: exchangeRateRepository,
+      );
+    });
+
+    test('returns same money when currencies match', () async {
+      final money = Money(amount: Decimal.parse('10'), currency: CurrencyCode.usd);
+
+      final result = await useCase(
+        money: money,
+        targetCurrency: CurrencyCode.usd,
+      );
+
+      expect(result.getOrElse((_) => throw StateError('expected right')), money);
+    });
+
+    test('converts using direct exchange rate', () async {
+      when(exchangeRateRepository.getRate(
+        baseCurrencyCode: CurrencyCode.zar,
+        quoteCurrencyCode: CurrencyCode.usd,
+      )).thenAnswer((_) async => _rate(base: 'ZAR', quote: 'USD', rate: '0.05'));
+
+      final result = await useCase(
+        money: Money(amount: Decimal.parse('20'), currency: CurrencyCode.zar),
+        targetCurrency: CurrencyCode.usd,
+      );
+
+      expect(
+        result.getOrElse((_) => throw StateError('expected right')).amount,
+        Decimal.parse('1'),
+      );
+    });
+  });
+
   group('CalculateNetWorthUseCase', () {
     late MockIWalletRepository walletRepository;
     late MockIExchangeRateRepository exchangeRateRepository;
@@ -130,7 +286,9 @@ void main() {
       exchangeRateRepository = MockIExchangeRateRepository();
       useCase = CalculateNetWorthUseCase(
         walletRepository: walletRepository,
-        exchangeRateRepository: exchangeRateRepository,
+        convertMoneyUseCase: ConvertMoneyUseCase(
+          exchangeRateRepository: exchangeRateRepository,
+        ),
       );
     });
 

@@ -11,4 +11,6 @@ abstract interface class IWalletRepository {
     required String walletId,
     required String balance,
   });
+
+  Future<void> archive({required String walletId});
 }
