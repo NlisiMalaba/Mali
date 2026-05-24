@@ -1,3 +1,9 @@
 planning/
 .cursor/
 .env
+
+# README files (all variants)
+**/README.md
+**/README
+**/readme.md
+**/Readme.md
