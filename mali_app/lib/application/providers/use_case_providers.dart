@@ -10,6 +10,8 @@ import 'package:mali_app/domain/usecases/create_goal_usecase.dart';
 import 'package:mali_app/domain/usecases/create_wallet_usecase.dart';
 import 'package:mali_app/domain/usecases/reorder_goals_usecase.dart';
 import 'package:mali_app/domain/usecases/update_goal_usecase.dart';
+import 'package:mali_app/domain/usecases/get_analytics_overview_usecase.dart';
+import 'package:mali_app/domain/usecases/get_analytics_trends_usecase.dart';
 import 'package:mali_app/domain/usecases/get_monthly_summary_usecase.dart';
 import 'package:mali_app/domain/usecases/delete_transaction_usecase.dart';
 import 'package:mali_app/domain/usecases/log_transaction_usecase.dart';
@@ -103,6 +105,21 @@ CalculateNetWorthUseCase calculateNetWorthUseCase(Ref ref) {
 @Riverpod(keepAlive: true)
 GetMonthlySummaryUseCase getMonthlySummaryUseCase(Ref ref) {
   return GetMonthlySummaryUseCase(
+    transactionRepository: ref.watch(transactionRepositoryProvider),
+  );
+}
+
+@Riverpod(keepAlive: true)
+GetAnalyticsOverviewUseCase getAnalyticsOverviewUseCase(Ref ref) {
+  return GetAnalyticsOverviewUseCase(
+    monthlySummary: ref.watch(getMonthlySummaryUseCaseProvider),
+    convertMoney: ref.watch(convertMoneyUseCaseProvider),
+  );
+}
+
+@Riverpod(keepAlive: true)
+GetAnalyticsTrendsUseCase getAnalyticsTrendsUseCase(Ref ref) {
+  return GetAnalyticsTrendsUseCase(
     transactionRepository: ref.watch(transactionRepositoryProvider),
   );
 }

@@ -11,6 +11,8 @@ import 'package:mali_app/presentation/screens/budget/budgets_screen.dart';
 import 'package:mali_app/presentation/screens/goal/goal_detail_screen.dart';
 import 'package:mali_app/presentation/screens/goal/goal_priority_screen.dart';
 import 'package:mali_app/presentation/screens/goal/goals_screen.dart';
+import 'package:mali_app/presentation/screens/analytics/analytics_screen.dart';
+import 'package:mali_app/presentation/screens/analytics/category_drilldown_screen.dart';
 import 'package:mali_app/presentation/screens/auth/login_screen.dart';
 import 'package:mali_app/presentation/screens/auth/register_screen.dart';
 import 'package:mali_app/presentation/screens/home/home_screen.dart';
@@ -119,8 +121,33 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: '/analytics',
-        builder: (context, state) =>
-            const PlaceholderScreen(title: 'Analytics'),
+        builder: (context, state) => AnalyticsScreen(
+          initialTab: AnalyticsScreen.tabFromQuery(
+            state.uri.queryParameters[AnalyticsScreen.tabQuery],
+          ),
+        ),
+        routes: [
+          GoRoute(
+            path: 'categories/:categoryId',
+            builder: (context, state) {
+              final now = DateTime.now();
+              final categoryId = state.pathParameters['categoryId'] ?? '';
+              final year = int.tryParse(
+                    state.uri.queryParameters['year'] ?? '',
+                  ) ??
+                  now.year;
+              final month = int.tryParse(
+                    state.uri.queryParameters['month'] ?? '',
+                  ) ??
+                  now.month;
+              return CategoryDrilldownScreen(
+                categoryId: categoryId,
+                year: year,
+                month: month,
+              );
+            },
+          ),
+        ],
       ),
       GoRoute(
         path: '/settings',

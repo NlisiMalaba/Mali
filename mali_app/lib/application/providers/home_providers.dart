@@ -33,7 +33,7 @@ Future<CalculateNetWorthResult> homeNetWorth(Ref ref) async {
   );
 }
 
-@riverpod
+@Riverpod(keepAlive: true)
 class HomeSelectedMonth extends _$HomeSelectedMonth {
   @override
   DateTime build() {
@@ -47,6 +47,10 @@ class HomeSelectedMonth extends _$HomeSelectedMonth {
 
   void nextMonth() {
     state = DateTime(state.year, state.month + 1);
+  }
+
+  void selectMonth(DateTime month) {
+    state = DateTime(month.year, month.month);
   }
 }
 

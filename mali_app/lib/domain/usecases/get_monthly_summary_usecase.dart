@@ -71,19 +71,22 @@ class GetMonthlySummaryUseCase {
           expenses: currentTotals.expenses + amount,
         );
         if (transaction.categoryId != null) {
-          expenseByCategory[transaction.categoryId!] =
-              (expenseByCategory[transaction.categoryId!] ?? Decimal.zero) + amount;
+          final key = '${transaction.categoryId}|${transaction.currencyCode}';
+          final current = expenseByCategory[key] ?? Decimal.zero;
+          expenseByCategory[key] = current + amount;
         }
       }
     }
 
     final categoryBreakdown = expenseByCategory.entries
-        .map(
-          (entry) => CategorySpend(
-            categoryId: entry.key,
+        .map((entry) {
+          final parts = entry.key.split('|');
+          return CategorySpend(
+            categoryId: parts[0],
+            currencyCode: parts[1],
             amount: entry.value,
-          ),
-        )
+          );
+        })
         .toList()
       ..sort((a, b) => b.amount.compareTo(a.amount));
 
@@ -139,9 +142,11 @@ class CurrencyMonthlyTotals {
 class CategorySpend {
   const CategorySpend({
     required this.categoryId,
+    required this.currencyCode,
     required this.amount,
   });
 
   final String categoryId;
+  final String currencyCode;
   final Decimal amount;
 }

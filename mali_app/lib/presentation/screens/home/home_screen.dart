@@ -76,6 +76,12 @@ class HomeScreen extends ConsumerWidget {
                         child: HomeGreetingHeader(userName: userName),
                       ),
                       IconButton(
+                        key: const Key('home-analytics-button'),
+                        icon: const Icon(Icons.insights_outlined),
+                        tooltip: 'Analytics',
+                        onPressed: () => context.push('/analytics'),
+                      ),
+                      IconButton(
                         key: const Key('home-settings-button'),
                         icon: const Icon(Icons.settings_outlined),
                         tooltip: 'Settings',

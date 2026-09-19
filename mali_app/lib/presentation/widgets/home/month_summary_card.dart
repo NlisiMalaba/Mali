@@ -1,29 +1,24 @@
 import 'package:decimal/decimal.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:intl/intl.dart';
 import 'package:mali_app/application/models/home_monthly_summary_display.dart';
 import 'package:mali_app/application/providers/home_providers.dart';
 import 'package:mali_app/presentation/theme/app_colors.dart';
 import 'package:mali_app/presentation/utils/money_display.dart';
+import 'package:mali_app/presentation/widgets/analytics/month_selector.dart';
 
 class MonthSummaryCard extends ConsumerWidget {
   const MonthSummaryCard({super.key});
 
-  static const Key monthTitleKey = Key('month-summary-title');
-  static const Key previousMonthKey = Key('month-summary-previous');
-  static const Key nextMonthKey = Key('month-summary-next');
+  static const Key monthTitleKey = MonthSelector.titleKey;
+  static const Key previousMonthKey = MonthSelector.previousMonthKey;
+  static const Key nextMonthKey = MonthSelector.nextMonthKey;
   static const Key netLabelKey = Key('month-summary-net-label');
   static const Key netAmountKey = Key('month-summary-net-amount');
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final summaryAsync = ref.watch(homeMonthlySummaryDisplayProvider);
-    final selectedMonth = ref.watch(homeSelectedMonthProvider);
-    final monthNotifier = ref.read(homeSelectedMonthProvider.notifier);
-    final now = DateTime.now();
-    final canGoForward = selectedMonth.year < now.year ||
-        (selectedMonth.year == now.year && selectedMonth.month < now.month);
 
     return Card(
       child: Padding(
@@ -31,12 +26,7 @@ class MonthSummaryCard extends ConsumerWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            _MonthNavigationHeader(
-              selectedMonth: selectedMonth,
-              canGoForward: canGoForward,
-              onPrevious: monthNotifier.previousMonth,
-              onNext: canGoForward ? monthNotifier.nextMonth : null,
-            ),
+            const MonthSelector(),
             const SizedBox(height: 16),
             summaryAsync.when(
               loading: () => const Padding(
@@ -57,52 +47,6 @@ class MonthSummaryCard extends ConsumerWidget {
           ],
         ),
       ),
-    );
-  }
-}
-
-class _MonthNavigationHeader extends StatelessWidget {
-  const _MonthNavigationHeader({
-    required this.selectedMonth,
-    required this.canGoForward,
-    required this.onPrevious,
-    required this.onNext,
-  });
-
-  final DateTime selectedMonth;
-  final bool canGoForward;
-  final VoidCallback onPrevious;
-  final VoidCallback? onNext;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
-    return Row(
-      children: [
-        IconButton(
-          key: MonthSummaryCard.previousMonthKey,
-          onPressed: onPrevious,
-          icon: const Icon(Icons.chevron_left),
-          tooltip: 'Previous month',
-        ),
-        Expanded(
-          child: Text(
-            DateFormat.yMMMM().format(selectedMonth),
-            key: MonthSummaryCard.monthTitleKey,
-            textAlign: TextAlign.center,
-            style: theme.textTheme.titleMedium?.copyWith(
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-        ),
-        IconButton(
-          key: MonthSummaryCard.nextMonthKey,
-          onPressed: onNext,
-          icon: const Icon(Icons.chevron_right),
-          tooltip: 'Next month',
-        ),
-      ],
     );
   }
 }

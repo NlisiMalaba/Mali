@@ -61,7 +61,7 @@ final class HomeSelectedMonthProvider
         argument: null,
         retry: null,
         name: r'homeSelectedMonthProvider',
-        isAutoDispose: true,
+        isAutoDispose: false,
         dependencies: null,
         $allTransitiveDependencies: null,
       );
@@ -82,7 +82,7 @@ final class HomeSelectedMonthProvider
   }
 }
 
-String _$homeSelectedMonthHash() => r'eb6603d92ef53672de8e4915d08c21c1e76809c5';
+String _$homeSelectedMonthHash() => r'5174069e59d7fb88748d423f5453a58e29b82f4d';
 
 abstract class _$HomeSelectedMonth extends $Notifier<DateTime> {
   DateTime build();

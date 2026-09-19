@@ -535,6 +535,103 @@ final class GetMonthlySummaryUseCaseProvider
 String _$getMonthlySummaryUseCaseHash() =>
     r'81a870e9cb59a64526a1e5063f17ceff8b2895d5';
 
+@ProviderFor(getAnalyticsOverviewUseCase)
+final getAnalyticsOverviewUseCaseProvider =
+    GetAnalyticsOverviewUseCaseProvider._();
+
+final class GetAnalyticsOverviewUseCaseProvider
+    extends
+        $FunctionalProvider<
+          GetAnalyticsOverviewUseCase,
+          GetAnalyticsOverviewUseCase,
+          GetAnalyticsOverviewUseCase
+        >
+    with $Provider<GetAnalyticsOverviewUseCase> {
+  GetAnalyticsOverviewUseCaseProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'getAnalyticsOverviewUseCaseProvider',
+        isAutoDispose: false,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$getAnalyticsOverviewUseCaseHash();
+
+  @$internal
+  @override
+  $ProviderElement<GetAnalyticsOverviewUseCase> $createElement(
+    $ProviderPointer pointer,
+  ) => $ProviderElement(pointer);
+
+  @override
+  GetAnalyticsOverviewUseCase create(Ref ref) {
+    return getAnalyticsOverviewUseCase(ref);
+  }
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(GetAnalyticsOverviewUseCase value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<GetAnalyticsOverviewUseCase>(value),
+    );
+  }
+}
+
+String _$getAnalyticsOverviewUseCaseHash() =>
+    r'1e2251473923377c4abb932caa13659575c1c94a';
+
+@ProviderFor(getAnalyticsTrendsUseCase)
+final getAnalyticsTrendsUseCaseProvider = GetAnalyticsTrendsUseCaseProvider._();
+
+final class GetAnalyticsTrendsUseCaseProvider
+    extends
+        $FunctionalProvider<
+          GetAnalyticsTrendsUseCase,
+          GetAnalyticsTrendsUseCase,
+          GetAnalyticsTrendsUseCase
+        >
+    with $Provider<GetAnalyticsTrendsUseCase> {
+  GetAnalyticsTrendsUseCaseProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'getAnalyticsTrendsUseCaseProvider',
+        isAutoDispose: false,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$getAnalyticsTrendsUseCaseHash();
+
+  @$internal
+  @override
+  $ProviderElement<GetAnalyticsTrendsUseCase> $createElement(
+    $ProviderPointer pointer,
+  ) => $ProviderElement(pointer);
+
+  @override
+  GetAnalyticsTrendsUseCase create(Ref ref) {
+    return getAnalyticsTrendsUseCase(ref);
+  }
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(GetAnalyticsTrendsUseCase value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<GetAnalyticsTrendsUseCase>(value),
+    );
+  }
+}
+
+String _$getAnalyticsTrendsUseCaseHash() =>
+    r'952a242ef78f903a6f29b641e3180591e96add36';
+
 @ProviderFor(allocateToGoalUseCase)
 final allocateToGoalUseCaseProvider = AllocateToGoalUseCaseProvider._();
 

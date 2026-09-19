@@ -27,6 +27,8 @@ import 'package:mali_app/domain/usecases/create_budget_usecase.dart';
 import 'package:mali_app/domain/usecases/create_goal_usecase.dart';
 import 'package:mali_app/domain/usecases/create_wallet_usecase.dart';
 import 'package:mali_app/domain/usecases/update_goal_usecase.dart';
+import 'package:mali_app/domain/usecases/get_analytics_overview_usecase.dart';
+import 'package:mali_app/domain/usecases/get_analytics_trends_usecase.dart';
 import 'package:mali_app/domain/usecases/get_monthly_summary_usecase.dart';
 import 'package:mali_app/domain/usecases/log_transaction_usecase.dart';
 import 'package:mali_app/domain/usecases/refresh_exchange_rates_usecase.dart';
@@ -757,6 +759,8 @@ void main() {
       expect(value.transactionsCount, 3);
       expect(value.totalsByCurrency.first.net, Decimal.parse('40'));
       expect(value.categoryBreakdown.first.amount, Decimal.parse('60'));
+      expect(value.categoryBreakdown.first.categoryId, 'cat-food');
+      expect(value.categoryBreakdown.first.currencyCode, 'USD');
     });
 
     test('returns storage failure when amount parsing fails', () async {
@@ -766,6 +770,201 @@ void main() {
       final result = await useCase.call(year: 2026, month: 4);
       expect(result.swap().getOrElse((_) => const ValidationFailure(message: 'x')),
           isA<StorageFailure>());
+    });
+  });
+
+  group('GetAnalyticsOverviewUseCase', () {
+    late MockITransactionRepository transactionRepository;
+    late GetAnalyticsOverviewUseCase useCase;
+
+    setUp(() {
+      transactionRepository = MockITransactionRepository();
+      useCase = GetAnalyticsOverviewUseCase(
+        monthlySummary: GetMonthlySummaryUseCase(
+          transactionRepository: transactionRepository,
+        ),
+        convertMoney: ConvertMoneyUseCase(
+          exchangeRateRepository: MockIExchangeRateRepository(),
+        ),
+      );
+    });
+
+    test('returns per-currency nets and the top five spending categories',
+        () async {
+      when(transactionRepository.list(query: anyNamed('query'))).thenAnswer(
+        (_) async => [
+          _transaction(
+            type: 'income',
+            amount: '200',
+            currencyCode: 'USD',
+          ),
+          _transaction(
+            type: 'expense',
+            amount: '80',
+            currencyCode: 'USD',
+            categoryId: 'cat-food',
+          ),
+          _transaction(
+            type: 'expense',
+            amount: '50',
+            currencyCode: 'USD',
+            categoryId: 'cat-transport',
+          ),
+          _transaction(
+            type: 'expense',
+            amount: '40',
+            currencyCode: 'USD',
+            categoryId: 'cat-utilities',
+          ),
+          _transaction(
+            type: 'expense',
+            amount: '30',
+            currencyCode: 'USD',
+            categoryId: 'cat-medical',
+          ),
+          _transaction(
+            type: 'expense',
+            amount: '20',
+            currencyCode: 'USD',
+            categoryId: 'cat-clothing',
+          ),
+          _transaction(
+            type: 'expense',
+            amount: '10',
+            currencyCode: 'USD',
+            categoryId: 'cat-entertainment',
+          ),
+        ],
+      );
+
+      final result = await useCase(
+        year: 2026,
+        month: 4,
+        displayCurrency: CurrencyCode.usd,
+      );
+      final overview = result.getOrElse(
+        (_) => throw StateError('expected right'),
+      );
+
+      expect(overview.totalsByCurrency.single.net, Decimal.parse('-30'));
+      expect(
+        overview.topCategories.map((spend) => spend.categoryId),
+        [
+          'cat-food',
+          'cat-transport',
+          'cat-utilities',
+          'cat-medical',
+          'cat-clothing',
+        ],
+      );
+      expect(overview.topCategories.length, 5);
+      expect(overview.topCategories.first.amount, Decimal.parse('80'));
+      expect(overview.categorySpend.length, 6);
+      expect(overview.categorySpend.last.categoryId, 'cat-entertainment');
+    });
+  });
+
+  group('GetAnalyticsTrendsUseCase', () {
+    late MockITransactionRepository transactionRepository;
+    late GetAnalyticsTrendsUseCase useCase;
+
+    setUp(() {
+      transactionRepository = MockITransactionRepository();
+      useCase = GetAnalyticsTrendsUseCase(
+        transactionRepository: transactionRepository,
+      );
+    });
+
+    test('builds a 6-month per-currency series including zero months', () async {
+      when(transactionRepository.list(query: anyNamed('query'))).thenAnswer(
+        (_) async => [
+          _transaction(
+            id: 'tx-usd-in',
+            type: 'income',
+            amount: '100',
+            currencyCode: 'USD',
+            transactionDate: DateTime(2026, 4, 10),
+          ),
+          _transaction(
+            id: 'tx-usd-out',
+            type: 'expense',
+            amount: '40',
+            currencyCode: 'USD',
+            transactionDate: DateTime(2026, 4, 12),
+          ),
+          _transaction(
+            id: 'tx-zar-in',
+            type: 'income',
+            amount: '50',
+            currencyCode: 'ZAR',
+            transactionDate: DateTime(2026, 3, 5),
+          ),
+          _transaction(
+            id: 'tx-transfer',
+            type: 'transfer',
+            amount: '10',
+            currencyCode: 'USD',
+            transactionDate: DateTime(2026, 4, 8),
+          ),
+        ],
+      );
+
+      final result = await useCase(endMonth: DateTime(2026, 4));
+      final trends = result.getOrElse(
+        (_) => throw StateError('expected right'),
+      );
+
+      expect(trends.months, [
+        DateTime(2025, 11),
+        DateTime(2025, 12),
+        DateTime(2026, 1),
+        DateTime(2026, 2),
+        DateTime(2026, 3),
+        DateTime(2026, 4),
+      ]);
+      expect(
+        trends.currencies.map((series) => series.currencyCode),
+        ['USD', 'ZAR'],
+      );
+
+      final usd = trends.currencies.first;
+      expect(usd.incomeByMonth.last, Decimal.parse('100'));
+      expect(usd.expensesByMonth.last, Decimal.parse('40'));
+      expect(usd.incomeByMonth[4], Decimal.zero);
+      expect(usd.incomeByMonth.where((amount) => amount == Decimal.zero).length, 5);
+
+      final zar = trends.currencies.last;
+      expect(zar.incomeByMonth[4], Decimal.parse('50'));
+      expect(zar.incomeByMonth.last, Decimal.zero);
+      expect(zar.expensesByMonth.every((amount) => amount == Decimal.zero), isTrue);
+    });
+
+    test('returns empty currencies when there are no income or expense txs',
+        () async {
+      when(transactionRepository.list(query: anyNamed('query')))
+          .thenAnswer((_) async => []);
+
+      final result = await useCase(endMonth: DateTime(2026, 4));
+      final trends = result.getOrElse(
+        (_) => throw StateError('expected right'),
+      );
+
+      expect(trends.months.length, GetAnalyticsTrendsUseCase.monthCount);
+      expect(trends.currencies, isEmpty);
+    });
+
+    test('returns storage failure when amount parsing fails', () async {
+      when(transactionRepository.list(query: anyNamed('query'))).thenAnswer(
+        (_) async => [
+          _transaction(amount: 'invalid', transactionDate: DateTime(2026, 4, 1)),
+        ],
+      );
+
+      final result = await useCase(endMonth: DateTime(2026, 4));
+      expect(
+        result.swap().getOrElse((_) => const ValidationFailure(message: 'x')),
+        isA<StorageFailure>(),
+      );
     });
   });
 

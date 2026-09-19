@@ -1,9 +1,12 @@
 import 'package:decimal/decimal.dart';
 import 'package:mali_app/application/models/home_monthly_summary_display.dart';
+import 'package:mali_app/application/providers/analytics_providers.dart';
 import 'package:mali_app/application/providers/budget_providers.dart';
 import 'package:mali_app/application/providers/goal_providers.dart';
 import 'package:mali_app/application/providers/home_providers.dart';
 import 'package:mali_app/domain/usecases/calculate_net_worth_usecase.dart';
+import 'package:mali_app/domain/usecases/get_analytics_overview_usecase.dart';
+import 'package:mali_app/domain/usecases/get_analytics_trends_usecase.dart';
 import 'package:mali_app/domain/value_objects/currency_code.dart';
 import 'package:mali_app/domain/value_objects/money.dart';
 
@@ -24,6 +27,27 @@ List<dynamic> homeScreenTestOverrides() {
         income: Decimal.zero,
         expenses: Decimal.zero,
         displayCurrency: CurrencyCode.usd,
+      ),
+    ),
+    analyticsOverviewProvider.overrideWith(
+      (ref) async => const AnalyticsOverview(
+        totalsByCurrency: [],
+        categorySpend: [],
+      ),
+    ),
+    analyticsTrendsProvider.overrideWith(
+      (ref) async => AnalyticsTrends(
+        months: GetAnalyticsTrendsUseCase.monthsEndingAt(selectedMonth),
+        currencies: const [],
+      ),
+    ),
+    categoryMonthTransactionsProvider.overrideWith(
+      (ref, query) => Stream.value(const []),
+    ),
+    categoryMonthDisplayTotalProvider.overrideWith(
+      (ref, query) async => Money(
+        amount: Decimal.zero,
+        currency: CurrencyCode.usd,
       ),
     ),
     homeRecentTransactionsProvider.overrideWith(
