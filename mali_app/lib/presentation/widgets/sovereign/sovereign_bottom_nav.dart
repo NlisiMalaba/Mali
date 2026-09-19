@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:mali_app/presentation/theme/app_colors.dart';
 import 'package:mali_app/presentation/theme/app_decorations.dart';
+import 'package:mali_app/presentation/widgets/common/pressable_scale.dart';
 
 enum SovereignNavDestination {
   home,
@@ -162,12 +163,12 @@ class _AddFab extends StatelessWidget {
   Widget build(BuildContext context) {
     return Transform.translate(
       offset: const Offset(0, -24),
-      child: Material(
-        elevation: 8,
-        shadowColor: AppColors.primary.withValues(alpha: 0.3),
-        borderRadius: BorderRadius.circular(AppDecorations.radiusMd),
-        child: InkWell(
-          onTap: onPressed,
+      child: PressableScale(
+        scale: 0.92,
+        onTap: onPressed,
+        child: Material(
+          elevation: 8,
+          shadowColor: AppColors.primary.withValues(alpha: 0.3),
           borderRadius: BorderRadius.circular(AppDecorations.radiusMd),
           child: Ink(
             width: 64,

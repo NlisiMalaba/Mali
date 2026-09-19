@@ -6,7 +6,11 @@ import 'package:mali_app/domain/entities/savings_goal.dart';
 import 'package:mali_app/presentation/theme/app_colors.dart';
 import 'package:mali_app/presentation/theme/app_decorations.dart';
 import 'package:mali_app/presentation/theme/app_typography.dart';
+import 'package:mali_app/presentation/theme/app_motion.dart';
 import 'package:mali_app/presentation/utils/money_display.dart';
+import 'package:mali_app/presentation/widgets/common/animated_progress_bar.dart';
+import 'package:mali_app/presentation/widgets/common/fade_slide_in.dart';
+import 'package:mali_app/presentation/widgets/common/shimmer_box.dart';
 
 class GoalsProgressRow extends ConsumerWidget {
   const GoalsProgressRow({super.key});
@@ -16,7 +20,13 @@ class GoalsProgressRow extends ConsumerWidget {
     final goalsAsync = ref.watch(homeTopGoalsProvider);
 
     return goalsAsync.when(
-      loading: () => const Center(child: CircularProgressIndicator()),
+      loading: () => Column(
+        children: [
+          ShimmerBox(height: 96, borderRadius: AppDecorations.radiusHero),
+          const SizedBox(height: 16),
+          ShimmerBox(height: 96, borderRadius: AppDecorations.radiusHero),
+        ],
+      ),
       error: (error, _) => Text('Could not load goals: $error'),
       data: (goals) {
         if (goals.isEmpty) {
@@ -27,7 +37,10 @@ class GoalsProgressRow extends ConsumerWidget {
           children: [
             for (var index = 0; index < goals.length; index++) ...[
               if (index > 0) const SizedBox(height: 16),
-              _GoalProgressTile(goal: goals[index], index: index),
+              FadeSlideIn(
+                index: index,
+                child: _GoalProgressTile(goal: goals[index], index: index),
+              ),
             ],
           ],
         );
@@ -106,23 +119,26 @@ class _GoalProgressTile extends StatelessWidget {
                   ],
                 ),
               ),
-              Text(
-                '$percent%',
-                style: theme.textTheme.titleSmall?.copyWith(
-                  fontWeight: FontWeight.w800,
-                ),
+              TweenAnimationBuilder<int>(
+                tween: IntTween(begin: 0, end: percent),
+                duration: AppMotion.resolve(context, AppMotion.progress),
+                curve: AppMotion.standard,
+                builder: (context, animatedPercent, _) {
+                  return Text(
+                    '$animatedPercent%',
+                    style: theme.textTheme.titleSmall?.copyWith(
+                      fontWeight: FontWeight.w800,
+                    ),
+                  );
+                },
               ),
             ],
           ),
           const SizedBox(height: 16),
-          ClipRRect(
-            borderRadius: BorderRadius.circular(999),
-            child: LinearProgressIndicator(
-              value: progress.clamp(0, 1),
-              minHeight: 8,
-              backgroundColor: AppColors.surfaceContainerHigh,
-              color: progressColor,
-            ),
+          AnimatedProgressBar(
+            value: progress.clamp(0, 1),
+            color: progressColor,
+            backgroundColor: AppColors.surfaceContainerHigh,
           ),
         ],
       ),

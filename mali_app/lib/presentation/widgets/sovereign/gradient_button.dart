@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:mali_app/presentation/theme/app_colors.dart';
 import 'package:mali_app/presentation/theme/app_decorations.dart';
+import 'package:mali_app/presentation/widgets/common/pressable_scale.dart';
 
 class GradientButton extends StatelessWidget {
   const GradientButton({
@@ -24,9 +25,8 @@ class GradientButton extends StatelessWidget {
       borderRadius: BorderRadius.circular(AppDecorations.radiusMd),
       elevation: 4,
       shadowColor: AppColors.primary.withValues(alpha: 0.2),
-      child: InkWell(
+      child: PressableScale(
         onTap: isLoading ? null : onPressed,
-        borderRadius: BorderRadius.circular(AppDecorations.radiusMd),
         child: Ink(
           height: 56,
           decoration: BoxDecoration(

@@ -7,6 +7,9 @@ import 'package:mali_app/presentation/theme/app_colors.dart';
 import 'package:mali_app/presentation/theme/app_decorations.dart';
 import 'package:mali_app/presentation/theme/app_typography.dart';
 import 'package:mali_app/presentation/utils/money_display.dart';
+import 'package:mali_app/presentation/widgets/common/fade_slide_in.dart';
+import 'package:mali_app/presentation/widgets/common/pressable_scale.dart';
+import 'package:mali_app/presentation/widgets/common/shimmer_box.dart';
 
 class WalletBalanceScroll extends ConsumerWidget {
   const WalletBalanceScroll({super.key});
@@ -16,9 +19,15 @@ class WalletBalanceScroll extends ConsumerWidget {
     final walletsAsync = ref.watch(activeWalletsProvider);
 
     return walletsAsync.when(
-      loading: () => const SizedBox(
+      loading: () => SizedBox(
         height: 140,
-        child: Center(child: CircularProgressIndicator()),
+        child: ListView.separated(
+          scrollDirection: Axis.horizontal,
+          padding: const EdgeInsets.symmetric(horizontal: 24),
+          itemCount: 3,
+          separatorBuilder: (_, __) => const SizedBox(width: 16),
+          itemBuilder: (_, __) => const ShimmerBox(width: 176, height: 140),
+        ),
       ),
       error: (error, _) => Text('Could not load wallets: $error'),
       data: (wallets) {
@@ -35,9 +44,12 @@ class WalletBalanceScroll extends ConsumerWidget {
             separatorBuilder: (_, __) => const SizedBox(width: 16),
             itemBuilder: (context, index) {
               final wallet = wallets[index];
-              return _CompactWalletCard(
-                wallet: wallet,
-                onTap: () => context.push('/wallets/${wallet.id}'),
+              return FadeSlideIn(
+                index: index,
+                child: _CompactWalletCard(
+                  wallet: wallet,
+                  onTap: () => context.push('/wallets/${wallet.id}'),
+                ),
               );
             },
           ),
@@ -90,7 +102,7 @@ class _CompactWalletCard extends ConsumerWidget {
     final isMobileMoney = wallet.name.toLowerCase().contains('ecocash') ||
         wallet.name.toLowerCase().contains('onemoney');
 
-    return GestureDetector(
+    return PressableScale(
       onTap: onTap,
       child: Container(
         width: 176,

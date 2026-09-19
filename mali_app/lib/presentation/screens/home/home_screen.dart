@@ -11,6 +11,7 @@ import 'package:mali_app/presentation/widgets/home/home_section_header.dart';
 import 'package:mali_app/presentation/widgets/home/month_summary_card.dart';
 import 'package:mali_app/presentation/widgets/home/net_worth_card.dart';
 import 'package:mali_app/presentation/widgets/home/wallet_balance_scroll.dart';
+import 'package:mali_app/presentation/widgets/common/fade_slide_in.dart';
 import 'package:mali_app/presentation/widgets/sovereign/sovereign_app_bar.dart';
 
 class HomeScreen extends ConsumerWidget {
@@ -71,17 +72,27 @@ class HomeScreen extends ConsumerWidget {
             SliverPadding(
               padding: const EdgeInsets.fromLTRB(24, 8, 24, 0),
               sliver: SliverToBoxAdapter(
-                child: HomeGreetingHeader(userName: userName),
+                child: FadeSlideIn(
+                  index: 0,
+                  child: HomeGreetingHeader(userName: userName),
+                ),
               ),
             ),
             const SliverToBoxAdapter(child: SizedBox(height: 24)),
-            const SliverPadding(
-              padding: EdgeInsets.symmetric(horizontal: 24),
-              sliver: SliverToBoxAdapter(child: NetWorthCard()),
+            SliverPadding(
+              padding: const EdgeInsets.symmetric(horizontal: 24),
+              sliver: SliverToBoxAdapter(
+                child: FadeSlideIn(
+                  index: 1,
+                  child: const NetWorthCard(),
+                ),
+              ),
             ),
             const SliverToBoxAdapter(child: SizedBox(height: 32)),
             SliverToBoxAdapter(
-              child: Column(
+              child: FadeSlideIn(
+                index: 2,
+                child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   Padding(
@@ -96,25 +107,39 @@ class HomeScreen extends ConsumerWidget {
                   const WalletBalanceScroll(),
                 ],
               ),
+              ),
             ),
             const SliverToBoxAdapter(child: SizedBox(height: 32)),
-            const SliverPadding(
-              padding: EdgeInsets.symmetric(horizontal: 24),
-              sliver: SliverToBoxAdapter(child: MonthSummaryCard()),
+            SliverPadding(
+              padding: const EdgeInsets.symmetric(horizontal: 24),
+              sliver: SliverToBoxAdapter(
+                child: FadeSlideIn(
+                  index: 3,
+                  child: const MonthSummaryCard(),
+                ),
+              ),
             ),
             SliverPadding(
               padding: const EdgeInsets.fromLTRB(24, 32, 24, 0),
               sliver: SliverToBoxAdapter(
-                child: HomeSectionHeader(
-                  title: 'Savings Goals',
-                  actionLabel: 'View All',
-                  onAction: () => context.go('/goals'),
+                child: FadeSlideIn(
+                  index: 4,
+                  child: HomeSectionHeader(
+                    title: 'Savings Goals',
+                    actionLabel: 'View All',
+                    onAction: () => context.go('/goals'),
+                  ),
                 ),
               ),
             ),
-            const SliverPadding(
+            SliverPadding(
               padding: const EdgeInsets.fromLTRB(24, 16, 24, 16),
-              sliver: SliverToBoxAdapter(child: GoalsProgressRow()),
+              sliver: SliverToBoxAdapter(
+                child: FadeSlideIn(
+                  index: 5,
+                  child: const GoalsProgressRow(),
+                ),
+              ),
             ),
           ],
         ),

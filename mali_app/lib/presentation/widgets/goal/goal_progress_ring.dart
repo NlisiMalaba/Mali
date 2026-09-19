@@ -3,6 +3,7 @@ import 'dart:math' as math;
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:mali_app/presentation/theme/app_colors.dart';
+import 'package:mali_app/presentation/theme/app_motion.dart';
 import 'package:mali_app/presentation/utils/goal_progress.dart';
 
 class GoalProgressRing extends StatelessWidget {
@@ -25,7 +26,7 @@ class GoalProgressRing extends StatelessWidget {
   static const double milestoneBorderWidth = 1.5;
   static const double startDegreeOffset = -90;
   static const double unfilledTrackOpacity = 0.15;
-  static const Duration chartAnimationDuration = Duration.zero;
+  static const Duration chartAnimationDuration = AppMotion.progress;
 
   static Key milestoneKey(int percent) => Key('goal-milestone-$percent');
 
@@ -60,7 +61,10 @@ class GoalProgressRing extends StatelessWidget {
                   borderData: FlBorderData(show: false),
                   sections: _sections(clamped, color),
                 ),
-                duration: chartAnimationDuration,
+                duration: AppMotion.resolve(
+                  context,
+                  chartAnimationDuration,
+                ),
               ),
             ),
           ),

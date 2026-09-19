@@ -9,6 +9,7 @@ import 'package:mali_app/presentation/theme/app_typography.dart';
 import 'package:mali_app/presentation/utils/money_display.dart';
 import 'package:mali_app/presentation/widgets/budget/add_budget_sheet.dart';
 import 'package:mali_app/presentation/widgets/budget/budget_list_tile.dart';
+import 'package:mali_app/presentation/widgets/common/fade_slide_in.dart';
 import 'package:mali_app/presentation/widgets/sovereign/sovereign_app_bar.dart';
 
 class BudgetsScreen extends ConsumerWidget {
@@ -82,10 +83,13 @@ class BudgetsScreen extends ConsumerWidget {
               if (budgets.isEmpty)
                 _EmptyBudgets(onAdd: () => _openAddBudget(context))
               else
-                ...budgets.map(
-                  (budget) => Padding(
+                ...budgets.asMap().entries.map(
+                  (entry) => Padding(
                     padding: const EdgeInsets.only(bottom: 16),
-                    child: BudgetListTile(budget: budget),
+                    child: FadeSlideIn(
+                      index: entry.key,
+                      child: BudgetListTile(budget: entry.value),
+                    ),
                   ),
                 ),
             ],

@@ -6,6 +6,8 @@ import 'package:mali_app/presentation/theme/app_decorations.dart';
 import 'package:mali_app/presentation/theme/app_typography.dart';
 import 'package:mali_app/presentation/utils/goal_progress.dart';
 import 'package:mali_app/presentation/utils/money_display.dart';
+import 'package:mali_app/presentation/theme/app_motion.dart';
+import 'package:mali_app/presentation/widgets/common/pressable_scale.dart';
 import 'package:mali_app/presentation/widgets/goal/goal_progress_ring.dart';
 
 class GoalCard extends StatelessWidget {
@@ -44,7 +46,7 @@ class GoalCard extends StatelessWidget {
       now: now ?? DateTime.now(),
     );
 
-    return GestureDetector(
+    return PressableScale(
       key: GoalCard.cardKey(goal.id),
       onTap: () => _openDetail(context),
       child: Container(
@@ -68,7 +70,9 @@ class GoalCard extends StatelessWidget {
                         ),
                       ),
                       Text(
-                        'Securing your future',
+                        goal.isCompleted
+                            ? 'Goal achieved'
+                            : '${goal.currencyCode} savings goal',
                         style: AppTypography.sectionLabel(context).copyWith(
                           fontSize: 11,
                         ),
@@ -103,11 +107,18 @@ class GoalCard extends StatelessWidget {
                 progress: progress,
                 size: 128,
                 strokeWidth: 8,
-                child: Text(
-                  '$percent%',
-                  style: theme.textTheme.headlineSmall?.copyWith(
-                    fontWeight: FontWeight.w700,
-                  ),
+                child: TweenAnimationBuilder<int>(
+                  tween: IntTween(begin: 0, end: percent),
+                  duration: AppMotion.resolve(context, AppMotion.progress),
+                  curve: AppMotion.standard,
+                  builder: (context, animatedPercent, _) {
+                    return Text(
+                      '$animatedPercent%',
+                      style: theme.textTheme.headlineSmall?.copyWith(
+                        fontWeight: FontWeight.w700,
+                      ),
+                    );
+                  },
                 ),
               ),
             ),

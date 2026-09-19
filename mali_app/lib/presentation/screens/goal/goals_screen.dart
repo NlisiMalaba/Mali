@@ -10,6 +10,8 @@ import 'package:mali_app/presentation/theme/app_typography.dart';
 import 'package:mali_app/presentation/utils/money_display.dart';
 import 'package:mali_app/presentation/widgets/goal/add_goal_sheet.dart';
 import 'package:mali_app/presentation/widgets/goal/goal_card.dart';
+import 'package:mali_app/presentation/widgets/common/fade_slide_in.dart';
+import 'package:mali_app/presentation/widgets/common/pressable_scale.dart';
 import 'package:mali_app/presentation/widgets/sovereign/sovereign_app_bar.dart';
 
 class GoalsScreen extends ConsumerWidget {
@@ -118,13 +120,19 @@ class GoalsScreen extends ConsumerWidget {
                 ],
               ),
               const SizedBox(height: 32),
-              ...goals.map(
-                (goal) => Padding(
+              ...goals.asMap().entries.map(
+                (entry) => Padding(
                   padding: const EdgeInsets.only(bottom: 16),
-                  child: GoalCard(goal: goal),
+                  child: FadeSlideIn(
+                    index: entry.key,
+                    child: GoalCard(goal: entry.value),
+                  ),
                 ),
               ),
-              _AddGoalCard(onTap: () => _openAddGoal(context)),
+              FadeSlideIn(
+                index: goals.length,
+                child: _AddGoalCard(onTap: () => _openAddGoal(context)),
+              ),
             ],
           );
         },
@@ -166,7 +174,7 @@ class _AddGoalCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
-    return GestureDetector(
+    return PressableScale(
       onTap: onTap,
       child: Container(
         padding: const EdgeInsets.all(32),
