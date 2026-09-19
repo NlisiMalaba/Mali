@@ -17,6 +17,16 @@ class SovereignBottomNav extends StatelessWidget {
     super.key,
   });
 
+  static const double _barPaddingTop = 12;
+  static const double _barContentHeight = 64;
+  static const double _barPaddingBottom = 24;
+
+  /// Space to reserve so scrollable content and sheets are not hidden behind
+  /// the shell bottom navigation bar.
+  static double contentInset(BuildContext context) {
+    return _barPaddingTop + _barContentHeight + _barPaddingBottom;
+  }
+
   final SovereignNavDestination selected;
   final ValueChanged<SovereignNavDestination> onDestinationSelected;
   final VoidCallback onAddPressed;

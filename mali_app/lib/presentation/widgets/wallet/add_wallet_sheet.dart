@@ -4,6 +4,7 @@ import 'package:mali_app/application/providers/auth_provider.dart';
 import 'package:mali_app/application/providers/use_case_providers.dart';
 import 'package:mali_app/domain/usecases/create_wallet_usecase.dart';
 import 'package:mali_app/domain/value_objects/currency_code.dart';
+import 'package:mali_app/presentation/utils/shell_insets.dart';
 import 'package:mali_app/presentation/widgets/wallet/currency_option_card.dart';
 import 'package:mali_app/presentation/widgets/wallet/wallet_draft_card.dart';
 
@@ -102,10 +103,9 @@ class _AddWalletSheetState extends ConsumerState<AddWalletSheet> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final bottomInset = MediaQuery.viewInsetsOf(context).bottom;
 
     return Padding(
-      padding: EdgeInsets.fromLTRB(24, 16, 24, 24 + bottomInset),
+      padding: modalSheetPadding(context),
       child: Form(
         key: _formKey,
         child: SingleChildScrollView(

@@ -47,14 +47,12 @@ Future<void> _pumpGoalsScreen(
 }
 
 void main() {
-  testWidgets('shows empty state and Add Goal FAB when there are no goals',
-      (tester) async {
+  testWidgets('shows empty state when there are no goals', (tester) async {
     await _pumpGoalsScreen(tester, goals: const []);
 
     expect(find.byKey(GoalsScreen.screenKey), findsOneWidget);
     expect(find.text('No savings goals yet'), findsOneWidget);
     expect(find.text('Add your first goal'), findsOneWidget);
-    expect(find.byTooltip('Add Goal'), findsOneWidget);
   });
 
   testWidgets('lists goals in GoalCards with name, emoji, and amounts',
@@ -74,7 +72,12 @@ void main() {
     expect(find.text('🛟'), findsOneWidget);
     expect(find.text('USD 500.00'), findsNWidgets(2));
     expect(find.text('USD 2000.00'), findsNWidgets(2));
-    expect(find.byTooltip('Add Goal'), findsOneWidget);
+    await tester.scrollUntilVisible(
+      find.text('Add New Goal'),
+      48,
+      scrollable: find.byType(Scrollable).first,
+    );
+    expect(find.text('Add New Goal'), findsOneWidget);
   });
 
   testWidgets('tapping a GoalCard opens GoalDetailScreen', (tester) async {

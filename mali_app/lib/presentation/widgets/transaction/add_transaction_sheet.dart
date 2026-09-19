@@ -13,6 +13,7 @@ import 'package:mali_app/domain/value_objects/currency_code.dart';
 import 'package:mali_app/presentation/constants/system_categories.dart';
 import 'package:mali_app/presentation/utils/amount_keypad_input.dart';
 import 'package:mali_app/presentation/utils/currency_display.dart';
+import 'package:mali_app/presentation/utils/shell_insets.dart';
 import 'package:mali_app/presentation/widgets/transaction/category_selector.dart';
 import 'package:mali_app/presentation/widgets/transaction/numeric_keypad.dart';
 import 'package:mali_app/presentation/widgets/transaction/transaction_success_overlay.dart';
@@ -317,7 +318,6 @@ class _AddTransactionSheetState extends ConsumerState<AddTransactionSheet> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final bottomInset = MediaQuery.viewInsetsOf(context).bottom;
     final walletsAsync = ref.watch(activeWalletsProvider);
     final submitState = ref.watch(addTransactionProvider);
     final isSaving = submitState.isLoading;
@@ -340,7 +340,7 @@ class _AddTransactionSheetState extends ConsumerState<AddTransactionSheet> {
         ],
       ),
       child: Padding(
-      padding: EdgeInsets.fromLTRB(24, 8, 24, 24 + bottomInset),
+      padding: modalSheetPadding(context, top: 8),
       child: walletsAsync.when(
         loading: () => const Center(
           child: Padding(

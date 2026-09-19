@@ -96,7 +96,7 @@ void main() {
     );
   });
 
-  testWidgets('Add Goal FAB on GoalsScreen opens AddGoalSheet', (tester) async {
+  testWidgets('Add goal action on GoalsScreen opens AddGoalSheet', (tester) async {
     await tester.binding.setSurfaceSize(const Size(800, 1400));
     addTearDown(() => tester.binding.setSurfaceSize(null));
 
@@ -111,7 +111,7 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    await tester.tap(find.byTooltip('Add Goal'));
+    await tester.tap(find.text('Add your first goal'));
     await tester.pumpAndSettle();
 
     expect(find.byKey(AddGoalSheet.sheetKey), findsOneWidget);

@@ -52,7 +52,7 @@ class BudgetsScreen extends ConsumerWidget {
           final totals = _computeTotals(budgets);
 
           return ListView(
-            padding: const EdgeInsets.fromLTRB(24, 8, 24, 120),
+            padding: const EdgeInsets.fromLTRB(24, 8, 24, 16),
             children: [
               _BudgetHeroSummary(
                 totalAllocated: totals.allocated,

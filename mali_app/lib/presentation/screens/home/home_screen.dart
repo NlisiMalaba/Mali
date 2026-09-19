@@ -113,7 +113,7 @@ class HomeScreen extends ConsumerWidget {
               ),
             ),
             const SliverPadding(
-              padding: EdgeInsets.fromLTRB(24, 16, 24, 120),
+              padding: const EdgeInsets.fromLTRB(24, 16, 24, 16),
               sliver: SliverToBoxAdapter(child: GoalsProgressRow()),
             ),
           ],

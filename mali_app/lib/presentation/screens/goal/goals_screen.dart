@@ -16,7 +16,6 @@ class GoalsScreen extends ConsumerWidget {
   const GoalsScreen({super.key});
 
   static const Key screenKey = Key('goals-screen');
-  static const Key addGoalFabKey = Key('add-goal-fab');
   static const Key reorderButtonKey = Key('reorder-goals-button');
 
   Future<void> _openAddGoal(BuildContext context) async {
@@ -49,15 +48,6 @@ class GoalsScreen extends ConsumerWidget {
             ),
         ],
       ),
-      floatingActionButton: FloatingActionButton(
-        key: addGoalFabKey,
-        heroTag: 'add-goal-fab',
-        onPressed: () => _openAddGoal(context),
-        tooltip: 'Add Goal',
-        backgroundColor: AppColors.primaryContainer,
-        foregroundColor: AppColors.onPrimaryContainer,
-        child: const Icon(Icons.add),
-      ),
       body: goalsAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (error, _) => Center(
@@ -74,7 +64,7 @@ class GoalsScreen extends ConsumerWidget {
           final totals = _computeTotals(goals);
 
           return ListView(
-            padding: const EdgeInsets.fromLTRB(24, 8, 24, 120),
+            padding: const EdgeInsets.fromLTRB(24, 8, 24, 16),
             children: [
               Text(
                 'TOTAL SAVINGS PROGRESS',

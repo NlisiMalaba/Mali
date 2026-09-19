@@ -43,7 +43,12 @@ class AppShell extends StatelessWidget {
     final selected = _selectedDestination(location);
 
     return Scaffold(
-      body: child,
+      body: Padding(
+        padding: EdgeInsets.only(
+          bottom: SovereignBottomNav.contentInset(context),
+        ),
+        child: child,
+      ),
       extendBody: true,
       bottomNavigationBar: SovereignBottomNav(
         selected: selected,

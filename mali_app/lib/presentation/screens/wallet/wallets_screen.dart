@@ -86,7 +86,7 @@ class WalletsScreen extends ConsumerWidget {
         ),
         data: (wallets) {
           return ListView(
-            padding: const EdgeInsets.fromLTRB(24, 8, 24, 120),
+            padding: const EdgeInsets.fromLTRB(24, 8, 24, 16),
             children: [
               _MarketRatesSection(
                 ratesAsync: ratesAsync,
