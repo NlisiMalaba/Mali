@@ -14,6 +14,7 @@ import 'package:mali_app/presentation/models/goal_preset.dart';
 import 'package:mali_app/presentation/theme/app_colors.dart';
 import 'package:mali_app/presentation/utils/goal_form_validators.dart';
 import 'package:mali_app/presentation/utils/goal_savings_hint.dart';
+import 'package:mali_app/presentation/utils/shell_insets.dart';
 import 'package:mali_app/presentation/widgets/wallet/currency_option_card.dart';
 
 class AddGoalSheet extends ConsumerStatefulWidget {
@@ -228,7 +229,6 @@ class _AddGoalSheetState extends ConsumerState<AddGoalSheet> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final bottomInset = MediaQuery.viewInsetsOf(context).bottom;
     final savingsHint = GoalSavingsHint.saveEachMonth(
       targetAmount: _amountController.text,
       currencyCode: _selectedCurrency?.value,
@@ -239,7 +239,7 @@ class _AddGoalSheetState extends ConsumerState<AddGoalSheet> {
 
     return Padding(
       key: AddGoalSheet.sheetKey,
-      padding: EdgeInsets.fromLTRB(24, 16, 24, 24 + bottomInset),
+      padding: modalSheetPadding(context),
       child: Form(
         key: _formKey,
         child: SingleChildScrollView(

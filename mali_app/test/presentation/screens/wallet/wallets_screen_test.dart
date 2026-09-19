@@ -4,6 +4,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mali_app/application/providers/auth_provider.dart';
 import 'package:mali_app/application/providers/display_currency_provider.dart';
+import 'package:mali_app/application/providers/exchange_rate_settings_providers.dart';
+import 'package:mali_app/application/providers/home_providers.dart';
 import 'package:mali_app/application/providers/wallet_card_providers.dart';
 import 'package:mali_app/application/providers/wallet_providers.dart';
 import 'package:mali_app/domain/value_objects/currency_code.dart';
@@ -64,6 +66,12 @@ void main() {
           authProvider.overrideWith(_TestAuth.new),
           activeWalletsProvider.overrideWith((ref) => _walletsStream()),
           displayCurrencyProvider.overrideWithValue(CurrencyCode.usd),
+          exchangeRateSettingsItemsProvider.overrideWith(
+            (ref) => Stream.value(const []),
+          ),
+          exchangeRatesLastUpdatedProvider.overrideWith(
+            (ref) => Stream.value(null),
+          ),
           walletEquivalentLabelProvider(
             (balance: '120.50', currencyCode: 'USD'),
           ).overrideWith((ref) async => null),

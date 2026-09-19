@@ -8,6 +8,7 @@ import 'package:mali_app/domain/entities/savings_goal.dart';
 import 'package:mali_app/domain/usecases/allocate_to_goal_usecase.dart';
 import 'package:mali_app/domain/value_objects/currency_code.dart';
 import 'package:mali_app/presentation/utils/goal_form_validators.dart';
+import 'package:mali_app/presentation/utils/shell_insets.dart';
 import 'package:mali_app/presentation/widgets/goal/milestone_celebration_overlay.dart';
 import 'package:mali_app/presentation/widgets/wallet/currency_option_card.dart';
 
@@ -153,11 +154,10 @@ class _ContributeToGoalSheetState extends ConsumerState<ContributeToGoalSheet> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final bottomInset = MediaQuery.viewInsetsOf(context).bottom;
 
     return Padding(
       key: ContributeToGoalSheet.sheetKey,
-      padding: EdgeInsets.fromLTRB(24, 16, 24, 24 + bottomInset),
+      padding: modalSheetPadding(context),
       child: Form(
         key: _formKey,
         child: SingleChildScrollView(

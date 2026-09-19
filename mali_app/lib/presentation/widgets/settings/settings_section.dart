@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:mali_app/presentation/theme/app_decorations.dart';
+import 'package:mali_app/presentation/theme/app_typography.dart';
 
 /// Grouped settings block with a section title and card-wrapped children.
 class SettingsSection extends StatelessWidget {
@@ -13,53 +15,24 @@ class SettingsSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Padding(
-          padding: const EdgeInsets.fromLTRB(16, 24, 16, 8),
+          padding: const EdgeInsets.fromLTRB(8, 0, 8, 16),
           child: Text(
-            title,
-            style: theme.textTheme.titleSmall?.copyWith(
-              color: theme.colorScheme.onSurface.withValues(alpha: 0.65),
-              fontWeight: FontWeight.w600,
-            ),
+            title.toUpperCase(),
+            style: AppTypography.sectionLabel(context),
           ),
         ),
-        Card(
-          margin: const EdgeInsets.symmetric(horizontal: 16),
-          clipBehavior: Clip.antiAlias,
+        Container(
+          decoration: AppDecorations.surfaceCard(radius: AppDecorations.radiusMd),
           child: Column(
             mainAxisSize: MainAxisSize.min,
-            children: _withDividers(
-              children,
-              theme.colorScheme.outlineVariant,
-            ),
+            children: children,
           ),
         ),
       ],
     );
-  }
-
-  List<Widget> _withDividers(List<Widget> items, Color dividerColor) {
-    if (items.isEmpty) {
-      return items;
-    }
-
-    final result = <Widget>[items.first];
-    for (var i = 1; i < items.length; i++) {
-      result.add(
-        Divider(
-          height: 1,
-          indent: 56,
-          endIndent: 16,
-          color: dividerColor,
-        ),
-      );
-      result.add(items[i]);
-    }
-    return result;
   }
 }

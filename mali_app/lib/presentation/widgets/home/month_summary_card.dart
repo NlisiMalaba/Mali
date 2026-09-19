@@ -4,6 +4,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mali_app/application/models/home_monthly_summary_display.dart';
 import 'package:mali_app/application/providers/home_providers.dart';
 import 'package:mali_app/presentation/theme/app_colors.dart';
+import 'package:mali_app/presentation/theme/app_decorations.dart';
+import 'package:mali_app/presentation/theme/app_typography.dart';
 import 'package:mali_app/presentation/utils/money_display.dart';
 import 'package:mali_app/presentation/widgets/analytics/month_selector.dart';
 
@@ -19,143 +21,254 @@ class MonthSummaryCard extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final summaryAsync = ref.watch(homeMonthlySummaryDisplayProvider);
+    final theme = Theme.of(context);
 
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            const MonthSelector(),
-            const SizedBox(height: 16),
-            summaryAsync.when(
-              loading: () => const Padding(
-                padding: EdgeInsets.symmetric(vertical: 32),
-                child: Center(child: CircularProgressIndicator()),
-              ),
-              error: (error, _) =>
-                  Text('Could not load month summary: $error'),
-              data: (summary) => Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
+    return Container(
+      padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        color: AppColors.surfaceContainerLow,
+        borderRadius: BorderRadius.circular(AppDecorations.radiusHero),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          LayoutBuilder(
+            builder: (context, constraints) {
+              final legend = Row(
+                mainAxisSize: MainAxisSize.min,
                 children: [
-                  _SummaryBars(summary: summary),
-                  const SizedBox(height: 20),
-                  _NetResult(summary: summary),
+                  _LegendDot(color: AppColors.primary, label: 'Income'),
+                  const SizedBox(width: 12),
+                  _LegendDot(color: AppColors.secondary, label: 'Expenses'),
                 ],
+              );
+
+              if (constraints.maxWidth < 420) {
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Monthly Summary',
+                      style: theme.textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    legend,
+                  ],
+                );
+              }
+
+              return Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    'Monthly Summary',
+                    style: theme.textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  legend,
+                ],
+              );
+            },
+          ),
+          const SizedBox(height: 8),
+          const MonthSelector(),
+          const SizedBox(height: 16),
+          summaryAsync.when(
+            loading: () => const Padding(
+              padding: EdgeInsets.symmetric(vertical: 32),
+              child: Center(child: CircularProgressIndicator()),
+            ),
+            error: (error, _) =>
+                Text('Could not load month summary: $error'),
+            data: (summary) => Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                _MiniBarChart(summary: summary),
+                const SizedBox(height: 24),
+                Row(
+                  children: [
+                    Expanded(
+                      child: _StatTile(
+                        label: 'Savings Rate',
+                        value: _savingsRate(summary),
+                        valueColor: AppColors.primary,
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: _StatTile(
+                        label: 'Burn Rate',
+                        value: _burnRate(summary),
+                        valueColor: AppColors.secondary,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                _NetResult(summary: summary),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  String _savingsRate(HomeMonthlySummaryDisplay summary) {
+    if (summary.income <= Decimal.zero) {
+      return '0%';
+    }
+    final rate = ((summary.net / summary.income).toDouble() * 100)
+        .clamp(0, 100)
+        .round();
+    return '$rate%';
+  }
+
+  String _burnRate(HomeMonthlySummaryDisplay summary) {
+    final daysInMonth = DateTime(
+      summary.month.year,
+      summary.month.month + 1,
+      0,
+    ).day;
+    final dayOfMonth = DateTime.now().day.clamp(1, daysInMonth);
+    if (dayOfMonth == 0 || summary.expenses <= Decimal.zero) {
+      return MoneyDisplay.withCurrency(
+        amount: '0',
+        currencyCode: summary.displayCurrency.value,
+      );
+    }
+    final daily = summary.expenses / Decimal.fromInt(dayOfMonth);
+    return '${MoneyDisplay.withCurrency(
+      amount: daily.toString(),
+      currencyCode: summary.displayCurrency.value,
+    )}/day';
+  }
+}
+
+class _LegendDot extends StatelessWidget {
+  const _LegendDot({required this.color, required this.label});
+
+  final Color color;
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          width: 8,
+          height: 8,
+          decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+        ),
+        const SizedBox(width: 4),
+        Text(
+          label.toUpperCase(),
+          style: Theme.of(context).textTheme.labelSmall?.copyWith(
+            fontSize: 10,
+            fontWeight: FontWeight.w700,
+            color: color,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _MiniBarChart extends StatelessWidget {
+  const _MiniBarChart({required this.summary});
+
+  final HomeMonthlySummaryDisplay summary;
+
+  @override
+  Widget build(BuildContext context) {
+    final maxValue = summary.income >= summary.expenses
+        ? summary.income
+        : summary.expenses;
+    final incomeFrac = maxValue > Decimal.zero
+        ? (summary.income / maxValue).toDouble().clamp(0.1, 1.0)
+        : 0.1;
+    final expenseFrac = maxValue > Decimal.zero
+        ? (summary.expenses / maxValue).toDouble().clamp(0.1, 1.0)
+        : 0.1;
+
+    return SizedBox(
+      height: 128,
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.end,
+        children: [
+          for (var i = 0; i < 10; i++)
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 2),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    Expanded(
+                      flex: (i.isEven ? incomeFrac * 100 : expenseFrac * 100)
+                          .round()
+                          .clamp(1, 100),
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: (i.isEven ? AppColors.primary : AppColors.secondary)
+                              .withValues(alpha: i == 8 ? 0.4 : 0.2),
+                          borderRadius: const BorderRadius.vertical(
+                            top: Radius.circular(8),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
-          ],
-        ),
+        ],
       ),
     );
   }
 }
 
-class _SummaryBars extends StatelessWidget {
-  const _SummaryBars({required this.summary});
+class _StatTile extends StatelessWidget {
+  const _StatTile({
+    required this.label,
+    required this.value,
+    required this.valueColor,
+  });
 
-  final HomeMonthlySummaryDisplay summary;
-
-  static const double barHeight = 12;
+  final String label;
+  final String value;
+  final Color valueColor;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final maxValue = _maxBarValue(summary.income, summary.expenses);
 
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Expanded(
-          child: _SummaryBarColumn(
-            label: 'Income',
-            amount: summary.income,
-            currencyCode: summary.displayCurrency.value,
-            color: AppColors.success,
-            fraction: _barFraction(summary.income, maxValue),
-            theme: theme,
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppColors.surfaceContainerLowest,
+        borderRadius: BorderRadius.circular(AppDecorations.radiusXl),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            label.toUpperCase(),
+            style: AppTypography.sectionLabel(context).copyWith(fontSize: 10),
           ),
-        ),
-        const SizedBox(width: 16),
-        Expanded(
-          child: _SummaryBarColumn(
-            label: 'Expenses',
-            amount: summary.expenses,
-            currencyCode: summary.displayCurrency.value,
-            color: AppColors.tealPrimary,
-            fraction: _barFraction(summary.expenses, maxValue),
-            theme: theme,
+          const SizedBox(height: 4),
+          Text(
+            value,
+            style: theme.textTheme.titleLarge?.copyWith(
+              fontWeight: FontWeight.w800,
+              color: valueColor,
+            ),
           ),
-        ),
-      ],
-    );
-  }
-
-  Decimal _maxBarValue(Decimal income, Decimal expenses) {
-    final max = income >= expenses ? income : expenses;
-    if (max <= Decimal.zero) {
-      return Decimal.one;
-    }
-    return max;
-  }
-
-  double _barFraction(Decimal value, Decimal maxValue) {
-    if (maxValue <= Decimal.zero) {
-      return 0;
-    }
-    return (value / maxValue).toDouble().clamp(0, 1);
-  }
-}
-
-class _SummaryBarColumn extends StatelessWidget {
-  const _SummaryBarColumn({
-    required this.label,
-    required this.amount,
-    required this.currencyCode,
-    required this.color,
-    required this.fraction,
-    required this.theme,
-  });
-
-  final String label;
-  final Decimal amount;
-  final String currencyCode;
-  final Color color;
-  final double fraction;
-  final ThemeData theme;
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        Text(
-          label,
-          style: theme.textTheme.labelMedium?.copyWith(
-            color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
-          ),
-        ),
-        const SizedBox(height: 8),
-        ClipRRect(
-          borderRadius: BorderRadius.circular(_SummaryBars.barHeight / 2),
-          child: LinearProgressIndicator(
-            value: fraction,
-            minHeight: _SummaryBars.barHeight,
-            backgroundColor: color.withValues(alpha: 0.15),
-            color: color,
-          ),
-        ),
-        const SizedBox(height: 8),
-        Text(
-          MoneyDisplay.withCurrency(
-            amount: amount.toString(),
-            currencyCode: currencyCode,
-          ),
-          style: theme.textTheme.bodyMedium?.copyWith(
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 }
@@ -178,7 +291,7 @@ class _NetResult extends StatelessWidget {
           label,
           key: MonthSummaryCard.netLabelKey,
           style: theme.textTheme.labelLarge?.copyWith(
-            color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
+            color: AppColors.onSurfaceVariant,
           ),
         ),
         const SizedBox(height: 6),

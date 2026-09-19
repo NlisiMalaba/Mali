@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:decimal/decimal.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
@@ -41,74 +43,92 @@ class CategorySpendPieChart extends ConsumerWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        SizedBox(
-          key: chartKey,
-          height: chartHeight,
-          child: Stack(
-            alignment: Alignment.center,
-            children: [
-              PieChart(
-                PieChartData(
-                  sectionsSpace: sectionsSpace,
-                  centerSpaceRadius: centerSpaceRadius,
-                  borderData: FlBorderData(show: false),
-                  pieTouchData: PieTouchData(
-                    touchCallback: (event, response) {
-                      if (event is! FlTapUpEvent) {
-                        return;
-                      }
-                      final index =
-                          response?.touchedSection?.touchedSectionIndex;
-                      if (index == null ||
-                          index < 0 ||
-                          index >= categories.length) {
-                        return;
-                      }
-                      onCategorySelected(categories[index]);
-                    },
-                  ),
-                  sections: [
-                    for (final spend in categories)
-                      _section(
-                        spend: spend,
-                        total: total,
-                        color: _colorFor(ref, spend.categoryId),
+        LayoutBuilder(
+          builder: (context, constraints) {
+            final maxRadius = (constraints.maxWidth / 2) - 16;
+            final radius = math.min(sectionRadius, maxRadius).clamp(40.0, sectionRadius);
+            final centerRadius =
+                centerSpaceRadius * (radius / sectionRadius);
+            final showSliceLabels =
+                constraints.maxWidth >= 380 && categories.length <= 8;
+
+            return SizedBox(
+              key: chartKey,
+              height: chartHeight,
+              width: constraints.maxWidth,
+              child: ClipRect(
+                child: Stack(
+                  alignment: Alignment.center,
+                  children: [
+                    PieChart(
+                      PieChartData(
+                        sectionsSpace: sectionsSpace,
+                        centerSpaceRadius: centerRadius,
+                        borderData: FlBorderData(show: false),
+                        pieTouchData: PieTouchData(
+                          touchCallback: (event, response) {
+                            if (event is! FlTapUpEvent) {
+                              return;
+                            }
+                            final index =
+                                response?.touchedSection?.touchedSectionIndex;
+                            if (index == null ||
+                                index < 0 ||
+                                index >= categories.length) {
+                              return;
+                            }
+                            onCategorySelected(categories[index]);
+                          },
+                        ),
+                        sections: [
+                          for (final spend in categories)
+                            _section(
+                              spend: spend,
+                              total: total,
+                              color: _colorFor(ref, spend.categoryId),
+                              radius: radius,
+                              showTitle: showSliceLabels,
+                            ),
+                        ],
                       ),
+                      duration: animationDuration,
+                    ),
+                    IgnorePointer(
+                      child: Padding(
+                        padding: EdgeInsets.symmetric(
+                          horizontal: math.max(16, radius * 0.4),
+                        ),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              'Spent',
+                              style: theme.textTheme.labelMedium?.copyWith(
+                                color: theme.colorScheme.onSurface
+                                    .withValues(alpha: 0.65),
+                              ),
+                            ),
+                            Text(
+                              MoneyDisplay.withCurrency(
+                                amount: total.toString(),
+                                currencyCode: currencyCode,
+                              ),
+                              textAlign: TextAlign.center,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: theme.textTheme.titleSmall?.copyWith(
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
                   ],
                 ),
-                duration: animationDuration,
               ),
-              IgnorePointer(
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 48),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        'Spent',
-                        style: theme.textTheme.labelMedium?.copyWith(
-                          color: theme.colorScheme.onSurface
-                              .withValues(alpha: 0.65),
-                        ),
-                      ),
-                      Text(
-                        MoneyDisplay.withCurrency(
-                          amount: total.toString(),
-                          currencyCode: currencyCode,
-                        ),
-                        textAlign: TextAlign.center,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: theme.textTheme.titleSmall?.copyWith(
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ],
-          ),
+            );
+          },
         ),
         const SizedBox(height: 16),
         Card(
@@ -137,16 +157,19 @@ class CategorySpendPieChart extends ConsumerWidget {
     required RankedCategorySpend spend,
     required Decimal total,
     required Color color,
+    required double radius,
+    required bool showTitle,
   }) {
     final percent =
         ShareFraction.of(amount: spend.amount, total: total) * 100;
-    final showTitle = percent >= minLabeledSlicePercent;
+    final showSliceTitle =
+        showTitle && percent >= minLabeledSlicePercent;
     return PieChartSectionData(
       // Display-only geometry; persisted money stays on Decimal.
       value: spend.amount.toDouble(),
       color: color,
-      radius: sectionRadius,
-      showTitle: showTitle,
+      radius: radius,
+      showTitle: showSliceTitle,
       title: '${percent.round()}%',
       titleStyle: const TextStyle(
         fontSize: titleFontSize,
@@ -212,13 +235,19 @@ class _LegendRow extends ConsumerWidget {
         ),
       ),
       subtitle: Text('$percent%'),
-      trailing: Text(
-        MoneyDisplay.withCurrency(
-          amount: spend.amount.toString(),
-          currencyCode: spend.displayCurrency.value,
-        ),
-        style: theme.textTheme.bodyMedium?.copyWith(
-          fontWeight: FontWeight.w600,
+      trailing: SizedBox(
+        width: 96,
+        child: Text(
+          MoneyDisplay.withCurrency(
+            amount: spend.amount.toString(),
+            currencyCode: spend.displayCurrency.value,
+          ),
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          textAlign: TextAlign.end,
+          style: theme.textTheme.bodyMedium?.copyWith(
+            fontWeight: FontWeight.w600,
+          ),
         ),
       ),
     );

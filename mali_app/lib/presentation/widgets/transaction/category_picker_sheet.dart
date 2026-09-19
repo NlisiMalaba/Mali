@@ -4,6 +4,7 @@ import 'package:mali_app/application/providers/category_providers.dart';
 import 'package:mali_app/application/providers/recent_categories_provider.dart';
 import 'package:mali_app/domain/entities/category.dart';
 import 'package:mali_app/presentation/utils/category_ordering.dart';
+import 'package:mali_app/presentation/utils/shell_insets.dart';
 import 'package:mali_app/presentation/widgets/transaction/category_grid.dart';
 import 'package:mali_app/presentation/widgets/transaction/category_icon_button.dart';
 
@@ -41,7 +42,6 @@ class CategoryPickerSheet extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
-    final bottomInset = MediaQuery.viewInsetsOf(context).bottom;
     final categories = ref.watch(categoriesForTypeProvider(transactionType));
     final recentIds = ref.watch(recentCategoryIdsProvider(transactionType));
     final ordered = CategoryOrdering.withRecentFirst(
@@ -50,7 +50,7 @@ class CategoryPickerSheet extends ConsumerWidget {
     );
 
     return Padding(
-      padding: EdgeInsets.fromLTRB(24, 16, 24, 24 + bottomInset),
+      padding: modalSheetPadding(context),
       child: ConstrainedBox(
         constraints: BoxConstraints(
           maxHeight: MediaQuery.sizeOf(context).height * 0.75,

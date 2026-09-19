@@ -6,6 +6,7 @@ import 'package:mali_app/application/providers/use_case_providers.dart';
 import 'package:mali_app/domain/exchange_rates/exchange_rate_catalog.dart';
 import 'package:mali_app/domain/usecases/set_manual_exchange_rate_usecase.dart';
 import 'package:mali_app/presentation/utils/exchange_rate_display.dart';
+import 'package:mali_app/presentation/utils/shell_insets.dart';
 import 'package:mali_app/presentation/widgets/transaction/transfer_exchange_rate_field.dart';
 
 class EditExchangeRateSheet extends ConsumerStatefulWidget {
@@ -97,10 +98,9 @@ class _EditExchangeRateSheetState extends ConsumerState<EditExchangeRateSheet> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final bottomInset = MediaQuery.viewInsetsOf(context).bottom;
 
     return Padding(
-      padding: EdgeInsets.fromLTRB(16, 16, 16, 16 + bottomInset),
+      padding: modalSheetPadding(context, left: 16, right: 16, bottom: 16),
       child: Form(
         key: _formKey,
         child: Column(

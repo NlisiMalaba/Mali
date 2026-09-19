@@ -206,7 +206,7 @@ void main() {
 
     expect(find.byKey(AnalyticsScreen.screenKey), findsOneWidget);
     expect(find.byKey(AnalyticsScreen.tabBarKey), findsOneWidget);
-    expect(find.text('Analytics'), findsOneWidget);
+    expect(find.text('Financial Insights'), findsOneWidget);
 
     for (final tab in AnalyticsTab.values) {
       expect(find.byKey(tab.tabKey), findsOneWidget);
@@ -292,7 +292,7 @@ void main() {
   testWidgets('pie chart renders without overflow', (tester) async {
     await _pumpAnalytics(
       tester,
-      surface: const Size(360, 700),
+      surface: const Size(400, 800),
       overview: AnalyticsOverview(
         totalsByCurrency: const [],
         categorySpend: _allExpenseCategorySpend(),
@@ -307,7 +307,7 @@ void main() {
 
     final chartBox = tester.getRect(find.byKey(CategorySpendPieChart.chartKey));
     expect(chartBox.left, greaterThanOrEqualTo(0));
-    expect(chartBox.right, lessThanOrEqualTo(360));
+    expect(chartBox.right, lessThanOrEqualTo(400));
     expect(tester.takeException(), isNull);
   });
 

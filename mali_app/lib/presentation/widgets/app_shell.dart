@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:mali_app/presentation/widgets/sovereign/sovereign_bottom_nav.dart';
+import 'package:mali_app/presentation/widgets/transaction/add_transaction_sheet.dart';
 
 class AppShell extends StatelessWidget {
   const AppShell({
@@ -9,44 +11,50 @@ class AppShell extends StatelessWidget {
 
   final Widget child;
 
-  int _selectedIndex(String location) {
-    if (location.startsWith('/transactions')) {
-      return 1;
+  SovereignNavDestination _selectedDestination(String location) {
+    if (location.startsWith('/wallets')) {
+      return SovereignNavDestination.wallets;
     }
-    return 0;
+    if (location.startsWith('/budgets')) {
+      return SovereignNavDestination.budgets;
+    }
+    if (location.startsWith('/goals')) {
+      return SovereignNavDestination.goals;
+    }
+    return SovereignNavDestination.home;
   }
 
-  void _onDestinationSelected(BuildContext context, int index) {
-    switch (index) {
-      case 0:
+  void _onDestinationSelected(BuildContext context, SovereignNavDestination dest) {
+    switch (dest) {
+      case SovereignNavDestination.home:
         context.go('/home');
-      case 1:
-        context.go('/transactions');
+      case SovereignNavDestination.wallets:
+        context.go('/wallets');
+      case SovereignNavDestination.budgets:
+        context.go('/budgets');
+      case SovereignNavDestination.goals:
+        context.go('/goals');
     }
   }
 
   @override
   Widget build(BuildContext context) {
     final location = GoRouterState.of(context).uri.path;
-    final selectedIndex = _selectedIndex(location);
+    final selected = _selectedDestination(location);
 
     return Scaffold(
-      body: child,
-      bottomNavigationBar: NavigationBar(
-        selectedIndex: selectedIndex,
-        onDestinationSelected: (index) => _onDestinationSelected(context, index),
-        destinations: const [
-          NavigationDestination(
-            icon: Icon(Icons.home_outlined),
-            selectedIcon: Icon(Icons.home),
-            label: 'Home',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.receipt_long_outlined),
-            selectedIcon: Icon(Icons.receipt_long),
-            label: 'Transactions',
-          ),
-        ],
+      body: Padding(
+        padding: EdgeInsets.only(
+          bottom: SovereignBottomNav.contentInset(context),
+        ),
+        child: child,
+      ),
+      extendBody: true,
+      bottomNavigationBar: SovereignBottomNav(
+        selected: selected,
+        onDestinationSelected: (dest) =>
+            _onDestinationSelected(context, dest),
+        onAddPressed: () => AddTransactionSheet.show(context),
       ),
     );
   }
