@@ -72,7 +72,8 @@ void main() {
     expect(find.text('🎓'), findsOneWidget);
     expect(find.text('Emergency Fund'), findsOneWidget);
     expect(find.text('🛟'), findsOneWidget);
-    expect(find.text('USD 500.00 of USD 2000.00'), findsNWidgets(2));
+    expect(find.text('USD 500.00'), findsNWidgets(2));
+    expect(find.text('USD 2000.00'), findsNWidgets(2));
     expect(find.byTooltip('Add Goal'), findsOneWidget);
   });
 

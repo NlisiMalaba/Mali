@@ -103,7 +103,7 @@ void main() {
         '/transactions': find.text('No transactions yet.'),
         '/add-transaction': find.text('Add Transaction'),
         '/budgets': find.byKey(BudgetsScreen.screenKey),
-        '/wallets': find.text('Wallets'),
+        '/wallets': find.text('Your Wallets'),
         '/goals': find.byKey(GoalsScreen.screenKey),
         '/goals/priority': find.byKey(GoalPriorityScreen.screenKey),
         '/goals/goal-1': find.byKey(GoalDetailScreen.screenKey),

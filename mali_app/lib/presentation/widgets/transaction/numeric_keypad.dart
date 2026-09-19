@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:mali_app/domain/value_objects/currency_code.dart';
+import 'package:mali_app/presentation/theme/app_colors.dart';
+import 'package:mali_app/presentation/theme/app_decorations.dart';
 import 'package:mali_app/presentation/utils/amount_keypad_input.dart';
 
 /// Custom numeric keypad for currency amount entry.
@@ -8,12 +10,14 @@ class NumericKeypad extends StatelessWidget {
     required this.amount,
     required this.currency,
     required this.onChanged,
+    this.showAmountDisplay = true,
     super.key,
   });
 
   final String amount;
   final CurrencyCode currency;
   final ValueChanged<String> onChanged;
+  final bool showAmountDisplay;
 
   static const _digitKeys = [
     '1',
@@ -49,31 +53,33 @@ class NumericKeypad extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Text(
-          displayAmount,
-          key: const Key('numeric-keypad-amount'),
-          textAlign: TextAlign.center,
-          style: theme.textTheme.displaySmall?.copyWith(
-            fontWeight: FontWeight.w700,
-            letterSpacing: -0.5,
+        if (showAmountDisplay) ...[
+          Text(
+            displayAmount,
+            key: const Key('numeric-keypad-amount'),
+            textAlign: TextAlign.center,
+            style: theme.textTheme.displaySmall?.copyWith(
+              fontWeight: FontWeight.w700,
+              letterSpacing: -0.5,
+            ),
           ),
-        ),
-        const SizedBox(height: 4),
-        Text(
-          currency.value,
-          textAlign: TextAlign.center,
-          style: theme.textTheme.labelMedium?.copyWith(
-            color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
+          const SizedBox(height: 4),
+          Text(
+            currency.value,
+            textAlign: TextAlign.center,
+            style: theme.textTheme.labelMedium?.copyWith(
+              color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
+            ),
           ),
-        ),
-        const SizedBox(height: 16),
+          const SizedBox(height: 16),
+        ],
         GridView.count(
           shrinkWrap: true,
           physics: const NeverScrollableScrollPhysics(),
           crossAxisCount: 3,
-          mainAxisSpacing: 8,
-          crossAxisSpacing: 8,
-          childAspectRatio: 1.6,
+          mainAxisSpacing: 12,
+          crossAxisSpacing: 12,
+          childAspectRatio: 1.8,
           children: [
             for (final key in _digitKeys)
               _KeypadButton(
@@ -127,21 +133,21 @@ class _KeypadButton extends StatelessWidget {
 
     return Material(
       color: enabled
-          ? theme.colorScheme.surfaceContainerHighest
-          : theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.4),
-      borderRadius: BorderRadius.circular(12),
+          ? AppColors.surfaceContainerLow
+          : AppColors.surfaceContainerLow.withValues(alpha: 0.4),
+      borderRadius: BorderRadius.circular(AppDecorations.radiusMd),
       child: InkWell(
         onTap: enabled ? onTap : null,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(AppDecorations.radiusMd),
         child: Center(
           child: child ??
               Text(
                 label!,
                 style: theme.textTheme.headlineSmall?.copyWith(
-                  fontWeight: FontWeight.w500,
+                  fontWeight: FontWeight.w700,
                   color: enabled
-                      ? theme.colorScheme.onSurface
-                      : theme.colorScheme.onSurface.withValues(alpha: 0.4),
+                      ? AppColors.onSurface
+                      : AppColors.onSurface.withValues(alpha: 0.4),
                 ),
               ),
         ),

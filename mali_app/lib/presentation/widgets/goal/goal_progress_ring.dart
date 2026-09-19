@@ -40,7 +40,7 @@ class GoalProgressRing extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final clamped = progress.clamp(0.0, 1.0);
-    final color = clamped >= 1 ? AppColors.success : AppColors.tealPrimary;
+    final color = clamped >= 1 ? AppColors.success : AppColors.primary;
     final centerSpaceRadius = (size / 2) - strokeWidth;
 
     return SizedBox(

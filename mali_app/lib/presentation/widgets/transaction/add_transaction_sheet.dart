@@ -18,6 +18,9 @@ import 'package:mali_app/presentation/widgets/transaction/numeric_keypad.dart';
 import 'package:mali_app/presentation/widgets/transaction/transaction_success_overlay.dart';
 import 'package:mali_app/presentation/widgets/transaction/transaction_type_toggle.dart';
 import 'package:mali_app/presentation/widgets/transaction/transfer_exchange_rate_field.dart';
+import 'package:mali_app/presentation/theme/app_colors.dart';
+import 'package:mali_app/presentation/theme/app_typography.dart';
+import 'package:mali_app/presentation/widgets/sovereign/gradient_button.dart';
 import 'package:mali_app/presentation/widgets/transaction/wallet_selector.dart';
 
 class AddTransactionSheet extends ConsumerStatefulWidget {
@@ -36,6 +39,8 @@ class AddTransactionSheet extends ConsumerStatefulWidget {
       context: context,
       isScrollControlled: true,
       useSafeArea: true,
+      backgroundColor: Colors.transparent,
+      barrierColor: Colors.black.withValues(alpha: 0.4),
       builder: (context) => AddTransactionSheet(
         initialWalletId: initialWalletId,
       ),
@@ -320,8 +325,22 @@ class _AddTransactionSheetState extends ConsumerState<AddTransactionSheet> {
 
     ref.listen(addTransactionProvider, _handleSubmitStateChange);
 
-    return Padding(
-      padding: EdgeInsets.fromLTRB(24, 16, 24, 24 + bottomInset),
+    return Container(
+      decoration: const BoxDecoration(
+        color: AppColors.surfaceContainerLowest,
+        borderRadius: BorderRadius.vertical(
+          top: Radius.circular(40),
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0x26000000),
+            blurRadius: 50,
+            offset: Offset(0, -20),
+          ),
+        ],
+      ),
+      child: Padding(
+      padding: EdgeInsets.fromLTRB(24, 8, 24, 24 + bottomInset),
       child: walletsAsync.when(
         loading: () => const Center(
           child: Padding(
@@ -380,49 +399,56 @@ class _AddTransactionSheetState extends ConsumerState<AddTransactionSheet> {
                     children: [
                 Center(
                   child: Container(
-                    width: 40,
-                    height: 4,
+                    width: 48,
+                    height: 6,
+                    margin: const EdgeInsets.only(top: 8, bottom: 16),
                     decoration: BoxDecoration(
-                      color: theme.colorScheme.onSurface.withValues(
-                        alpha: 0.2,
-                      ),
-                      borderRadius: BorderRadius.circular(2),
+                      color: AppColors.surfaceContainerHighest,
+                      borderRadius: BorderRadius.circular(999),
                     ),
                   ),
                 ),
-                const SizedBox(height: 16),
                 Text(
-                  'Add transaction',
-                  style: theme.textTheme.titleLarge,
+                  'TRANSACTION AMOUNT',
+                  textAlign: TextAlign.center,
+                  style: AppTypography.sectionLabel(context).copyWith(
+                    fontSize: 11,
+                    letterSpacing: 3,
+                  ),
                 ),
-                const SizedBox(height: 16),
+                const SizedBox(height: 12),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    _CurrencyChip(
+                      currency: _currency,
+                      onTap: () => _showCurrencyPicker(context),
+                    ),
+                    const SizedBox(width: 12),
+                    Text(
+                      AmountKeypadInput.formatDisplay(
+                        _amount,
+                        _currency.decimalPlaces,
+                      ),
+                      style: theme.textTheme.displayMedium?.copyWith(
+                        fontWeight: FontWeight.w800,
+                        color: AppColors.primary,
+                        letterSpacing: -1,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
                 TransactionTypeToggle(
                   selected: _type,
                   onChanged: _onTypeChanged,
                 ),
                 const SizedBox(height: 20),
-                _CurrencySelector(
-                  selected: _currency,
-                  onSelected: (currency) {
-                    setState(() {
-                      _currency = currency;
-                      _amount = AmountKeypadInput.clampToDecimalPlaces(
-                        _amount,
-                        currency.decimalPlaces,
-                      );
-                    });
-                  },
-                ),
-                const SizedBox(height: 12),
-                NumericKeypad(
-                  amount: _amount,
-                  currency: _currency,
-                  onChanged: (value) => setState(() => _amount = value),
-                ),
-                const SizedBox(height: 20),
                 Text(
                   'Category',
-                  style: theme.textTheme.titleSmall,
+                  style: theme.textTheme.titleSmall?.copyWith(
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
                 const SizedBox(height: 8),
                 CategorySelector(
@@ -431,6 +457,13 @@ class _AddTransactionSheetState extends ConsumerState<AddTransactionSheet> {
                   onCategorySelected: (category) {
                     setState(() => _selectedCategory = category);
                   },
+                ),
+                const SizedBox(height: 20),
+                NumericKeypad(
+                  amount: _amount,
+                  currency: _currency,
+                  onChanged: (value) => setState(() => _amount = value),
+                  showAmountDisplay: false,
                 ),
                 const SizedBox(height: 20),
                 WalletSelector(
@@ -481,16 +514,12 @@ class _AddTransactionSheetState extends ConsumerState<AddTransactionSheet> {
                   ),
                 ],
                 const SizedBox(height: 20),
-                FilledButton(
+                GradientButton(
                   key: const Key('add-transaction-submit'),
+                  label: 'Confirm Transaction',
+                  icon: Icons.arrow_forward,
+                  isLoading: isSaving,
                   onPressed: isSaving ? null : _submit,
-                  child: isSaving
-                      ? const SizedBox(
-                          height: 20,
-                          width: 20,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        )
-                      : const Text('Save transaction'),
                 ),
                     ],
                   ),
@@ -501,51 +530,90 @@ class _AddTransactionSheetState extends ConsumerState<AddTransactionSheet> {
           );
         },
       ),
+    ),
+    );
+  }
+
+  void _showCurrencyPicker(BuildContext context) {
+    showModalBottomSheet<void>(
+      context: context,
+      builder: (sheetContext) {
+        return SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              for (final currency in CurrencyCode.values)
+                ListTile(
+                  key: Key('currency-${currency.value}'),
+                  leading: Text(CurrencyDisplay.flagEmoji(currency)),
+                  title: Text(currency.value),
+                  trailing: _currency == currency
+                      ? const Icon(Icons.check, color: AppColors.primary)
+                      : null,
+                  onTap: () {
+                    setState(() {
+                      _currency = currency;
+                      _amount = AmountKeypadInput.clampToDecimalPlaces(
+                        _amount,
+                        currency.decimalPlaces,
+                      );
+                    });
+                    Navigator.of(sheetContext).pop();
+                  },
+                ),
+            ],
+          ),
+        );
+      },
     );
   }
 }
 
-class _CurrencySelector extends StatelessWidget {
-  const _CurrencySelector({
-    required this.selected,
-    required this.onSelected,
+class _CurrencyChip extends StatelessWidget {
+  const _CurrencyChip({
+    required this.currency,
+    required this.onTap,
   });
 
-  final CurrencyCode selected;
-  final ValueChanged<CurrencyCode> onSelected;
+  final CurrencyCode currency;
+  final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
-    return SizedBox(
-      height: 44,
-      child: ListView.separated(
-        scrollDirection: Axis.horizontal,
-        itemCount: CurrencyCode.values.length,
-        separatorBuilder: (_, __) => const SizedBox(width: 8),
-        itemBuilder: (context, index) {
-          final currency = CurrencyCode.values[index];
-          final isSelected = currency == selected;
-
-          return FilterChip(
-            key: Key('currency-${currency.value}'),
-            selected: isSelected,
-            showCheckmark: false,
-            label: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  CurrencyDisplay.flagEmoji(currency),
-                  style: theme.textTheme.titleMedium,
-                ),
-                const SizedBox(width: 6),
-                Text(currency.value),
-              ],
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        decoration: BoxDecoration(
+          color: AppColors.secondaryContainer.withValues(alpha: 0.1),
+          borderRadius: BorderRadius.circular(999),
+          border: Border.all(
+            color: AppColors.secondaryContainer.withValues(alpha: 0.2),
+          ),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(
+              Icons.payments_outlined,
+              size: 18,
+              color: AppColors.secondary,
             ),
-            onSelected: (_) => onSelected(currency),
-          );
-        },
+            const SizedBox(width: 6),
+            Text(
+              currency.value,
+              style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                color: AppColors.secondary,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+            const Icon(
+              Icons.expand_more,
+              size: 18,
+              color: AppColors.secondary,
+            ),
+          ],
+        ),
       ),
     );
   }

@@ -4,6 +4,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mali_app/application/providers/home_providers.dart';
 import 'package:mali_app/domain/entities/savings_goal.dart';
 import 'package:mali_app/presentation/theme/app_colors.dart';
+import 'package:mali_app/presentation/theme/app_decorations.dart';
+import 'package:mali_app/presentation/theme/app_typography.dart';
 import 'package:mali_app/presentation/utils/money_display.dart';
 
 class GoalsProgressRow extends ConsumerWidget {
@@ -24,8 +26,8 @@ class GoalsProgressRow extends ConsumerWidget {
         return Column(
           children: [
             for (var index = 0; index < goals.length; index++) ...[
-              if (index > 0) const SizedBox(height: 12),
-              _GoalProgressTile(goal: goals[index]),
+              if (index > 0) const SizedBox(height: 16),
+              _GoalProgressTile(goal: goals[index], index: index),
             ],
           ],
         );
@@ -35,56 +37,94 @@ class GoalsProgressRow extends ConsumerWidget {
 }
 
 class _GoalProgressTile extends StatelessWidget {
-  const _GoalProgressTile({required this.goal});
+  const _GoalProgressTile({
+    required this.goal,
+    required this.index,
+  });
 
   final SavingsGoal goal;
+  final int index;
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final progress = _goalProgress(goal);
+    final percent = (progress.clamp(0.0, 1.0) * 100).round();
     final emoji = goal.emoji?.trim();
-    final titlePrefix = (emoji != null && emoji.isNotEmpty) ? '$emoji ' : '';
+    final progressColor = index.isEven
+        ? AppColors.tertiary
+        : AppColors.primaryContainer;
+    final iconBg = index.isEven
+        ? AppColors.tertiaryFixed
+        : AppColors.primaryFixed;
 
-    return Card(
+    return Container(
       key: Key('home-goal-${goal.id}'),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              '$titlePrefix${goal.name}',
-              style: theme.textTheme.titleSmall?.copyWith(
-                fontWeight: FontWeight.w600,
+      padding: const EdgeInsets.all(20),
+      decoration: AppDecorations.ghostBorderCard(),
+      child: Column(
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  color: iconBg,
+                  borderRadius: BorderRadius.circular(AppDecorations.radiusMd),
+                ),
+                alignment: Alignment.center,
+                child: emoji != null && emoji.isNotEmpty
+                    ? Text(emoji, style: theme.textTheme.titleMedium)
+                    : Icon(
+                        Icons.flag_outlined,
+                        color: progressColor,
+                        size: 22,
+                      ),
               ),
-            ),
-            const SizedBox(height: 10),
-            ClipRRect(
-              borderRadius: BorderRadius.circular(6),
-              child: LinearProgressIndicator(
-                value: progress.clamp(0, 1),
-                minHeight: 8,
-                backgroundColor: AppColors.tealPrimary.withValues(alpha: 0.15),
-                color: AppColors.tealPrimary,
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      goal.name,
+                      style: theme.textTheme.titleSmall?.copyWith(
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    Text(
+                      'TARGET: ${MoneyDisplay.withCurrency(
+                        amount: goal.targetAmount,
+                        currencyCode: goal.currencyCode,
+                      )}',
+                      style: AppTypography.sectionLabel(context).copyWith(
+                        fontSize: 10,
+                      ),
+                    ),
+                  ],
+                ),
               ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              '${MoneyDisplay.withCurrency(
-                amount: goal.currentAmount,
-                currencyCode: goal.currencyCode,
-              )} of '
-              '${MoneyDisplay.withCurrency(
-                amount: goal.targetAmount,
-                currencyCode: goal.currencyCode,
-              )}',
-              style: theme.textTheme.bodySmall?.copyWith(
-                color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
+              Text(
+                '$percent%',
+                style: theme.textTheme.titleSmall?.copyWith(
+                  fontWeight: FontWeight.w800,
+                ),
               ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(999),
+            child: LinearProgressIndicator(
+              value: progress.clamp(0, 1),
+              minHeight: 8,
+              backgroundColor: AppColors.surfaceContainerHigh,
+              color: progressColor,
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
@@ -112,7 +152,7 @@ class _EmptyGoalsMessage extends StatelessWidget {
     return Text(
       'No active savings goals yet.',
       style: theme.textTheme.bodyMedium?.copyWith(
-        color: theme.colorScheme.onSurface.withValues(alpha: 0.65),
+        color: AppColors.onSurfaceVariant,
       ),
     );
   }

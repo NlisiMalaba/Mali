@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:mali_app/presentation/theme/app_colors.dart';
 
 class HomeSectionHeader extends StatelessWidget {
   const HomeSectionHeader({
@@ -17,19 +18,28 @@ class HomeSectionHeader extends StatelessWidget {
     final theme = Theme.of(context);
 
     return Row(
+      crossAxisAlignment: CrossAxisAlignment.end,
       children: [
         Expanded(
           child: Text(
             title,
-            style: theme.textTheme.titleMedium?.copyWith(
-              fontWeight: FontWeight.w600,
+            style: theme.textTheme.titleLarge?.copyWith(
+              fontWeight: FontWeight.w700,
             ),
           ),
         ),
         if (actionLabel != null && onAction != null)
-          TextButton(
-            onPressed: onAction,
-            child: Text(actionLabel!),
+          GestureDetector(
+            onTap: onAction,
+            child: Text(
+              actionLabel!.toUpperCase(),
+              style: theme.textTheme.labelSmall?.copyWith(
+                fontSize: 12,
+                fontWeight: FontWeight.w700,
+                letterSpacing: 2,
+                color: AppColors.secondary,
+              ),
+            ),
           ),
       ],
     );

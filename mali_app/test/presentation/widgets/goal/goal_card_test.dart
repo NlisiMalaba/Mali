@@ -72,7 +72,8 @@ void main() {
 
       expect(find.text('Car'), findsOneWidget);
       expect(find.text('🚗'), findsOneWidget);
-      expect(find.text('USD 1000.00 of USD 4000.00'), findsOneWidget);
+      expect(find.text('USD 1000.00'), findsOneWidget);
+      expect(find.text('USD 4000.00'), findsOneWidget);
       expect(find.text('3 months to go'), findsOneWidget);
       expect(find.byType(PieChart), findsOneWidget);
       expect(find.byKey(GoalProgressRing.milestoneKey(25)), findsOneWidget);
@@ -81,7 +82,7 @@ void main() {
 
       final sections = _pieChart(tester).data.sections;
       expect(sections.first.value, 0.25);
-      expect(sections.first.color, AppColors.tealPrimary);
+      expect(sections.first.color, AppColors.primary);
       expect(sections.last.value, 0.75);
     });
 

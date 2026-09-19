@@ -2,6 +2,7 @@ import 'package:decimal/decimal.dart';
 import 'package:mali_app/application/models/home_monthly_summary_display.dart';
 import 'package:mali_app/application/providers/analytics_providers.dart';
 import 'package:mali_app/application/providers/budget_providers.dart';
+import 'package:mali_app/application/providers/exchange_rate_settings_providers.dart';
 import 'package:mali_app/application/providers/goal_providers.dart';
 import 'package:mali_app/application/providers/home_providers.dart';
 import 'package:mali_app/domain/usecases/calculate_net_worth_usecase.dart';
@@ -67,6 +68,9 @@ List<dynamic> homeScreenTestOverrides() {
     ),
     exchangeRatesLastUpdatedProvider.overrideWith(
       (ref) => Stream.value(null),
+    ),
+    exchangeRateSettingsItemsProvider.overrideWith(
+      (ref) => Stream.value(const []),
     ),
   ];
 }

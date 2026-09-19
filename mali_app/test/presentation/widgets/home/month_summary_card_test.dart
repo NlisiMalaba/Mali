@@ -144,7 +144,7 @@ void main() {
       );
     });
 
-    testWidgets('shows income and expense bars side by side', (tester) async {
+    testWidgets('shows monthly summary metrics and legend', (tester) async {
       await _pumpMonthSummaryCard(
         tester,
         summary: _summary(
@@ -154,11 +154,11 @@ void main() {
         ),
       );
 
-      expect(find.text('Income'), findsOneWidget);
-      expect(find.text('Expenses'), findsOneWidget);
-      expect(find.text('USD 1000.00'), findsOneWidget);
-      expect(find.text('USD 600.00'), findsOneWidget);
-      expect(find.byType(LinearProgressIndicator), findsNWidgets(2));
+      expect(find.text('Monthly Summary'), findsOneWidget);
+      expect(find.text('INCOME'), findsOneWidget);
+      expect(find.text('EXPENSES'), findsOneWidget);
+      expect(find.text('SAVINGS RATE'), findsOneWidget);
+      expect(find.text('BURN RATE'), findsOneWidget);
     });
   });
 }

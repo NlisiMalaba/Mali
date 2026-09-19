@@ -7,7 +7,6 @@ import 'package:mali_app/domain/entities/wallet.dart';
 import 'package:mali_app/domain/usecases/calculate_net_worth_usecase.dart';
 import 'package:mali_app/domain/value_objects/currency_code.dart';
 import 'package:mali_app/domain/value_objects/money.dart';
-import 'package:mali_app/presentation/utils/currency_display.dart';
 import 'package:mali_app/presentation/widgets/home/net_worth_card.dart';
 
 Wallet _wallet({
@@ -73,11 +72,11 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      expect(find.text('Net worth'), findsOneWidget);
+      expect(find.text('TOTAL EST. VALUE'), findsOneWidget);
       expect(find.byKey(const Key('net-worth-total')), findsOneWidget);
     });
 
-    testWidgets('shows row of individual wallet balances', (tester) async {
+    testWidgets('shows hero total with currency code', (tester) async {
       await tester.pumpWidget(
         ProviderScope(
           overrides: [
@@ -122,18 +121,8 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      expect(
-        find.text(CurrencyDisplay.flagEmoji(CurrencyCode.usd)),
-        findsOneWidget,
-      );
-      expect(
-        find.text(CurrencyDisplay.flagEmoji(CurrencyCode.zar)),
-        findsOneWidget,
-      );
-      expect(find.text('USD 500.00'), findsOneWidget);
-      expect(find.text('ZAR 2000.00'), findsOneWidget);
-      expect(find.text('EcoCash USD'), findsOneWidget);
-      expect(find.text('Rand Wallet'), findsOneWidget);
+      expect(find.text('USD'), findsOneWidget);
+      expect(find.byKey(const Key('net-worth-total')), findsOneWidget);
     });
 
     testWidgets('shows exchange rates footer when multi-currency', (tester) async {

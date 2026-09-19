@@ -2,15 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mali_app/application/providers/home_providers.dart';
 import 'package:mali_app/domain/usecases/calculate_net_worth_usecase.dart';
-import 'package:mali_app/domain/value_objects/currency_code.dart';
-import 'package:mali_app/presentation/utils/currency_display.dart';
+import 'package:mali_app/presentation/theme/app_colors.dart';
+import 'package:mali_app/presentation/theme/app_decorations.dart';
+import 'package:mali_app/presentation/theme/app_typography.dart';
 import 'package:mali_app/presentation/utils/exchange_rate_labels.dart';
 import 'package:mali_app/presentation/utils/money_display.dart';
 
 class NetWorthCard extends ConsumerWidget {
   const NetWorthCard({super.key});
-
-  static const double _walletRowHeight = 72;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -18,89 +17,115 @@ class NetWorthCard extends ConsumerWidget {
     final netWorthAsync = ref.watch(homeNetWorthProvider);
     final ratesUpdatedAsync = ref.watch(exchangeRatesLastUpdatedProvider);
 
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(20),
-        child: netWorthAsync.when(
-          loading: () => Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'Net worth',
-                style: theme.textTheme.titleMedium?.copyWith(
-                  color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
-                ),
-              ),
-              const SizedBox(height: 16),
-              const Center(
-                child: Padding(
-                  padding: EdgeInsets.symmetric(vertical: 24),
-                  child: CircularProgressIndicator(),
-                ),
-              ),
-            ],
-          ),
-          error: (error, _) => Text('Could not load net worth: $error'),
-          data: (netWorth) {
-            final hasMultipleCurrencies = _hasMultipleCurrencies(
-              netWorth.walletBreakdown,
-            );
+    return netWorthAsync.when(
+      loading: () => Container(
+        height: 180,
+        decoration: AppDecorations.heroCard(),
+        child: const Center(
+          child: CircularProgressIndicator(color: AppColors.onPrimaryContainer),
+        ),
+      ),
+      error: (error, _) => Text('Could not load net worth: $error'),
+      data: (netWorth) {
+        final hasMultipleCurrencies = _hasMultipleCurrencies(
+          netWorth.walletBreakdown,
+        );
 
-            return Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Net worth',
-                  style: theme.textTheme.titleMedium?.copyWith(
-                    color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
-                  ),
+        return Container(
+          decoration: AppDecorations.heroCard(),
+          padding: const EdgeInsets.all(32),
+          child: Stack(
+            children: [
+              Positioned(
+                top: 0,
+                right: 0,
+                child: Icon(
+                  Icons.account_balance,
+                  size: 72,
+                  color: AppColors.onPrimaryContainer.withValues(alpha: 0.2),
                 ),
-                const SizedBox(height: 8),
-                Text(
-                  MoneyDisplay.withCurrency(
-                    amount: netWorth.total.amount.toString(),
-                    currencyCode: netWorth.total.currency.value,
+              ),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'TOTAL EST. VALUE',
+                    style: AppTypography.sectionLabel(context).copyWith(
+                      color: AppColors.onPrimaryContainer.withValues(
+                        alpha: 0.8,
+                      ),
+                      fontSize: 11,
+                      letterSpacing: 3,
+                    ),
                   ),
-                  key: const Key('net-worth-total'),
-                  style: theme.textTheme.displayMedium?.copyWith(
-                    fontWeight: FontWeight.w700,
-                    height: 1.1,
-                  ),
-                ),
-                if (netWorth.walletBreakdown.isNotEmpty) ...[
-                  const SizedBox(height: 20),
-                  _WalletBalancesRow(
-                    breakdown: netWorth.walletBreakdown,
-                  ),
-                ],
-                ratesUpdatedAsync.when(
-                  data: (updatedAt) {
-                    if (updatedAt == null || !hasMultipleCurrencies) {
-                      return const SizedBox.shrink();
-                    }
-                    return Padding(
-                      padding: const EdgeInsets.only(top: 16),
-                      child: Text(
-                        ExchangeRateLabels.lastUpdated(
-                          updatedAt,
-                          DateTime.now(),
+                  const SizedBox(height: 8),
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.baseline,
+                    textBaseline: TextBaseline.alphabetic,
+                    children: [
+                      Text(
+                        MoneyDisplay.withCurrency(
+                          amount: netWorth.total.amount.toString(),
+                          currencyCode: netWorth.total.currency.value,
                         ),
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          color: theme.colorScheme.onSurface.withValues(
-                            alpha: 0.5,
+                        key: const Key('net-worth-total'),
+                        style: theme.textTheme.displaySmall?.copyWith(
+                          fontWeight: FontWeight.w800,
+                          color: AppColors.onPrimaryContainer,
+                          letterSpacing: -1,
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        netWorth.total.currency.value,
+                        style: theme.textTheme.titleLarge?.copyWith(
+                          fontWeight: FontWeight.w700,
+                          color: AppColors.onPrimaryContainer.withValues(
+                            alpha: 0.7,
                           ),
                         ),
                       ),
-                    );
-                  },
-                  loading: () => const SizedBox.shrink(),
-                  error: (_, __) => const SizedBox.shrink(),
-                ),
-              ],
-            );
-          },
-        ),
-      ),
+                    ],
+                  ),
+                  ratesUpdatedAsync.when(
+                    data: (updatedAt) {
+                      if (updatedAt == null || !hasMultipleCurrencies) {
+                        return const SizedBox(height: 24);
+                      }
+                      return Padding(
+                        padding: const EdgeInsets.only(top: 24),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 6,
+                          ),
+                          decoration: BoxDecoration(
+                            color: AppColors.onPrimaryContainer.withValues(
+                              alpha: 0.2,
+                            ),
+                            borderRadius: BorderRadius.circular(999),
+                          ),
+                          child: Text(
+                            ExchangeRateLabels.lastUpdated(
+                              updatedAt,
+                              DateTime.now(),
+                            ),
+                            style: theme.textTheme.labelSmall?.copyWith(
+                              color: AppColors.onPrimaryContainer,
+                            ),
+                          ),
+                        ),
+                      );
+                    },
+                    loading: () => const SizedBox(height: 24),
+                    error: (_, __) => const SizedBox(height: 24),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        );
+      },
     );
   }
 
@@ -112,91 +137,5 @@ class NetWorthCard extends ConsumerWidget {
         .map((entry) => entry.wallet.currencyCode)
         .toSet();
     return currencies.length > 1;
-  }
-}
-
-class _WalletBalancesRow extends StatelessWidget {
-  const _WalletBalancesRow({
-    required this.breakdown,
-  });
-
-  final List<ConvertedWalletBalance> breakdown;
-
-  @override
-  Widget build(BuildContext context) {
-    if (breakdown.length <= 3) {
-      return Row(
-        children: [
-          for (var index = 0; index < breakdown.length; index++) ...[
-            if (index > 0) const SizedBox(width: 12),
-            Expanded(
-              child: _WalletBalanceItem(entry: breakdown[index]),
-            ),
-          ],
-        ],
-      );
-    }
-
-    return SizedBox(
-      height: NetWorthCard._walletRowHeight,
-      child: ListView.separated(
-        scrollDirection: Axis.horizontal,
-        itemCount: breakdown.length,
-        separatorBuilder: (_, __) => const SizedBox(width: 12),
-        itemBuilder: (context, index) {
-          return SizedBox(
-            width: 96,
-            child: _WalletBalanceItem(entry: breakdown[index]),
-          );
-        },
-      ),
-    );
-  }
-}
-
-class _WalletBalanceItem extends StatelessWidget {
-  const _WalletBalanceItem({
-    required this.entry,
-  });
-
-  final ConvertedWalletBalance entry;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final currency = CurrencyCode(entry.wallet.currencyCode);
-
-    return Column(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        Text(
-          CurrencyDisplay.flagEmoji(currency),
-          style: theme.textTheme.headlineSmall,
-        ),
-        const SizedBox(height: 6),
-        Text(
-          MoneyDisplay.withCurrency(
-            amount: entry.wallet.balance,
-            currencyCode: currency.value,
-          ),
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-          textAlign: TextAlign.center,
-          style: theme.textTheme.bodyMedium?.copyWith(
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-        const SizedBox(height: 2),
-        Text(
-          entry.wallet.name,
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-          textAlign: TextAlign.center,
-          style: theme.textTheme.labelSmall?.copyWith(
-            color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
-          ),
-        ),
-      ],
-    );
   }
 }

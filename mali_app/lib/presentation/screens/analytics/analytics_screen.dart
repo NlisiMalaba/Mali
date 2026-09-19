@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:mali_app/presentation/models/analytics_tab.dart';
+import 'package:mali_app/presentation/theme/app_colors.dart';
 import 'package:mali_app/presentation/widgets/analytics/analytics_overview_tab.dart';
 import 'package:mali_app/presentation/widgets/analytics/analytics_spending_tab.dart';
 import 'package:mali_app/presentation/widgets/analytics/analytics_trends_tab.dart';
+import 'package:mali_app/presentation/widgets/sovereign/sovereign_app_bar.dart';
 
 class AnalyticsScreen extends StatelessWidget {
   const AnalyticsScreen({
@@ -35,30 +37,70 @@ class AnalyticsScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
     return DefaultTabController(
       key: ValueKey(initialTab),
       initialIndex: initialTab.index,
       length: AnalyticsTab.values.length,
       child: Scaffold(
         key: screenKey,
-        appBar: AppBar(
-          title: const Text('Analytics'),
-          bottom: TabBar(
-            key: tabBarKey,
-            tabs: [
-              for (final tab in AnalyticsTab.values)
-                Tab(
-                  key: tab.tabKey,
-                  text: tab.label,
-                ),
-            ],
-          ),
-        ),
-        body: const TabBarView(
+        appBar: const SovereignAppBar(),
+        body: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            AnalyticsOverviewTab(),
-            AnalyticsSpendingTab(),
-            AnalyticsTrendsTab(),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(24, 0, 24, 16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Financial Insights',
+                    style: theme.textTheme.headlineMedium?.copyWith(
+                      fontWeight: FontWeight.w800,
+                      color: AppColors.primary,
+                    ),
+                  ),
+                  Text(
+                    'Tracking your wealth journey',
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      color: AppColors.onSurfaceVariant,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: TabBar(
+                key: tabBarKey,
+                isScrollable: true,
+                labelColor: AppColors.primary,
+                unselectedLabelColor: AppColors.onSurfaceVariant,
+                indicatorColor: AppColors.primary,
+                dividerColor: Colors.transparent,
+                labelStyle: theme.textTheme.labelLarge?.copyWith(
+                  fontWeight: FontWeight.w600,
+                ),
+                tabs: [
+                  for (final tab in AnalyticsTab.values)
+                    Tab(
+                      key: tab.tabKey,
+                      text: tab.label,
+                    ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 8),
+            const Expanded(
+              child: TabBarView(
+                children: [
+                  AnalyticsOverviewTab(),
+                  AnalyticsSpendingTab(),
+                  AnalyticsTrendsTab(),
+                ],
+              ),
+            ),
           ],
         ),
       ),

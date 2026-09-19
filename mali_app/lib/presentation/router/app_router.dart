@@ -77,48 +77,48 @@ final appRouterProvider = Provider<GoRouter>((ref) {
             builder: (context, state) => const HomeScreen(),
           ),
           GoRoute(
-            path: '/transactions',
-            builder: (context, state) => const TransactionListScreen(),
+            path: '/wallets',
+            builder: (context, state) => const WalletsScreen(),
+            routes: [
+              GoRoute(
+                path: ':walletId',
+                builder: (context, state) {
+                  final walletId = state.pathParameters['walletId'] ?? '';
+                  return TransactionListScreen(walletId: walletId);
+                },
+              ),
+            ],
+          ),
+          GoRoute(
+            path: '/budgets',
+            builder: (context, state) => const BudgetsScreen(),
+          ),
+          GoRoute(
+            path: '/goals',
+            builder: (context, state) => const GoalsScreen(),
+            routes: [
+              GoRoute(
+                path: 'priority',
+                builder: (context, state) => const GoalPriorityScreen(),
+              ),
+              GoRoute(
+                path: ':id',
+                builder: (context, state) {
+                  final goalId = state.pathParameters['id'] ?? '';
+                  return GoalDetailScreen(goalId: goalId);
+                },
+              ),
+            ],
           ),
         ],
+      ),
+      GoRoute(
+        path: '/transactions',
+        builder: (context, state) => const TransactionListScreen(),
       ),
       GoRoute(
         path: '/add-transaction',
         builder: (context, state) => const AddTransactionScreen(),
-      ),
-      GoRoute(
-        path: '/budgets',
-        builder: (context, state) => const BudgetsScreen(),
-      ),
-      GoRoute(
-        path: '/wallets',
-        builder: (context, state) => const WalletsScreen(),
-        routes: [
-          GoRoute(
-            path: ':walletId',
-            builder: (context, state) {
-              final walletId = state.pathParameters['walletId'] ?? '';
-              return TransactionListScreen(walletId: walletId);
-            },
-          ),
-        ],
-      ),
-      GoRoute(
-        path: '/goals',
-        builder: (context, state) => const GoalsScreen(),
-        routes: [
-          GoRoute(
-            path: 'priority',
-            builder: (context, state) => const GoalPriorityScreen(),
-          ),
-          GoRoute(
-            path: ':id',
-            builder: (context, state) {
-              final goalId = state.pathParameters['id'] ?? '';
-              return GoalDetailScreen(goalId: goalId);
-            },
-          ),
-        ],
       ),
       GoRoute(
         path: '/analytics',
