@@ -5,6 +5,7 @@ import 'package:mali_app/application/providers/auth_provider.dart';
 import 'package:mali_app/application/providers/display_currency_provider.dart';
 import 'package:mali_app/domain/entities/user.dart';
 import 'package:mali_app/core/constants/app_info.dart';
+import 'package:mali_app/presentation/screens/settings/export_screen.dart';
 import 'package:mali_app/presentation/widgets/settings/settings_section.dart';
 import 'package:mali_app/presentation/widgets/settings/settings_tile.dart';
 
@@ -184,8 +185,8 @@ class SettingsScreen extends ConsumerWidget {
               SettingsTile(
                 icon: Icons.cloud_upload_outlined,
                 title: 'Export data',
-                subtitle: 'Download your transactions and wallets',
-                onTap: () => _showComingSoon(context, 'Data export'),
+                subtitle: 'Download your transactions as PDF or CSV',
+                onTap: () => context.push(ExportScreen.location),
               ),
               SettingsTile(
                 icon: Icons.sync,

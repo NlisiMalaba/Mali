@@ -39,12 +39,18 @@ class SystemCategories {
   /// Display name for [categoryId], or [fallback] when it is not a known
   /// system category.
   static String nameFor(String categoryId, {required String fallback}) {
+    return nameForOrNull(categoryId) ?? fallback;
+  }
+
+  /// Display name for [categoryId], or null when it is not a known system
+  /// category.
+  static String? nameForOrNull(String categoryId) {
     for (final category in all) {
       if (category.id == categoryId) {
         return category.name;
       }
     }
-    return fallback;
+    return null;
   }
 
   static List<Category> forType(String type) {

@@ -11,6 +11,7 @@ import 'package:mali_app/presentation/screens/budget/budgets_screen.dart';
 import 'package:mali_app/presentation/screens/goal/goal_detail_screen.dart';
 import 'package:mali_app/presentation/screens/goal/goal_priority_screen.dart';
 import 'package:mali_app/presentation/screens/goal/goals_screen.dart';
+import 'package:mali_app/presentation/screens/settings/export_screen.dart';
 import 'package:mali_app/presentation/screens/settings/settings_screen.dart';
 import 'package:mali_app/presentation/screens/splash_screen.dart';
 
@@ -108,6 +109,7 @@ void main() {
         '/goals/goal-1': find.byKey(GoalDetailScreen.screenKey),
         '/analytics': find.byKey(AnalyticsScreen.screenKey),
         '/settings': find.byKey(SettingsScreen.screenKey),
+        '/settings/export': find.byKey(ExportScreen.screenKey),
       };
 
       for (final entry in routes.entries) {

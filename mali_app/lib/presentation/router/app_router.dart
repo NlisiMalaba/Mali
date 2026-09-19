@@ -18,6 +18,7 @@ import 'package:mali_app/presentation/screens/auth/register_screen.dart';
 import 'package:mali_app/presentation/screens/home/home_screen.dart';
 import 'package:mali_app/presentation/screens/placeholder_screen.dart';
 import 'package:mali_app/presentation/screens/settings/exchange_rates_settings_screen.dart';
+import 'package:mali_app/presentation/screens/settings/export_screen.dart';
 import 'package:mali_app/presentation/screens/settings/settings_screen.dart';
 import 'package:mali_app/presentation/screens/splash_screen.dart';
 import 'package:mali_app/presentation/screens/transaction/add_transaction_screen.dart';
@@ -157,6 +158,10 @@ final appRouterProvider = Provider<GoRouter>((ref) {
             path: 'exchange-rates',
             builder: (context, state) =>
                 const ExchangeRatesSettingsScreen(),
+          ),
+          GoRoute(
+            path: 'export',
+            builder: (context, state) => const ExportScreen(),
           ),
           GoRoute(
             path: 'notifications',
