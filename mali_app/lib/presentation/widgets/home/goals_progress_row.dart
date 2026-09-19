@@ -47,6 +47,7 @@ class _GoalProgressTile extends StatelessWidget {
     final titlePrefix = (emoji != null && emoji.isNotEmpty) ? '$emoji ' : '';
 
     return Card(
+      key: Key('home-goal-${goal.id}'),
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(

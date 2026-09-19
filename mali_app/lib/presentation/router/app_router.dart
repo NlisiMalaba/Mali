@@ -8,6 +8,9 @@ import 'package:mali_app/presentation/screens/security/pin_entry_screen.dart';
 import 'package:mali_app/presentation/screens/security/pin_setup_screen.dart';
 import 'package:mali_app/presentation/screens/settings/security_settings_screen.dart';
 import 'package:mali_app/presentation/screens/budget/budgets_screen.dart';
+import 'package:mali_app/presentation/screens/goal/goal_detail_screen.dart';
+import 'package:mali_app/presentation/screens/goal/goal_priority_screen.dart';
+import 'package:mali_app/presentation/screens/goal/goals_screen.dart';
 import 'package:mali_app/presentation/screens/auth/login_screen.dart';
 import 'package:mali_app/presentation/screens/auth/register_screen.dart';
 import 'package:mali_app/presentation/screens/home/home_screen.dart';
@@ -99,14 +102,20 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: '/goals',
-        builder: (context, state) => const PlaceholderScreen(title: 'Goals'),
-      ),
-      GoRoute(
-        path: '/goals/:id',
-        builder: (context, state) {
-          final goalId = state.pathParameters['id'] ?? 'unknown';
-          return PlaceholderScreen(title: 'Goal $goalId');
-        },
+        builder: (context, state) => const GoalsScreen(),
+        routes: [
+          GoRoute(
+            path: 'priority',
+            builder: (context, state) => const GoalPriorityScreen(),
+          ),
+          GoRoute(
+            path: ':id',
+            builder: (context, state) {
+              final goalId = state.pathParameters['id'] ?? '';
+              return GoalDetailScreen(goalId: goalId);
+            },
+          ),
+        ],
       ),
       GoRoute(
         path: '/analytics',

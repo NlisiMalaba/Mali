@@ -6,7 +6,10 @@ import 'package:mali_app/domain/usecases/calculate_net_worth_usecase.dart';
 import 'package:mali_app/domain/usecases/convert_money_usecase.dart';
 import 'package:mali_app/domain/usecases/archive_wallet_usecase.dart';
 import 'package:mali_app/domain/usecases/create_budget_usecase.dart';
+import 'package:mali_app/domain/usecases/create_goal_usecase.dart';
 import 'package:mali_app/domain/usecases/create_wallet_usecase.dart';
+import 'package:mali_app/domain/usecases/reorder_goals_usecase.dart';
+import 'package:mali_app/domain/usecases/update_goal_usecase.dart';
 import 'package:mali_app/domain/usecases/get_monthly_summary_usecase.dart';
 import 'package:mali_app/domain/usecases/delete_transaction_usecase.dart';
 import 'package:mali_app/domain/usecases/log_transaction_usecase.dart';
@@ -43,6 +46,27 @@ CreateWalletUseCase createWalletUseCase(Ref ref) {
 CreateBudgetUseCase createBudgetUseCase(Ref ref) {
   return CreateBudgetUseCase(
     budgetRepository: ref.watch(budgetRepositoryProvider),
+  );
+}
+
+@Riverpod(keepAlive: true)
+CreateGoalUseCase createGoalUseCase(Ref ref) {
+  return CreateGoalUseCase(
+    goalRepository: ref.watch(goalRepositoryProvider),
+  );
+}
+
+@Riverpod(keepAlive: true)
+UpdateGoalUseCase updateGoalUseCase(Ref ref) {
+  return UpdateGoalUseCase(
+    goalRepository: ref.watch(goalRepositoryProvider),
+  );
+}
+
+@Riverpod(keepAlive: true)
+ReorderGoalsUseCase reorderGoalsUseCase(Ref ref) {
+  return ReorderGoalsUseCase(
+    goalRepository: ref.watch(goalRepositoryProvider),
   );
 }
 

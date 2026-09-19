@@ -264,7 +264,7 @@ final class HomeTopGoalsProvider
   }
 }
 
-String _$homeTopGoalsHash() => r'8a53c2f967b9a819a3688232383a76a9fc4b4df8';
+String _$homeTopGoalsHash() => r'a87ac170267894ef42e0c99a976aff46fdc1baa4';
 
 @ProviderFor(exchangeRatesLastUpdated)
 final exchangeRatesLastUpdatedProvider = ExchangeRatesLastUpdatedProvider._();

@@ -7,6 +7,9 @@ import 'package:mali_app/domain/entities/user.dart';
 import 'package:mali_app/domain/entities/wallet.dart';
 import 'package:mali_app/presentation/router/app_router.dart';
 import 'package:mali_app/presentation/screens/budget/budgets_screen.dart';
+import 'package:mali_app/presentation/screens/goal/goal_detail_screen.dart';
+import 'package:mali_app/presentation/screens/goal/goal_priority_screen.dart';
+import 'package:mali_app/presentation/screens/goal/goals_screen.dart';
 import 'package:mali_app/presentation/screens/settings/settings_screen.dart';
 import 'package:mali_app/presentation/screens/splash_screen.dart';
 
@@ -99,8 +102,9 @@ void main() {
         '/add-transaction': find.text('Add Transaction'),
         '/budgets': find.byKey(BudgetsScreen.screenKey),
         '/wallets': find.text('Wallets'),
-        '/goals': find.text('Goals'),
-        '/goals/goal-1': find.text('Goal goal-1'),
+        '/goals': find.byKey(GoalsScreen.screenKey),
+        '/goals/priority': find.byKey(GoalPriorityScreen.screenKey),
+        '/goals/goal-1': find.byKey(GoalDetailScreen.screenKey),
         '/analytics': find.text('Analytics'),
         '/settings': find.byKey(SettingsScreen.screenKey),
       };

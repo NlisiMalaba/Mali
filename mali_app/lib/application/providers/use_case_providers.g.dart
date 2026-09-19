@@ -153,6 +153,148 @@ final class CreateBudgetUseCaseProvider
 String _$createBudgetUseCaseHash() =>
     r'0e6683e980ee2d41240af4a60c1f532751c8ef48';
 
+@ProviderFor(createGoalUseCase)
+final createGoalUseCaseProvider = CreateGoalUseCaseProvider._();
+
+final class CreateGoalUseCaseProvider
+    extends
+        $FunctionalProvider<
+          CreateGoalUseCase,
+          CreateGoalUseCase,
+          CreateGoalUseCase
+        >
+    with $Provider<CreateGoalUseCase> {
+  CreateGoalUseCaseProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'createGoalUseCaseProvider',
+        isAutoDispose: false,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$createGoalUseCaseHash();
+
+  @$internal
+  @override
+  $ProviderElement<CreateGoalUseCase> $createElement(
+    $ProviderPointer pointer,
+  ) => $ProviderElement(pointer);
+
+  @override
+  CreateGoalUseCase create(Ref ref) {
+    return createGoalUseCase(ref);
+  }
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(CreateGoalUseCase value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<CreateGoalUseCase>(value),
+    );
+  }
+}
+
+String _$createGoalUseCaseHash() => r'fb830fb2ec351384f1029cd10f8b37d58fba82a9';
+
+@ProviderFor(updateGoalUseCase)
+final updateGoalUseCaseProvider = UpdateGoalUseCaseProvider._();
+
+final class UpdateGoalUseCaseProvider
+    extends
+        $FunctionalProvider<
+          UpdateGoalUseCase,
+          UpdateGoalUseCase,
+          UpdateGoalUseCase
+        >
+    with $Provider<UpdateGoalUseCase> {
+  UpdateGoalUseCaseProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'updateGoalUseCaseProvider',
+        isAutoDispose: false,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$updateGoalUseCaseHash();
+
+  @$internal
+  @override
+  $ProviderElement<UpdateGoalUseCase> $createElement(
+    $ProviderPointer pointer,
+  ) => $ProviderElement(pointer);
+
+  @override
+  UpdateGoalUseCase create(Ref ref) {
+    return updateGoalUseCase(ref);
+  }
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(UpdateGoalUseCase value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<UpdateGoalUseCase>(value),
+    );
+  }
+}
+
+String _$updateGoalUseCaseHash() => r'8bba693ebb7f8e87dde542985a38e71ea37eb835';
+
+@ProviderFor(reorderGoalsUseCase)
+final reorderGoalsUseCaseProvider = ReorderGoalsUseCaseProvider._();
+
+final class ReorderGoalsUseCaseProvider
+    extends
+        $FunctionalProvider<
+          ReorderGoalsUseCase,
+          ReorderGoalsUseCase,
+          ReorderGoalsUseCase
+        >
+    with $Provider<ReorderGoalsUseCase> {
+  ReorderGoalsUseCaseProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'reorderGoalsUseCaseProvider',
+        isAutoDispose: false,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$reorderGoalsUseCaseHash();
+
+  @$internal
+  @override
+  $ProviderElement<ReorderGoalsUseCase> $createElement(
+    $ProviderPointer pointer,
+  ) => $ProviderElement(pointer);
+
+  @override
+  ReorderGoalsUseCase create(Ref ref) {
+    return reorderGoalsUseCase(ref);
+  }
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(ReorderGoalsUseCase value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<ReorderGoalsUseCase>(value),
+    );
+  }
+}
+
+String _$reorderGoalsUseCaseHash() =>
+    r'5c72c4d19c9fdb904d6eba5ffcf2875189d38c6d';
+
 @ProviderFor(budgetExceededEventBus)
 final budgetExceededEventBusProvider = BudgetExceededEventBusProvider._();
 

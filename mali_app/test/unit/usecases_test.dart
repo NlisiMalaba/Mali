@@ -24,10 +24,13 @@ import 'package:mali_app/domain/usecases/calculate_net_worth_usecase.dart';
 import 'package:mali_app/domain/usecases/convert_money_usecase.dart';
 import 'package:mali_app/domain/usecases/archive_wallet_usecase.dart';
 import 'package:mali_app/domain/usecases/create_budget_usecase.dart';
+import 'package:mali_app/domain/usecases/create_goal_usecase.dart';
 import 'package:mali_app/domain/usecases/create_wallet_usecase.dart';
+import 'package:mali_app/domain/usecases/update_goal_usecase.dart';
 import 'package:mali_app/domain/usecases/get_monthly_summary_usecase.dart';
 import 'package:mali_app/domain/usecases/log_transaction_usecase.dart';
 import 'package:mali_app/domain/usecases/refresh_exchange_rates_usecase.dart';
+import 'package:mali_app/domain/usecases/reorder_goals_usecase.dart';
 import 'package:mali_app/domain/usecases/disable_pin_lock_usecase.dart';
 import 'package:mali_app/domain/usecases/set_manual_exchange_rate_usecase.dart';
 import 'package:mali_app/domain/usecases/set_biometric_unlock_usecase.dart';
@@ -367,6 +370,232 @@ void main() {
       expect(budget.month, 5);
       expect(budget.year, 2026);
       verify(budgetRepository.save(any)).called(1);
+    });
+  });
+
+  group('CreateGoalUseCase', () {
+    late MockIGoalRepository goalRepository;
+    late CreateGoalUseCase useCase;
+
+    setUp(() {
+      goalRepository = MockIGoalRepository();
+      useCase = CreateGoalUseCase(goalRepository: goalRepository);
+      when(goalRepository.watchActiveGoals())
+          .thenAnswer((_) => Stream.value(const []));
+    });
+
+    test('returns validation failure when name is empty', () async {
+      final result = await useCase(
+        CreateGoalParams(
+          userId: 'u-1',
+          name: '   ',
+          currencyCode: CurrencyCode.usd,
+          targetAmount: '1000',
+          deadline: DateTime(2027, 12, 31),
+        ),
+      );
+
+      expect(result.isLeft(), isTrue);
+      expect(
+        result.getLeft().toNullable(),
+        isA<ValidationFailure>().having((f) => f.field, 'field', 'name'),
+      );
+    });
+
+    test('returns validation failure when target is not positive', () async {
+      final result = await useCase(
+        CreateGoalParams(
+          userId: 'u-1',
+          name: 'Car',
+          currencyCode: CurrencyCode.usd,
+          targetAmount: '0',
+          deadline: DateTime(2027, 12, 31),
+        ),
+      );
+
+      expect(result.isLeft(), isTrue);
+      expect(
+        result.getLeft().toNullable(),
+        isA<ValidationFailure>().having(
+          (f) => f.field,
+          'field',
+          'targetAmount',
+        ),
+      );
+    });
+
+    test('returns validation failure when deadline is not in the future',
+        () async {
+      final result = await useCase(
+        CreateGoalParams(
+          userId: 'u-1',
+          name: 'Car',
+          currencyCode: CurrencyCode.usd,
+          targetAmount: '1000',
+          deadline: DateTime(2020, 1, 1),
+        ),
+      );
+
+      expect(result.isLeft(), isTrue);
+      expect(
+        result.getLeft().toNullable(),
+        isA<ValidationFailure>().having((f) => f.field, 'field', 'deadline'),
+      );
+    });
+
+    test('saves goal after existing goals and trims name', () async {
+      when(goalRepository.watchActiveGoals()).thenAnswer(
+        (_) => Stream.value([_goal(id: 'g-existing')]),
+      );
+      when(goalRepository.saveGoal(any)).thenAnswer((_) async {});
+
+      final result = await useCase(
+        CreateGoalParams(
+          userId: 'u-1',
+          name: '  School Fees  ',
+          emoji: '🎓',
+          currencyCode: CurrencyCode.usd,
+          targetAmount: '2000.50',
+          deadline: DateTime(2027, 12, 31),
+        ),
+      );
+
+      expect(result.isRight(), isTrue);
+      final goal = result.getOrElse((_) => throw StateError('expected right'));
+      expect(goal.name, 'School Fees');
+      expect(goal.emoji, '🎓');
+      expect(goal.targetAmount, '2000.5');
+      expect(goal.currentAmount, '0');
+      expect(goal.currencyCode, 'USD');
+      expect(goal.priorityOrder, 1);
+      expect(goal.targetDate, DateTime(2027, 12, 31));
+      verify(goalRepository.saveGoal(any)).called(1);
+    });
+  });
+
+  group('UpdateGoalUseCase', () {
+    late MockIGoalRepository goalRepository;
+    late UpdateGoalUseCase useCase;
+
+    setUp(() {
+      goalRepository = MockIGoalRepository();
+      useCase = UpdateGoalUseCase(goalRepository: goalRepository);
+    });
+
+    test('returns not found when the goal is missing', () async {
+      when(goalRepository.watchActiveGoals())
+          .thenAnswer((_) => Stream.value(const []));
+
+      final result = await useCase(
+        UpdateGoalParams(
+          goalId: 'missing',
+          name: 'Car',
+          currencyCode: CurrencyCode.usd,
+          targetAmount: '1000',
+          deadline: DateTime(2027, 12, 31),
+        ),
+      );
+
+      expect(result.isLeft(), isTrue);
+      expect(result.getLeft().toNullable(), isA<NotFoundFailure>());
+    });
+
+    test('updates name, target, and deadline without changing saved amount',
+        () async {
+      when(goalRepository.watchActiveGoals())
+          .thenAnswer((_) => Stream.value([_goal(currentAmount: '40')]));
+      when(goalRepository.saveGoal(any)).thenAnswer((_) async {});
+
+      final result = await useCase(
+        UpdateGoalParams(
+          goalId: 'g-1',
+          name: '  Updated Car  ',
+          emoji: '🚗',
+          currencyCode: CurrencyCode.usd,
+          targetAmount: '800',
+          deadline: DateTime(2027, 6, 1),
+        ),
+      );
+
+      expect(result.isRight(), isTrue);
+      final goal = result.getOrElse((_) => throw StateError('expected right'));
+      expect(goal.name, 'Updated Car');
+      expect(goal.emoji, '🚗');
+      expect(goal.targetAmount, '800');
+      expect(goal.currentAmount, '40');
+      expect(goal.targetDate, DateTime(2027, 6, 1));
+      verify(goalRepository.saveGoal(any)).called(1);
+    });
+  });
+
+  group('ReorderGoalsUseCase', () {
+    late MockIGoalRepository goalRepository;
+    late ReorderGoalsUseCase useCase;
+
+    setUp(() {
+      goalRepository = MockIGoalRepository();
+      useCase = ReorderGoalsUseCase(goalRepository: goalRepository);
+    });
+
+    test('returns validation failure for duplicate ids', () async {
+      final result = await useCase.call(
+        orderedGoalIds: const ['g-1', 'g-1'],
+      );
+
+      expect(result.isLeft(), isTrue);
+      expect(
+        result.getLeft().toNullable(),
+        isA<ValidationFailure>().having(
+          (failure) => failure.field,
+          'field',
+          'orderedGoalIds',
+        ),
+      );
+    });
+
+    test('returns validation failure when the goal set does not match',
+        () async {
+      when(goalRepository.watchActiveGoals()).thenAnswer(
+        (_) => Stream.value([_goal(id: 'g-1'), _goal(id: 'g-2')]),
+      );
+
+      final result = await useCase.call(orderedGoalIds: const ['g-1']);
+
+      expect(result.isLeft(), isTrue);
+      expect(result.getLeft().toNullable(), isA<ValidationFailure>());
+    });
+
+    test('saves new priority order on drop', () async {
+      when(goalRepository.watchActiveGoals()).thenAnswer(
+        (_) => Stream.value([
+          _goal(id: 'g-1', priorityOrder: 0),
+          _goal(id: 'g-2', priorityOrder: 1),
+        ]),
+      );
+      when(goalRepository.saveGoal(any)).thenAnswer((_) async {});
+
+      final result = await useCase.call(orderedGoalIds: const ['g-2', 'g-1']);
+
+      expect(result.isRight(), isTrue);
+      final ordered =
+          result.getOrElse((_) => throw StateError('expected right'));
+      expect(ordered.map((goal) => goal.id), ['g-2', 'g-1']);
+      expect(ordered.map((goal) => goal.priorityOrder), [0, 1]);
+      verify(goalRepository.saveGoal(any)).called(2);
+    });
+
+    test('skips save when priority is already correct', () async {
+      when(goalRepository.watchActiveGoals()).thenAnswer(
+        (_) => Stream.value([
+          _goal(id: 'g-1', priorityOrder: 0),
+          _goal(id: 'g-2', priorityOrder: 1),
+        ]),
+      );
+
+      final result = await useCase.call(orderedGoalIds: const ['g-1', 'g-2']);
+
+      expect(result.isRight(), isTrue);
+      verifyNever(goalRepository.saveGoal(any));
     });
   });
 
@@ -960,6 +1189,7 @@ SavingsGoal _goal({
   String id = 'g-1',
   String currentAmount = '20',
   String targetAmount = '100',
+  int priorityOrder = 0,
 }) {
   final now = DateTime(2026, 4, 1);
   return SavingsGoal(
@@ -969,7 +1199,7 @@ SavingsGoal _goal({
     targetAmount: targetAmount,
     currentAmount: currentAmount,
     currencyCode: 'USD',
-    priorityOrder: 0,
+    priorityOrder: priorityOrder,
     isCompleted: false,
     isSynced: false,
     createdAt: now,

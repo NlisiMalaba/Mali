@@ -5,6 +5,7 @@ import 'package:mali_app/application/providers/repository_providers.dart';
 import 'package:mali_app/application/providers/use_case_providers.dart';
 import 'package:mali_app/domain/entities/budget.dart';
 import 'package:mali_app/domain/entities/savings_goal.dart';
+import 'package:mali_app/domain/services/goal_priority.dart';
 import 'package:mali_app/domain/entities/transaction.dart';
 import 'package:mali_app/domain/repositories/transaction_repository.dart';
 import 'package:mali_app/domain/usecases/calculate_net_worth_usecase.dart';
@@ -171,11 +172,7 @@ Decimal _budgetUsageRatio(Budget budget) {
 @riverpod
 Stream<List<SavingsGoal>> homeTopGoals(Ref ref) {
   return ref.watch(goalRepositoryProvider).watchActiveGoals().map(
-        (goals) {
-          final sorted = [...goals]
-            ..sort((a, b) => a.priorityOrder.compareTo(b.priorityOrder));
-          return sorted.take(homeTopGoalLimit).toList();
-        },
+        (goals) => GoalPriority.top(goals: goals, limit: homeTopGoalLimit),
       );
 }
 
