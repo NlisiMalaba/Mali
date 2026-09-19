@@ -38,6 +38,8 @@ Transaction _expense({
   );
 }
 
+// Return type is inferred: Riverpod 3 does not export `Override`, so the
+// element type cannot be written explicitly.
 _drilldownOverrides({
   List<Transaction> transactions = const [],
   String total = '0',

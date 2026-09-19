@@ -6,6 +6,10 @@ abstract interface class IGoalRepository {
 
   Stream<List<SavingsGoal>> watchActiveGoals();
 
+  /// One-shot read for callers without a reactive scope, such as background
+  /// isolates.
+  Future<List<SavingsGoal>> listActiveGoals();
+
   Future<void> addContribution(GoalContribution contribution);
 
   Stream<List<GoalContribution>> watchContributions(String goalId);

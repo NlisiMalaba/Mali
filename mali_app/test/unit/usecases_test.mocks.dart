@@ -283,6 +283,19 @@ class MockIGoalRepository extends _i1.Mock implements _i11.IGoalRepository {
           as _i5.Stream<List<_i12.SavingsGoal>>);
 
   @override
+  _i5.Future<List<_i12.SavingsGoal>> listActiveGoals() =>
+      (super.noSuchMethod(
+            Invocation.method(#listActiveGoals, []),
+            returnValue: _i5.Future<List<_i12.SavingsGoal>>.value(
+              <_i12.SavingsGoal>[],
+            ),
+            returnValueForMissingStub: _i5.Future<List<_i12.SavingsGoal>>.value(
+              <_i12.SavingsGoal>[],
+            ),
+          )
+          as _i5.Future<List<_i12.SavingsGoal>>);
+
+  @override
   _i5.Future<void> addContribution(_i13.GoalContribution? contribution) =>
       (super.noSuchMethod(
             Invocation.method(#addContribution, [contribution]),

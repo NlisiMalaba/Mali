@@ -15,4 +15,17 @@ class GoalPriority {
   }) {
     return sorted(goals).take(limit).toList();
   }
+
+  /// Highest-priority goal that still needs funding, or null when every goal
+  /// is completed or deleted.
+  static SavingsGoal? topFundable(List<SavingsGoal> goals) {
+    final fundable = [
+      for (final goal in goals)
+        if (!goal.isCompleted && goal.deletedAt == null) goal,
+    ];
+    if (fundable.isEmpty) {
+      return null;
+    }
+    return sorted(fundable).first;
+  }
 }

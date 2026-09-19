@@ -13,10 +13,18 @@ class GoalDao extends DatabaseAccessor<AppDatabase> with _$GoalDaoMixin {
   }
 
   Stream<List<SavingsGoalsTableData>> watchActiveGoals() {
-    return (select(savingsGoalsTable)
-          ..where((table) => table.deletedAt.isNull())
-          ..orderBy([(table) => OrderingTerm.asc(table.priorityOrder)]))
-        .watch();
+    return _activeGoalsSelect().watch();
+  }
+
+  Future<List<SavingsGoalsTableData>> listActiveGoals() {
+    return _activeGoalsSelect().get();
+  }
+
+  SimpleSelectStatement<$SavingsGoalsTableTable, SavingsGoalsTableData>
+      _activeGoalsSelect() {
+    return select(savingsGoalsTable)
+      ..where((table) => table.deletedAt.isNull())
+      ..orderBy([(table) => OrderingTerm.asc(table.priorityOrder)]);
   }
 
   Future<void> addContribution(GoalContributionsTableCompanion entry) {

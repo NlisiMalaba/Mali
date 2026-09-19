@@ -632,6 +632,105 @@ final class GetAnalyticsTrendsUseCaseProvider
 String _$getAnalyticsTrendsUseCaseHash() =>
     r'952a242ef78f903a6f29b641e3180591e96add36';
 
+@ProviderFor(buildContributionReminderUseCase)
+final buildContributionReminderUseCaseProvider =
+    BuildContributionReminderUseCaseProvider._();
+
+final class BuildContributionReminderUseCaseProvider
+    extends
+        $FunctionalProvider<
+          BuildContributionReminderUseCase,
+          BuildContributionReminderUseCase,
+          BuildContributionReminderUseCase
+        >
+    with $Provider<BuildContributionReminderUseCase> {
+  BuildContributionReminderUseCaseProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'buildContributionReminderUseCaseProvider',
+        isAutoDispose: false,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$buildContributionReminderUseCaseHash();
+
+  @$internal
+  @override
+  $ProviderElement<BuildContributionReminderUseCase> $createElement(
+    $ProviderPointer pointer,
+  ) => $ProviderElement(pointer);
+
+  @override
+  BuildContributionReminderUseCase create(Ref ref) {
+    return buildContributionReminderUseCase(ref);
+  }
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(BuildContributionReminderUseCase value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<BuildContributionReminderUseCase>(
+        value,
+      ),
+    );
+  }
+}
+
+String _$buildContributionReminderUseCaseHash() =>
+    r'77d33f09cef1b2d75c2077359900d05e88e54c11';
+
+@ProviderFor(buildWeeklyDigestUseCase)
+final buildWeeklyDigestUseCaseProvider = BuildWeeklyDigestUseCaseProvider._();
+
+final class BuildWeeklyDigestUseCaseProvider
+    extends
+        $FunctionalProvider<
+          BuildWeeklyDigestUseCase,
+          BuildWeeklyDigestUseCase,
+          BuildWeeklyDigestUseCase
+        >
+    with $Provider<BuildWeeklyDigestUseCase> {
+  BuildWeeklyDigestUseCaseProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'buildWeeklyDigestUseCaseProvider',
+        isAutoDispose: false,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$buildWeeklyDigestUseCaseHash();
+
+  @$internal
+  @override
+  $ProviderElement<BuildWeeklyDigestUseCase> $createElement(
+    $ProviderPointer pointer,
+  ) => $ProviderElement(pointer);
+
+  @override
+  BuildWeeklyDigestUseCase create(Ref ref) {
+    return buildWeeklyDigestUseCase(ref);
+  }
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(BuildWeeklyDigestUseCase value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<BuildWeeklyDigestUseCase>(value),
+    );
+  }
+}
+
+String _$buildWeeklyDigestUseCaseHash() =>
+    r'e85a0754ba91516535c13dc0cd39bfd9752370fe';
+
 @ProviderFor(allocateToGoalUseCase)
 final allocateToGoalUseCaseProvider = AllocateToGoalUseCaseProvider._();
 

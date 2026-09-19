@@ -47,6 +47,9 @@ class _StubGoalRepository implements IGoalRepository {
   Stream<List<SavingsGoal>> watchActiveGoals() => const Stream.empty();
 
   @override
+  Future<List<SavingsGoal>> listActiveGoals() async => const [];
+
+  @override
   Stream<List<GoalContribution>> watchContributions(String goalId) =>
       const Stream.empty();
 }

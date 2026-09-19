@@ -22,6 +22,11 @@ class LocalGoalRepository implements IGoalRepository {
   }
 
   @override
+  Future<List<SavingsGoal>> listActiveGoals() async {
+    return GoalMapper.toDomainList(await _goalDao.listActiveGoals());
+  }
+
+  @override
   Future<void> addContribution(GoalContribution contribution) {
     return _goalDao.addContribution(
       GoalMapper.toContributionCompanion(contribution),

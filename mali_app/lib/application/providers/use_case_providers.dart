@@ -18,6 +18,8 @@ import 'package:mali_app/domain/usecases/log_transaction_usecase.dart';
 import 'package:mali_app/application/providers/biometric_providers.dart';
 import 'package:mali_app/application/providers/pin_lock_store_providers.dart';
 import 'package:mali_app/domain/usecases/authenticate_with_biometric_usecase.dart';
+import 'package:mali_app/domain/usecases/build_contribution_reminder_usecase.dart';
+import 'package:mali_app/domain/usecases/build_weekly_digest_usecase.dart';
 import 'package:mali_app/domain/usecases/disable_pin_lock_usecase.dart';
 import 'package:mali_app/domain/usecases/set_biometric_unlock_usecase.dart';
 import 'package:mali_app/domain/usecases/refresh_exchange_rates_usecase.dart';
@@ -121,6 +123,24 @@ GetAnalyticsOverviewUseCase getAnalyticsOverviewUseCase(Ref ref) {
 GetAnalyticsTrendsUseCase getAnalyticsTrendsUseCase(Ref ref) {
   return GetAnalyticsTrendsUseCase(
     transactionRepository: ref.watch(transactionRepositoryProvider),
+  );
+}
+
+@Riverpod(keepAlive: true)
+BuildContributionReminderUseCase buildContributionReminderUseCase(Ref ref) {
+  return BuildContributionReminderUseCase(
+    monthlySummary: ref.watch(getMonthlySummaryUseCaseProvider),
+    goalRepository: ref.watch(goalRepositoryProvider),
+    convertMoney: ref.watch(convertMoneyUseCaseProvider),
+  );
+}
+
+@Riverpod(keepAlive: true)
+BuildWeeklyDigestUseCase buildWeeklyDigestUseCase(Ref ref) {
+  return BuildWeeklyDigestUseCase(
+    transactionRepository: ref.watch(transactionRepositoryProvider),
+    goalRepository: ref.watch(goalRepositoryProvider),
+    convertMoney: ref.watch(convertMoneyUseCaseProvider),
   );
 }
 

@@ -36,6 +36,17 @@ class SystemCategories {
 
   static List<Category> get all => [...expense, ...income];
 
+  /// Display name for [categoryId], or [fallback] when it is not a known
+  /// system category.
+  static String nameFor(String categoryId, {required String fallback}) {
+    for (final category in all) {
+      if (category.id == categoryId) {
+        return category.name;
+      }
+    }
+    return fallback;
+  }
+
   static List<Category> forType(String type) {
     return switch (type) {
       'income' => income,

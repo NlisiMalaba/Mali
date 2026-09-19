@@ -6,13 +6,13 @@ class BudgetAlertMessages {
 
   static const String notificationTitle = 'Budget alert';
 
+  static const String _unknownCategoryName = 'Budget';
+
   static String categoryName(String categoryId) {
-    for (final category in SystemCategories.all) {
-      if (category.id == categoryId) {
-        return category.name;
-      }
-    }
-    return 'Budget';
+    return SystemCategories.nameFor(
+      categoryId,
+      fallback: _unknownCategoryName,
+    );
   }
 
   static String notificationBody({
