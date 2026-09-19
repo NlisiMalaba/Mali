@@ -1,0 +1,262 @@
+{
+  "info": {
+    "_postman_id": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+    "name": "Mali Goals API",
+    "description": "Phase 2 task 33 — verifies all Goals endpoints from task 12.\n\nFlow: Register → Login → Create → List → Get → Contribute → Update → Delete.\n\nBase URL defaults to http://localhost:8082 (docker-compose.override.yml).",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:8082" },
+    { "key": "accessToken", "value": "" },
+    { "key": "goalId", "value": "" },
+    { "key": "email", "value": "goals-postman@example.com" },
+    { "key": "password", "value": "password123" },
+    { "key": "deviceId", "value": "postman-goals" }
+  ],
+  "item": [
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Register",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Register returns 201 or 409', function () {",
+                  "  pm.expect([201, 409]).to.include(pm.response.code);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{email}}\",\n  \"name\": \"Goals Postman User\",\n  \"password\": \"{{password}}\"\n}"
+            },
+            "url": "{{baseUrl}}/v1/auth/register"
+          }
+        },
+        {
+          "name": "Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Login returns 200', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "const body = pm.response.json();",
+                  "pm.collectionVariables.set('accessToken', body.access_token);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{email}}\",\n  \"password\": \"{{password}}\",\n  \"device_id\": \"{{deviceId}}\"\n}"
+            },
+            "url": "{{baseUrl}}/v1/auth/login"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Goals",
+      "item": [
+        {
+          "name": "Create Goal",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Create goal returns 201', function () {",
+                  "  pm.response.to.have.status(201);",
+                  "});",
+                  "const body = pm.response.json();",
+                  "pm.test('Goal has id and required_monthly', function () {",
+                  "  pm.expect(body.goal).to.have.property('id');",
+                  "  pm.expect(body.goal).to.have.property('required_monthly');",
+                  "});",
+                  "pm.collectionVariables.set('goalId', body.goal.id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"New Laptop\",\n  \"emoji\": \"💻\",\n  \"goal_type\": \"device\",\n  \"target_amount\": \"2000.00\",\n  \"currency\": \"USD\",\n  \"saved_amount\": \"200.00\",\n  \"deadline\": \"2027-12-31T00:00:00Z\",\n  \"priority\": 1\n}"
+            },
+            "url": "{{baseUrl}}/v1/goals"
+          }
+        },
+        {
+          "name": "List Goals",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('List goals returns 200', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "const body = pm.response.json();",
+                  "pm.test('Goals array is present', function () {",
+                  "  pm.expect(body.goals).to.be.an('array');",
+                  "  pm.expect(body.goals.length).to.be.above(0);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "url": "{{baseUrl}}/v1/goals"
+          }
+        },
+        {
+          "name": "Get Goal by ID",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Get goal returns 200', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "const body = pm.response.json();",
+                  "pm.test('Returned goal matches goalId', function () {",
+                  "  pm.expect(body.goal.id).to.eql(pm.collectionVariables.get('goalId'));",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "url": "{{baseUrl}}/v1/goals/{{goalId}}"
+          }
+        },
+        {
+          "name": "Contribute to Goal",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Contribute returns 200', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "const body = pm.response.json();",
+                  "pm.test('Saved amount increased', function () {",
+                  "  pm.expect(body.goal).to.have.property('saved_amount');",
+                  "  const saved = parseFloat(body.goal.saved_amount);",
+                  "  pm.expect(saved).to.be.at.least(350);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"amount\": \"150.00\",\n  \"currency\": \"USD\",\n  \"notes\": \"Monthly savings contribution\",\n  \"contributed_at\": \"2026-09-19T08:00:00Z\"\n}"
+            },
+            "url": "{{baseUrl}}/v1/goals/{{goalId}}/contribute"
+          }
+        },
+        {
+          "name": "Update Goal",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Update goal returns 200', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "const body = pm.response.json();",
+                  "pm.test('Update message present', function () {",
+                  "  pm.expect(body.message).to.include('updated');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"New Laptop Pro\",\n  \"emoji\": \"💻\",\n  \"goal_type\": \"device\",\n  \"target_amount\": \"2500.00\",\n  \"currency\": \"USD\",\n  \"deadline\": \"2028-03-31T00:00:00Z\",\n  \"priority\": 1,\n  \"is_completed\": false\n}"
+            },
+            "url": "{{baseUrl}}/v1/goals/{{goalId}}"
+          }
+        },
+        {
+          "name": "Delete Goal",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Delete goal returns 200', function () {",
+                  "  pm.response.to.have.status(200);",
+                  "});",
+                  "const body = pm.response.json();",
+                  "pm.test('Delete message present', function () {",
+                  "  pm.expect(body.message).to.include('deleted');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{accessToken}}" }
+            ],
+            "url": "{{baseUrl}}/v1/goals/{{goalId}}"
+          }
+        }
+      ]
+    }
+  ]
+}
