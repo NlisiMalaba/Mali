@@ -21,6 +21,9 @@ RUN apk add --no-cache ca-certificates tzdata wget
 COPY --from=builder /out/mali_api /usr/local/bin/mali_api
 COPY --from=migrate-builder /go/bin/migrate /usr/local/bin/migrate
 COPY db/migrations /migrations
+COPY docs/openapi.json /docs/openapi.json
+
+WORKDIR /
 
 EXPOSE 8080
 
