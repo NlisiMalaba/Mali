@@ -28,7 +28,9 @@ Public API URL: `https://mali-api.nlisimalaba.co.zw`
    - Proxy status: **DNS only** (grey cloud) so Caddy can obtain a Let's Encrypt certificate
 2. On the VPS firewall, allow inbound **TCP 80** and **TCP 443**.
 
-### Server (Docker Compose)
+### Server (Docker Compose + existing nginx)
+
+This VPS already uses **nginx** on ports 80/443, so prod compose does **not** run Caddy. The API is published on host **8085**, and nginx terminates TLS.
 
 From the repository root on the VPS:
 
@@ -36,6 +38,14 @@ From the repository root on the VPS:
 cp .env.production.example .env
 # Edit .env: set strong POSTGRES_PASSWORD, JWT_SECRET, JWT_REFRESH_SECRET, and matching DATABASE_URL
 docker compose -f docker-compose.prod.yml up -d --build
+
+sudo cp deploy/nginx-mali-api.conf /etc/nginx/sites-available/mali-api
+sudo ln -sf /etc/nginx/sites-available/mali-api /etc/nginx/sites-enabled/mali-api
+sudo nginx -t && sudo systemctl reload nginx
+
+# TLS (certbot must already be set up for nginx on this host)
+sudo certbot --nginx -d mali-api.nlisimalaba.co.zw
+
 curl -fsS https://mali-api.nlisimalaba.co.zw/health
 ```
 
