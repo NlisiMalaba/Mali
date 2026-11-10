@@ -53,9 +53,11 @@ Migrations run automatically via the one-shot `migrate` service before `api` sta
 
 ### Release APK
 
+Default API URL is already `https://mali-api.nlisimalaba.co.zw` in `mali_app/lib/core/config/api_config.dart`.
+
 ```powershell
 cd mali_app
-flutter build apk --release --dart-define=MALI_API_BASE_URL=https://mali-api.nlisimalaba.co.zw
+flutter build apk --release
 ```
 
 APK path: `mali_app/build/app/outputs/flutter-apk/app-release.apk`

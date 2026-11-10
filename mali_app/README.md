@@ -30,15 +30,22 @@ flutter pub get
 
 The app reads `MALI_API_BASE_URL` at compile time (`lib/core/config/api_config.dart`).
 
+**Default (unset):** `https://mali-api.nlisimalaba.co.zw` (production).
+
 | Where the app runs | Host to use | Example |
 | --- | --- | --- |
-| Android emulator | `10.0.2.2` (alias for your PC) | `http://10.0.2.2:8082` |
-| iOS Simulator (macOS) | `localhost` | `http://localhost:8082` |
+| Production / release APK | Live API | `https://mali-api.nlisimalaba.co.zw` |
+| Android emulator + local Docker | `10.0.2.2` (alias for your PC) | `http://10.0.2.2:8082` |
+| iOS Simulator (macOS) + local Docker | `localhost` | `http://localhost:8082` |
 | Physical phone (same Wi‑Fi as PC) | Your PC’s LAN IP | `http://192.168.1.50:8082` |
 
-Default when unset: `http://10.0.2.2:8082` (Android emulator + local Docker).
+Release APK (uses production default):
 
-Override with `--dart-define`:
+```powershell
+flutter build apk --release
+```
+
+Local Docker override:
 
 ```powershell
 flutter run --dart-define=MALI_API_BASE_URL=http://10.0.2.2:8082
