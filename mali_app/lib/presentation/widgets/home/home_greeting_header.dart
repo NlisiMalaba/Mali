@@ -28,7 +28,7 @@ class HomeGreetingHeader extends StatelessWidget {
         ),
         const SizedBox(height: 4),
         Text(
-          'Sovereign Ledger',
+          'Your money today',
           style: theme.textTheme.headlineSmall?.copyWith(
             fontWeight: FontWeight.w700,
             color: AppColors.primary,

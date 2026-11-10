@@ -1,3 +1,4 @@
+import 'package:flutter/cupertino.dart' show CupertinoPageTransitionsBuilder;
 import 'package:flutter/material.dart';
 import 'package:mali_app/presentation/theme/app_colors.dart';
 import 'package:mali_app/presentation/theme/app_decorations.dart';
@@ -42,7 +43,7 @@ class AppTheme {
       colorScheme: colorScheme,
       scaffoldBackground: AppColors.background,
       surfaceContainer: AppColors.surfaceContainerLowest,
-      inputFill: AppColors.surfaceContainerHigh,
+      inputFill: AppColors.surfaceContainerLowest,
     );
   }
 
@@ -133,7 +134,7 @@ class AppTheme {
       ),
       navigationBarTheme: NavigationBarThemeData(
         backgroundColor: Colors.transparent,
-        indicatorColor: AppColors.primaryFixed.withValues(alpha: 0.3),
+        indicatorColor: AppColors.silver.withValues(alpha: 0.2),
         labelTextStyle: WidgetStateProperty.resolveWith((states) {
           final selected = states.contains(WidgetState.selected);
           return textTheme.labelSmall?.copyWith(
@@ -150,9 +151,10 @@ class AppTheme {
         style: FilledButton.styleFrom(
           backgroundColor: AppColors.primary,
           foregroundColor: AppColors.onPrimary,
+          minimumSize: const Size(64, 56),
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(AppDecorations.radiusMd),
+            borderRadius: BorderRadius.circular(18),
           ),
           textStyle: textTheme.titleMedium?.copyWith(
             fontWeight: FontWeight.w800,
@@ -163,19 +165,21 @@ class AppTheme {
         filled: true,
         fillColor: inputFill,
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(AppDecorations.radiusXl),
+          borderRadius: BorderRadius.circular(AppDecorations.radiusMd),
           borderSide: BorderSide.none,
         ),
         enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(AppDecorations.radiusXl),
-          borderSide: BorderSide(
-            color: AppColors.outlineVariant.withValues(alpha: 0.15),
+          borderRadius: BorderRadius.circular(AppDecorations.radiusMd),
+          borderSide: const BorderSide(
+            color: AppColors.surfaceContainerHigh,
+            width: 1.5,
           ),
         ),
         focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(AppDecorations.radiusXl),
-          borderSide: BorderSide(
-            color: AppColors.primary.withValues(alpha: 0.4),
+          borderRadius: BorderRadius.circular(AppDecorations.radiusMd),
+          borderSide: const BorderSide(
+            color: AppColors.navy,
+            width: 1.5,
           ),
         ),
         contentPadding: const EdgeInsets.symmetric(
@@ -185,12 +189,32 @@ class AppTheme {
       ),
       chipTheme: ChipThemeData(
         backgroundColor: AppColors.surfaceContainerHigh,
-        selectedColor: AppColors.secondaryContainer.withValues(alpha: 0.3),
+        selectedColor: AppColors.navy,
+        secondaryLabelStyle: textTheme.labelMedium?.copyWith(
+          color: AppColors.silver,
+        ),
         labelStyle: textTheme.labelMedium,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(999),
         ),
         side: BorderSide.none,
+      ),
+      snackBarTheme: SnackBarThemeData(
+        behavior: SnackBarBehavior.floating,
+        backgroundColor: AppColors.navy,
+        contentTextStyle: textTheme.bodyMedium?.copyWith(
+          color: AppColors.onPrimary,
+        ),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppDecorations.radiusMd),
+        ),
+      ),
+      bottomSheetTheme: const BottomSheetThemeData(
+        backgroundColor: AppColors.surfaceBright,
+        dragHandleColor: AppColors.surfaceDim,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(32)),
+        ),
       ),
       switchTheme: SwitchThemeData(
         thumbColor: WidgetStateProperty.resolveWith((states) {
@@ -201,9 +225,9 @@ class AppTheme {
         }),
         trackColor: WidgetStateProperty.resolveWith((states) {
           if (states.contains(WidgetState.selected)) {
-            return AppColors.primary;
+            return AppColors.success;
           }
-          return AppColors.surfaceContainerHighest;
+          return AppColors.surfaceDim;
         }),
       ),
     );

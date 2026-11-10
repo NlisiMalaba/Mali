@@ -5,7 +5,7 @@ import 'package:share_plus/share_plus.dart';
 class SharePlusFileShareService implements IFileShareService {
   const SharePlusFileShareService();
 
-  static const String shareSubject = 'Mali transactions';
+  static const String shareSubject = 'Master of Coin transactions';
 
   @override
   Future<void> shareFile(ExportedFile file) async {

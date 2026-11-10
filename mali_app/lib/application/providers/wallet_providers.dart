@@ -26,6 +26,6 @@ bool needsWalletSetup(Ref ref) {
   return wallets.when(
     data: (list) => list.isEmpty,
     loading: () => false,
-    error: (_, __) => false,
+    error: (_, _) => false,
   );
 }

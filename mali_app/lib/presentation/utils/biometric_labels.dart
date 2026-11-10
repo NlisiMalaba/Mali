@@ -28,6 +28,6 @@ abstract final class BiometricLabels {
   }
 
   static String settingsSubtitle(BiometricCapability capability) {
-    return 'Unlock Mali with ${unlockAction(capability).toLowerCase()}';
+    return 'Unlock with ${unlockAction(capability).toLowerCase()}';
   }
 }

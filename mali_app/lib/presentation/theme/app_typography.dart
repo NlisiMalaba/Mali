@@ -2,43 +2,44 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:mali_app/presentation/theme/app_colors.dart';
 
-/// Dual-typeface system: Manrope (display/headline) + Inter (body/label).
+/// Dual-typeface system: Space Grotesk (numbers, display, headlines) + Inter
+/// (body and labels).
 class AppTypography {
   const AppTypography._();
 
   static TextTheme textTheme({required Color bodyColor, required bool isDark}) {
-    final manrope = GoogleFonts.manropeTextTheme();
+    final grotesk = GoogleFonts.spaceGroteskTextTheme();
     final inter = GoogleFonts.interTextTheme();
 
     return TextTheme(
-      displayLarge: manrope.displayLarge?.copyWith(
+      displayLarge: grotesk.displayLarge?.copyWith(
         color: bodyColor,
-        fontWeight: FontWeight.w800,
-        letterSpacing: -0.5,
+        fontWeight: FontWeight.w700,
+        letterSpacing: -1.5,
       ),
-      displayMedium: manrope.displayMedium?.copyWith(
+      displayMedium: grotesk.displayMedium?.copyWith(
         color: bodyColor,
-        fontWeight: FontWeight.w800,
-        letterSpacing: -0.5,
+        fontWeight: FontWeight.w700,
+        letterSpacing: -1.5,
       ),
-      displaySmall: manrope.displaySmall?.copyWith(
+      displaySmall: grotesk.displaySmall?.copyWith(
         color: bodyColor,
-        fontWeight: FontWeight.w800,
-        letterSpacing: -0.25,
+        fontWeight: FontWeight.w700,
+        letterSpacing: -1,
       ),
-      headlineLarge: manrope.headlineLarge?.copyWith(
+      headlineLarge: grotesk.headlineLarge?.copyWith(
         color: bodyColor,
         fontWeight: FontWeight.w700,
       ),
-      headlineMedium: manrope.headlineMedium?.copyWith(
+      headlineMedium: grotesk.headlineMedium?.copyWith(
         color: bodyColor,
         fontWeight: FontWeight.w700,
       ),
-      headlineSmall: manrope.headlineSmall?.copyWith(
+      headlineSmall: grotesk.headlineSmall?.copyWith(
         color: bodyColor,
         fontWeight: FontWeight.w700,
       ),
-      titleLarge: manrope.titleLarge?.copyWith(
+      titleLarge: grotesk.titleLarge?.copyWith(
         color: bodyColor,
         fontWeight: FontWeight.w700,
       ),
@@ -83,9 +84,26 @@ class AppTypography {
 
   static TextStyle currencyHero(BuildContext context) {
     return Theme.of(context).textTheme.displaySmall!.copyWith(
-      fontWeight: FontWeight.w800,
+      fontWeight: FontWeight.w700,
       color: AppColors.primary,
-      letterSpacing: -1,
+      letterSpacing: -1.5,
+      fontFeatures: const [FontFeature.tabularFigures()],
+    );
+  }
+
+  /// Money figures anywhere in the app: Space Grotesk with tabular digits so
+  /// amounts don't jitter while counting up.
+  static TextStyle money({
+    required double fontSize,
+    Color color = AppColors.onSurface,
+    FontWeight fontWeight = FontWeight.w700,
+  }) {
+    return GoogleFonts.spaceGrotesk(
+      fontSize: fontSize,
+      fontWeight: fontWeight,
+      color: color,
+      letterSpacing: fontSize >= 28 ? -1.2 : -0.3,
+      fontFeatures: const [FontFeature.tabularFigures()],
     );
   }
 }

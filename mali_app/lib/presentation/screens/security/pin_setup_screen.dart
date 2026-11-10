@@ -29,7 +29,7 @@ class _PinSetupScreenState extends ConsumerState<PinSetupScreen> {
 
   String get _stepSubtitle {
     return _firstPin == null
-        ? 'Choose a 4-digit PIN to protect Mali'
+        ? 'Keeps your money private if someone else picks up your phone'
         : 'Enter the same PIN again';
   }
 

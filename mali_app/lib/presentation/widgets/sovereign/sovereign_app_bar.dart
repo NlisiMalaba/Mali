@@ -2,10 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mali_app/application/providers/auth_provider.dart';
+import 'package:mali_app/core/constants/app_info.dart';
 import 'package:mali_app/presentation/theme/app_colors.dart';
 import 'package:mali_app/presentation/theme/app_decorations.dart';
 
-/// Glassmorphism top bar with profile avatar, Mali branding, and actions.
+/// Glassmorphism top bar with profile avatar, Master of Coin branding, and actions.
 class SovereignAppBar extends ConsumerWidget implements PreferredSizeWidget {
   const SovereignAppBar({
     this.title,
@@ -73,11 +74,11 @@ class SovereignAppBar extends ConsumerWidget implements PreferredSizeWidget {
                 const SizedBox(width: 8),
                 if (!showBackButton)
                   Text(
-                    'Mali',
-                    style: theme.textTheme.titleLarge?.copyWith(
-                      fontWeight: FontWeight.w900,
+                    AppInfo.name,
+                    style: theme.textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.w700,
                       color: AppColors.primary,
-                      letterSpacing: -1,
+                      letterSpacing: -0.3,
                     ),
                   ),
                 if (title != null) ...[
@@ -95,7 +96,7 @@ class SovereignAppBar extends ConsumerWidget implements PreferredSizeWidget {
                   ),
                 ] else
                   const Spacer(),
-                if (actions != null) ...actions!,
+                ...?actions,
                 IconButton(
                   key: const Key('sovereign-notifications-button'),
                   icon: const Icon(Icons.notifications_outlined),

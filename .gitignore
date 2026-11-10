@@ -2,8 +2,9 @@ planning/
 .cursor/
 .env
 
-# README files (all variants)
-**/README.md
-**/README
-**/readme.md
-**/Readme.md
+# Environment files (keep the examples)
+**/.env
+!**/.env.example
+
+# Go build output (air hot-reload)
+mali_api/tmp/

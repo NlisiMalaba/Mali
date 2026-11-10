@@ -28,6 +28,6 @@ void main() {
     await tester.pump(SplashScreen.minimumDisplayDuration);
     await tester.pumpAndSettle();
 
-    expect(find.text('Login'), findsOneWidget);
+    expect(find.text('Welcome back'), findsOneWidget);
   });
 }

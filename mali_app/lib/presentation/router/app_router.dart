@@ -6,6 +6,7 @@ import 'package:mali_app/application/providers/pin_lock_providers.dart';
 import 'package:mali_app/application/providers/wallet_providers.dart';
 import 'package:mali_app/presentation/screens/security/pin_entry_screen.dart';
 import 'package:mali_app/presentation/screens/security/pin_setup_screen.dart';
+import 'package:mali_app/presentation/screens/settings/notification_settings_screen.dart';
 import 'package:mali_app/presentation/screens/settings/security_settings_screen.dart';
 import 'package:mali_app/presentation/screens/budget/budgets_screen.dart';
 import 'package:mali_app/presentation/screens/goal/goal_detail_screen.dart';
@@ -16,7 +17,6 @@ import 'package:mali_app/presentation/screens/analytics/category_drilldown_scree
 import 'package:mali_app/presentation/screens/auth/login_screen.dart';
 import 'package:mali_app/presentation/screens/auth/register_screen.dart';
 import 'package:mali_app/presentation/screens/home/home_screen.dart';
-import 'package:mali_app/presentation/screens/placeholder_screen.dart';
 import 'package:mali_app/presentation/screens/settings/exchange_rates_settings_screen.dart';
 import 'package:mali_app/presentation/screens/settings/export_screen.dart';
 import 'package:mali_app/presentation/screens/settings/settings_screen.dart';
@@ -165,9 +165,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
           ),
           GoRoute(
             path: 'notifications',
-            builder: (context, state) => const PlaceholderScreen(
-              title: 'Notifications',
-            ),
+            builder: (context, state) => const NotificationSettingsScreen(),
           ),
           GoRoute(
             path: 'security',

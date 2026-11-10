@@ -144,7 +144,7 @@ class _TransactionListScreenState extends ConsumerState<TransactionListScreen> {
         : walletAsync?.when(
               data: (wallet) => wallet?.name ?? 'Transactions',
               loading: () => 'Transactions',
-              error: (_, __) => 'Transactions',
+              error: (_, _) => 'Transactions',
             ) ??
             'Transactions';
 

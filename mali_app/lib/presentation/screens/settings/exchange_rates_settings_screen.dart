@@ -87,7 +87,7 @@ class ExchangeRatesSettingsScreen extends ConsumerWidget {
             children: [
               lastUpdatedAsync.when(
                 loading: () => const SizedBox.shrink(),
-                error: (_, __) => const SizedBox.shrink(),
+                error: (_, _) => const SizedBox.shrink(),
                 data: (lastUpdated) {
                   if (lastUpdated == null) {
                     return Padding(
@@ -122,7 +122,7 @@ class ExchangeRatesSettingsScreen extends ConsumerWidget {
                 child: ListView.separated(
                   padding: const EdgeInsets.all(16),
                   itemCount: items.length,
-                  separatorBuilder: (_, __) => const SizedBox(height: 8),
+                  separatorBuilder: (_, _) => const SizedBox(height: 8),
                   itemBuilder: (context, index) {
                     final item = items[index];
                     final rate = item.rate;

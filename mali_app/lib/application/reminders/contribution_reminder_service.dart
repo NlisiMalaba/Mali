@@ -53,6 +53,10 @@ class ContributionReminderService {
     return result;
   }
 
+  /// Entry point for the background task when the user has turned reminders
+  /// off: skip this month's prompt but keep next month's queued.
+  Future<void> skipAndReschedule() => _rescheduleAfterRun();
+
   Future<ReminderDeliveryResult> deliverReminder() async {
     final result = await _buildContributionReminder(
       now: _clock(),

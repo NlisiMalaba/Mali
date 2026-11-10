@@ -35,7 +35,7 @@ class SettingsTile extends StatelessWidget {
               height: 40,
               decoration: BoxDecoration(
                 color: AppColors.secondary.withValues(alpha: 0.1),
-                shape: BoxShape.circle,
+                borderRadius: BorderRadius.circular(12),
               ),
               child: Icon(icon, color: AppColors.secondary, size: 20),
             ),

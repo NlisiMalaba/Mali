@@ -1,4 +1,3 @@
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mali_app/application/providers/repository_providers.dart';
 import 'package:mali_app/domain/value_objects/currency_code.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';

@@ -92,7 +92,7 @@ class _PinEntryScreenState extends ConsumerState<PinEntryScreen> {
                   title: 'Enter your PIN',
                   subtitle: showBiometric
                       ? 'Or use biometrics to unlock'
-                      : 'Unlock Mali to continue',
+                      : 'Enter your PIN to continue',
                   onCompleted: (pin) async {
                     final error = await ref
                         .read(pinLockControllerProvider.notifier)

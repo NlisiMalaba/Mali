@@ -1,76 +1,101 @@
 import 'package:flutter/material.dart';
 
-/// Sovereign Ledger design tokens — "The Sovereign Ledger" palette.
+/// Master of Coin design tokens — "Navy & Silver".
+///
+/// Navy carries the brand (hero cards, the bottom bar, primary buttons) and
+/// silver is the accent on navy. Green, amber and red are reserved for meaning:
+/// money in / on track, close to a limit, and over a limit or errors.
 class AppColors {
   const AppColors._();
 
-  // Primary — Wealth Green
-  static const Color primary = Color(0xFF00450D);
-  static const Color onPrimary = Color(0xFFFFFFFF);
-  static const Color primaryContainer = Color(0xFF1B5E20);
-  static const Color onPrimaryContainer = Color(0xFF90D689);
-  static const Color primaryFixed = Color(0xFFACF4A4);
-  static const Color primaryFixedDim = Color(0xFF91D78A);
-  static const Color onPrimaryFixed = Color(0xFF002203);
+  // Brand — Navy & Silver
+  static const Color navy = Color(0xFF0B1B3F);
+  static const Color navyRaised = Color(0xFF16295A);
+  static const Color navyBorder = Color(0xFF2B4580);
+  static const Color navyDeep = Color(0xFF070F24);
+  static const Color silver = Color(0xFFE6EAF2);
+  static const Color silverDim = Color(0xFFC8CFDD);
 
-  // Secondary — Secure Navy
-  static const Color secondary = Color(0xFF4C56AF);
+  /// Muted text and icons placed on navy surfaces.
+  static const Color onNavyMuted = Color(0xFFB8C4E0);
+  static const Color navInactive = Color(0xFFA3B1D1);
+
+  /// Text links and small interactive accents on light surfaces.
+  static const Color link = Color(0xFF2F5BEA);
+
+  // Primary — Navy
+  static const Color primary = navy;
+  static const Color onPrimary = Color(0xFFF4F6FB);
+  static const Color primaryContainer = navyRaised;
+  static const Color onPrimaryContainer = onNavyMuted;
+  static const Color primaryFixed = silver;
+  static const Color primaryFixedDim = silverDim;
+  static const Color onPrimaryFixed = navy;
+
+  // Secondary — Link blue
+  static const Color secondary = link;
   static const Color onSecondary = Color(0xFFFFFFFF);
-  static const Color secondaryContainer = Color(0xFF959EFD);
-  static const Color onSecondaryContainer = Color(0xFF27308A);
-  static const Color secondaryFixed = Color(0xFFE0E0FF);
-  static const Color secondaryFixedDim = Color(0xFFBDC2FF);
+  static const Color secondaryContainer = Color(0xFFDCE4FB);
+  static const Color onSecondaryContainer = Color(0xFF1E3A8A);
+  static const Color secondaryFixed = Color(0xFFE3E8F2);
+  static const Color secondaryFixedDim = silverDim;
 
-  // Tertiary — Warm Amber
-  static const Color tertiary = Color(0xFF553300);
+  // Tertiary — Amber (warnings, "close to limit")
+  static const Color tertiary = Color(0xFF8F4A00);
   static const Color onTertiary = Color(0xFFFFFFFF);
   static const Color tertiaryContainer = Color(0xFF754700);
   static const Color onTertiaryContainer = Color(0xFFFFB65E);
-  static const Color tertiaryFixed = Color(0xFFFFDDBA);
-  static const Color tertiaryFixedDim = Color(0xFFFFB865);
+  static const Color tertiaryFixed = Color(0xFFFFE9D1);
+  static const Color tertiaryFixedDim = Color(0xFFE8890C);
 
-  // Surfaces — tonal layering
-  static const Color background = Color(0xFFF9F9F9);
-  static const Color onBackground = Color(0xFF1A1C1C);
-  static const Color surface = Color(0xFFF9F9F9);
-  static const Color onSurface = Color(0xFF1A1C1C);
-  static const Color onSurfaceVariant = Color(0xFF41493E);
-  static const Color surfaceBright = Color(0xFFF9F9F9);
-  static const Color surfaceDim = Color(0xFFDADADA);
+  // Surfaces — cool grey-blue layering
+  static const Color background = Color(0xFFF4F6FB);
+  static const Color onBackground = Color(0xFF0F172A);
+  static const Color surface = Color(0xFFF4F6FB);
+  static const Color onSurface = Color(0xFF0F172A);
+  static const Color onSurfaceVariant = Color(0xFF556079);
+  static const Color surfaceBright = Color(0xFFF8F9FC);
+  static const Color surfaceDim = Color(0xFFD4DAE6);
   static const Color surfaceContainerLowest = Color(0xFFFFFFFF);
-  static const Color surfaceContainerLow = Color(0xFFF3F3F3);
-  static const Color surfaceContainer = Color(0xFFEEEEEE);
-  static const Color surfaceContainerHigh = Color(0xFFE8E8E8);
-  static const Color surfaceContainerHighest = Color(0xFFE2E2E2);
-  static const Color surfaceVariant = Color(0xFFE2E2E2);
-  static const Color surfaceTint = Color(0xFF2A6B2C);
+  static const Color surfaceContainerLow = Color(0xFFF8F9FC);
+  static const Color surfaceContainer = Color(0xFFECEFF5);
+  static const Color surfaceContainerHigh = Color(0xFFE3E8F2);
+  static const Color surfaceContainerHighest = Color(0xFFDCE1EC);
+  static const Color surfaceVariant = Color(0xFFE3E8F2);
+  static const Color surfaceTint = navy;
 
   // Outline
-  static const Color outline = Color(0xFF717A6D);
-  static const Color outlineVariant = Color(0xFFC0C9BB);
+  static const Color outline = Color(0xFF8590A6);
+  static const Color outlineVariant = Color(0xFFD4DAE6);
 
   // Semantic
-  static const Color error = Color(0xFFBA1A1A);
+  static const Color error = Color(0xFFB42318);
   static const Color onError = Color(0xFFFFFFFF);
-  static const Color errorContainer = Color(0xFFFFDAD6);
-  static const Color onErrorContainer = Color(0xFF93000A);
-  static const Color success = Color(0xFF16A34A);
-  static const Color warning = Color(0xFFF59E0B);
+  static const Color errorContainer = Color(0xFFFDE4E1);
+  static const Color onErrorContainer = Color(0xFF7A1A10);
+  static const Color success = Color(0xFF0F7A3D);
+  static const Color successContainer = Color(0xFFE3F4E9);
+  static const Color warning = Color(0xFFE8890C);
+
+  /// Money leaving the user's wallets in charts ("out" bars and legends).
+  static const Color moneyOut = Color(0xFFC96F00);
+  static const Color warningText = Color(0xFF8F4A00);
+  static const Color warningContainer = Color(0xFFFFE9D1);
 
   // Inverse
-  static const Color inverseSurface = Color(0xFF2F3131);
-  static const Color onInverseSurface = Color(0xFFF1F1F1);
-  static const Color inversePrimary = Color(0xFF91D78A);
+  static const Color inverseSurface = navy;
+  static const Color onInverseSurface = Color(0xFFF4F6FB);
+  static const Color inversePrimary = silver;
 
   // Dark mode surfaces
-  static const Color darkBackground = Color(0xFF0B1220);
-  static const Color darkSurface = Color(0xFF111827);
-  static const Color darkOnSurface = Color(0xFFE5E7EB);
+  static const Color darkBackground = navyDeep;
+  static const Color darkSurface = navy;
+  static const Color darkOnSurface = silver;
 
   // Legacy aliases (used across existing widgets/tests)
-  static const Color tealPrimary = primaryFixedDim;
-  static const Color tealPrimaryDark = primaryContainer;
-  static const Color tealPrimaryLight = primaryFixed;
+  static const Color tealPrimary = link;
+  static const Color tealPrimaryDark = navy;
+  static const Color tealPrimaryLight = silver;
   static const Color lightBackground = background;
   static const Color lightSurface = surfaceContainerLowest;
   static const Color lightOnSurface = onSurface;

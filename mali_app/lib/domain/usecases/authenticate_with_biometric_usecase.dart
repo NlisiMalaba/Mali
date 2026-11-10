@@ -7,7 +7,7 @@ class AuthenticateWithBiometricUseCase {
 
   final IBiometricAuthenticator _biometricAuthenticator;
 
-  static const String _unlockReason = 'Unlock Mali';
+  static const String _unlockReason = 'Unlock Master of Coin';
 
   Future<BiometricAuthResult> call() {
     return _biometricAuthenticator.authenticate(

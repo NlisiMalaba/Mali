@@ -7,7 +7,7 @@
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
 	<key>CFBundleDisplayName</key>
-	<string>Mali App</string>
+	<string>Master of Coin</string>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIdentifier</key>
@@ -47,8 +47,12 @@
 			</array>
 		</dict>
 	</dict>
+	<key>NSCameraUsageDescription</key>
+	<string>Mali uses the camera to scan receipts. Photos are read on your phone and never uploaded.</string>
 	<key>NSFaceIDUsageDescription</key>
 	<string>Use Face ID to unlock Mali quickly and securely.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Mali reads receipt photos you choose to fill in an expense. Photos are never uploaded.</string>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
 	<key>UILaunchStoryboardName</key>

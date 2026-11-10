@@ -72,7 +72,7 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      expect(find.text('TOTAL EST. VALUE'), findsOneWidget);
+      expect(find.text('Net worth'), findsOneWidget);
       expect(find.byKey(const Key('net-worth-total')), findsOneWidget);
     });
 
@@ -121,7 +121,10 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      expect(find.text('USD'), findsOneWidget);
+      final currencyPill = tester.widget<Text>(
+        find.byKey(const Key('net-worth-currency')),
+      );
+      expect(currencyPill.data, 'USD');
       expect(find.byKey(const Key('net-worth-total')), findsOneWidget);
     });
 

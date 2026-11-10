@@ -3,21 +3,22 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:mali_app/presentation/theme/app_colors.dart';
 
-/// Shared visual primitives for the Sovereign Ledger design system.
+/// Shared visual primitives for the Master of Coin "Navy & Silver" system.
 class AppDecorations {
   const AppDecorations._();
 
-  static const double radiusMd = 12;
-  static const double radiusXl = 24;
-  static const double radiusHero = 32;
+  static const double radiusSm = 12;
+  static const double radiusMd = 16;
+  static const double radiusLg = 20;
+  static const double radiusXl = 22;
+  static const double radiusHero = 28;
 
   static const LinearGradient heroGradient = LinearGradient(
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
     colors: [
-      AppColors.primary,
-      AppColors.primaryContainer,
-      AppColors.secondary,
+      AppColors.navy,
+      AppColors.navy,
     ],
   );
 
@@ -25,16 +26,16 @@ class AppDecorations {
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
     colors: [
-      AppColors.primary,
-      AppColors.primaryContainer,
+      AppColors.navy,
+      AppColors.navy,
     ],
   );
 
   static BoxDecoration heroCard({double radius = radiusHero}) {
     return BoxDecoration(
-      gradient: heroGradient,
+      color: AppColors.navy,
       borderRadius: BorderRadius.circular(radius),
-      boxShadow: ambientShadow(),
+      boxShadow: navyShadow(),
     );
   }
 
@@ -74,11 +75,31 @@ class AppDecorations {
     ];
   }
 
+  /// Deep, tinted shadow that makes navy cards feel lifted off the page.
+  static List<BoxShadow> navyShadow() {
+    return [
+      BoxShadow(
+        color: AppColors.navy.withValues(alpha: 0.45),
+        blurRadius: 40,
+        spreadRadius: -12,
+        offset: const Offset(0, 24),
+      ),
+    ];
+  }
+
+  /// Small rounded square holding a category or setting icon.
+  static BoxDecoration iconTile(Color tint, {double radius = radiusSm}) {
+    return BoxDecoration(
+      color: tint,
+      borderRadius: BorderRadius.circular(radius),
+    );
+  }
+
   static List<BoxShadow> softCardShadow() {
     return [
       BoxShadow(
-        color: Colors.black.withValues(alpha: 0.03),
-        blurRadius: 20,
+        color: AppColors.navy.withValues(alpha: 0.05),
+        blurRadius: 16,
         offset: const Offset(0, 4),
       ),
     ];

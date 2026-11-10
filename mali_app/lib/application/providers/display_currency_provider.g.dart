@@ -9,22 +9,16 @@ part of 'display_currency_provider.dart';
 // GENERATED CODE - DO NOT MODIFY BY HAND
 // ignore_for_file: type=lint, type=warning
 /// User's preferred currency for displaying equivalents and net worth.
-///
-/// TODO(settings-31): Load from persisted user preferences.
 
 @ProviderFor(displayCurrency)
 final displayCurrencyProvider = DisplayCurrencyProvider._();
 
 /// User's preferred currency for displaying equivalents and net worth.
-///
-/// TODO(settings-31): Load from persisted user preferences.
 
 final class DisplayCurrencyProvider
     extends $FunctionalProvider<CurrencyCode, CurrencyCode, CurrencyCode>
     with $Provider<CurrencyCode> {
   /// User's preferred currency for displaying equivalents and net worth.
-  ///
-  /// TODO(settings-31): Load from persisted user preferences.
   DisplayCurrencyProvider._()
     : super(
         from: null,
@@ -58,4 +52,4 @@ final class DisplayCurrencyProvider
   }
 }
 
-String _$displayCurrencyHash() => r'70c31d2aa6419ed637a678a46c349c5d87fe06c7';
+String _$displayCurrencyHash() => r'f7a5e010bbb48070add56e31f900426a587ca26e';

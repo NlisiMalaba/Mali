@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:mali_app/presentation/theme/app_colors.dart';
-import 'package:mali_app/presentation/theme/app_decorations.dart';
+import 'package:mali_app/presentation/theme/app_motion.dart';
 import 'package:mali_app/presentation/widgets/common/pressable_scale.dart';
 
 enum SovereignNavDestination {
@@ -10,6 +10,7 @@ enum SovereignNavDestination {
   goals,
 }
 
+/// Floating navy bottom bar with a raised silver "add" button in the middle.
 class SovereignBottomNav extends StatelessWidget {
   const SovereignBottomNav({
     required this.selected,
@@ -18,14 +19,15 @@ class SovereignBottomNav extends StatelessWidget {
     super.key,
   });
 
-  static const double _barPaddingTop = 12;
-  static const double _barContentHeight = 64;
-  static const double _barPaddingBottom = 24;
+  static const double _barHeight = 70;
+  static const double _sideMargin = 16;
+  static const double _bottomMargin = 18;
+  static const double _barRadius = 26;
 
   /// Space to reserve so scrollable content and sheets are not hidden behind
-  /// the shell bottom navigation bar.
+  /// the floating bar.
   static double contentInset(BuildContext context) {
-    return _barPaddingTop + _barContentHeight + _barPaddingBottom;
+    return _barHeight + _bottomMargin + MediaQuery.paddingOf(context).bottom;
   }
 
   final SovereignNavDestination selected;
@@ -34,58 +36,67 @@ class SovereignBottomNav extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
-
-    return AppDecorations.glassBar(
-      backgroundColor: isDark
-          ? AppColors.darkSurface
-          : AppColors.surfaceContainerLowest,
-      borderRadius: const BorderRadius.vertical(
-        top: Radius.circular(AppDecorations.radiusHero),
-      ),
-      child: Container(
-        decoration: BoxDecoration(
-          boxShadow: AppDecorations.bottomNavShadow(),
-          borderRadius: const BorderRadius.vertical(
-            top: Radius.circular(AppDecorations.radiusHero),
-          ),
+    return SafeArea(
+      top: false,
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(
+          _sideMargin,
+          0,
+          _sideMargin,
+          _bottomMargin,
         ),
-        padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceAround,
-          children: [
-            _NavItem(
-              icon: Icons.grid_view_rounded,
-              label: 'Home',
-              selected: selected == SovereignNavDestination.home,
-              onTap: () => onDestinationSelected(SovereignNavDestination.home),
-            ),
-            _NavItem(
-              icon: Icons.account_balance_wallet_outlined,
-              selectedIcon: Icons.account_balance_wallet,
-              label: 'Wallets',
-              selected: selected == SovereignNavDestination.wallets,
-              onTap: () =>
-                  onDestinationSelected(SovereignNavDestination.wallets),
-            ),
-            _AddFab(onPressed: onAddPressed),
-            _NavItem(
-              icon: Icons.layers_outlined,
-              selectedIcon: Icons.layers,
-              label: 'Budgets',
-              selected: selected == SovereignNavDestination.budgets,
-              onTap: () =>
-                  onDestinationSelected(SovereignNavDestination.budgets),
-            ),
-            _NavItem(
-              icon: Icons.track_changes_outlined,
-              selectedIcon: Icons.track_changes,
-              label: 'Goals',
-              selected: selected == SovereignNavDestination.goals,
-              onTap: () => onDestinationSelected(SovereignNavDestination.goals),
-            ),
-          ],
+        child: Container(
+          height: _barHeight,
+          decoration: BoxDecoration(
+            color: AppColors.navy,
+            borderRadius: BorderRadius.circular(_barRadius),
+            boxShadow: [
+              BoxShadow(
+                color: AppColors.navy.withValues(alpha: 0.5),
+                blurRadius: 34,
+                spreadRadius: -8,
+                offset: const Offset(0, 14),
+              ),
+            ],
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceAround,
+            children: [
+              _NavItem(
+                icon: Icons.home_outlined,
+                selectedIcon: Icons.home_rounded,
+                label: 'Home',
+                selected: selected == SovereignNavDestination.home,
+                onTap: () =>
+                    onDestinationSelected(SovereignNavDestination.home),
+              ),
+              _NavItem(
+                icon: Icons.account_balance_wallet_outlined,
+                selectedIcon: Icons.account_balance_wallet,
+                label: 'Wallets',
+                selected: selected == SovereignNavDestination.wallets,
+                onTap: () =>
+                    onDestinationSelected(SovereignNavDestination.wallets),
+              ),
+              _AddFab(onPressed: onAddPressed),
+              _NavItem(
+                icon: Icons.pie_chart_outline,
+                selectedIcon: Icons.pie_chart,
+                label: 'Budgets',
+                selected: selected == SovereignNavDestination.budgets,
+                onTap: () =>
+                    onDestinationSelected(SovereignNavDestination.budgets),
+              ),
+              _NavItem(
+                icon: Icons.track_changes_outlined,
+                selectedIcon: Icons.track_changes,
+                label: 'Goals',
+                selected: selected == SovereignNavDestination.goals,
+                onTap: () =>
+                    onDestinationSelected(SovereignNavDestination.goals),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -107,47 +118,53 @@ class _NavItem extends StatelessWidget {
   final bool selected;
   final VoidCallback onTap;
 
+  static const double _tapSize = 52;
+  static const double _iconSize = 24;
+  static const double _dotSize = 4;
+
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
+    final color = selected ? AppColors.silver : AppColors.navInactive;
+    final duration = AppMotion.resolve(context, AppMotion.normal);
 
-    return GestureDetector(
-      onTap: onTap,
-      behavior: HitTestBehavior.opaque,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        padding: selected
-            ? const EdgeInsets.symmetric(horizontal: 16, vertical: 6)
-            : const EdgeInsets.all(8),
-        decoration: BoxDecoration(
-          color: selected
-              ? AppColors.primaryFixed.withValues(alpha: 0.35)
-              : Colors.transparent,
-          borderRadius: BorderRadius.circular(AppDecorations.radiusMd),
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              selected ? (selectedIcon ?? icon) : icon,
-              size: 24,
-              color: selected
-                  ? AppColors.primary
-                  : theme.colorScheme.onSurface.withValues(alpha: 0.5),
+    return Semantics(
+      button: true,
+      selected: selected,
+      label: label,
+      child: Tooltip(
+        message: label,
+        child: InkResponse(
+          onTap: onTap,
+          radius: _tapSize / 2,
+          child: SizedBox(
+            width: _tapSize,
+            height: _tapSize,
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                AnimatedSwitcher(
+                  duration: duration,
+                  child: Icon(
+                    selected ? (selectedIcon ?? icon) : icon,
+                    key: ValueKey(selected),
+                    size: _iconSize,
+                    color: color,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                AnimatedContainer(
+                  duration: duration,
+                  curve: AppMotion.spring,
+                  width: selected ? _dotSize * 4 : _dotSize,
+                  height: _dotSize,
+                  decoration: BoxDecoration(
+                    color: selected ? AppColors.silver : Colors.transparent,
+                    borderRadius: BorderRadius.circular(_dotSize),
+                  ),
+                ),
+              ],
             ),
-            const SizedBox(height: 4),
-            Text(
-              label.toUpperCase(),
-              style: theme.textTheme.labelSmall?.copyWith(
-                fontSize: 11,
-                fontWeight: FontWeight.w600,
-                letterSpacing: 1.5,
-                color: selected
-                    ? AppColors.primary
-                    : theme.colorScheme.onSurface.withValues(alpha: 0.5),
-              ),
-            ),
-          ],
+          ),
         ),
       ),
     );
@@ -159,28 +176,42 @@ class _AddFab extends StatelessWidget {
 
   final VoidCallback onPressed;
 
+  static const double _size = 58;
+  static const double _lift = -26;
+  static const double _ringWidth = 5;
+
   @override
   Widget build(BuildContext context) {
     return Transform.translate(
-      offset: const Offset(0, -24),
-      child: PressableScale(
-        scale: 0.92,
-        onTap: onPressed,
-        child: Material(
-          elevation: 8,
-          shadowColor: AppColors.primary.withValues(alpha: 0.3),
-          borderRadius: BorderRadius.circular(AppDecorations.radiusMd),
-          child: Ink(
-            width: 64,
-            height: 64,
+      offset: const Offset(0, _lift),
+      child: Semantics(
+        button: true,
+        label: 'Add transaction',
+        child: PressableScale(
+          scale: 0.92,
+          onTap: onPressed,
+          child: Container(
+            width: _size + _ringWidth * 2,
+            height: _size + _ringWidth * 2,
+            padding: const EdgeInsets.all(_ringWidth),
             decoration: BoxDecoration(
-              gradient: AppDecorations.primaryButtonGradient,
-              borderRadius: BorderRadius.circular(AppDecorations.radiusMd),
+              color: AppColors.navy,
+              borderRadius: BorderRadius.circular(24),
             ),
-            child: const Icon(
-              Icons.add,
-              size: 36,
-              color: AppColors.onPrimaryContainer,
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                color: AppColors.silver,
+                borderRadius: BorderRadius.circular(20),
+                boxShadow: [
+                  BoxShadow(
+                    color: AppColors.navy.withValues(alpha: 0.55),
+                    blurRadius: 24,
+                    spreadRadius: -8,
+                    offset: const Offset(0, 10),
+                  ),
+                ],
+              ),
+              child: const Icon(Icons.add_rounded, size: 30, color: AppColors.navy),
             ),
           ),
         ),

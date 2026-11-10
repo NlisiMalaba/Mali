@@ -234,4 +234,4 @@ final class NeedsWalletSetupProvider
   }
 }
 
-String _$needsWalletSetupHash() => r'545d44110fa017455819c650536dd2f403fac4de';
+String _$needsWalletSetupHash() => r'4ef4204405d47b5a0178d94c4b8d6e6e2b5ef020';

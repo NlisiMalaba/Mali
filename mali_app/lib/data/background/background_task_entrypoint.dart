@@ -40,6 +40,9 @@ Future<bool> _runBackgroundSync() async {
 Future<bool> _runWeeklyDigest() async {
   final bootstrap = await NotificationBootstrap.createForBackgroundIsolate();
   try {
+    if (!bootstrap.preferences.weeklyDigestEnabled) {
+      return true;
+    }
     final result = await bootstrap.digestNotificationService.deliverDigest();
     return result.isSuccess;
   } finally {
@@ -50,6 +53,11 @@ Future<bool> _runWeeklyDigest() async {
 Future<bool> _runContributionReminder() async {
   final bootstrap = await NotificationBootstrap.createForBackgroundIsolate();
   try {
+    if (!bootstrap.preferences.goalRemindersEnabled) {
+      // Keep the monthly chain alive so reminders resume if re-enabled.
+      await bootstrap.contributionReminderService.skipAndReschedule();
+      return true;
+    }
     final result =
         await bootstrap.contributionReminderService.runScheduledReminder();
     return result.isSuccess;

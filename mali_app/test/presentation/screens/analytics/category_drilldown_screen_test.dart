@@ -1,6 +1,7 @@
 import 'package:decimal/decimal.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/misc.dart' show Override;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mali_app/application/models/category_month_query.dart';
@@ -38,9 +39,7 @@ Transaction _expense({
   );
 }
 
-// Return type is inferred: Riverpod 3 does not export `Override`, so the
-// element type cannot be written explicitly.
-_drilldownOverrides({
+List<Override> _drilldownOverrides({
   List<Transaction> transactions = const [],
   String total = '0',
 }) {

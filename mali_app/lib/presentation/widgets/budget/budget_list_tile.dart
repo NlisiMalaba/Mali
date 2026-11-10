@@ -164,36 +164,32 @@ class _BudgetStatus {
   final Color progressColor;
   final Color iconBackground;
 
+  static const double _closeToLimit = 0.9;
+
+  /// Meaning colours only: green on track, amber close to the limit, red over.
+  /// The label is spelled out so status never depends on colour alone.
   static _BudgetStatus fromUsage(double usage, bool isOver) {
-    if (isOver || usage >= 1) {
+    if (isOver || usage > 1) {
       return const _BudgetStatus(
-        label: 'Depleted',
+        label: 'Over budget',
         accentColor: AppColors.error,
         progressColor: AppColors.error,
         iconBackground: AppColors.errorContainer,
       );
     }
-    if (usage >= 0.8) {
-      return _BudgetStatus(
-        label: 'Watchful',
-        accentColor: AppColors.tertiary,
-        progressColor: AppColors.tertiaryFixedDim,
-        iconBackground: AppColors.tertiaryFixedDim.withValues(alpha: 0.2),
+    if (usage >= _closeToLimit) {
+      return const _BudgetStatus(
+        label: 'Close to limit',
+        accentColor: AppColors.warningText,
+        progressColor: AppColors.warning,
+        iconBackground: AppColors.warningContainer,
       );
     }
-    if (usage >= 0.5) {
-      return _BudgetStatus(
-        label: 'Stable',
-        accentColor: AppColors.secondary,
-        progressColor: AppColors.secondaryContainer,
-        iconBackground: AppColors.secondaryFixedDim.withValues(alpha: 0.2),
-      );
-    }
-    return _BudgetStatus(
-      label: 'Safe Zone',
-      accentColor: AppColors.primary,
-      progressColor: AppColors.primaryFixedDim,
-      iconBackground: AppColors.primaryFixedDim.withValues(alpha: 0.2),
+    return const _BudgetStatus(
+      label: 'On track',
+      accentColor: AppColors.success,
+      progressColor: AppColors.success,
+      iconBackground: AppColors.successContainer,
     );
   }
 }

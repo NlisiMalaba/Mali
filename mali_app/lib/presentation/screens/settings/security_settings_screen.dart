@@ -125,7 +125,7 @@ class SecuritySettingsScreen extends ConsumerWidget {
                 key: const Key('pin-lock-switch'),
                 title: const Text('PIN lock'),
                 subtitle: const Text(
-                  'Require a 4-digit PIN when opening Mali',
+                  'Ask for your 4-digit PIN every time',
                 ),
                 value: pinLock.isEnabled,
                 onChanged: (enabled) async {

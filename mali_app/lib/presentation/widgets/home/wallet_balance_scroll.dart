@@ -25,8 +25,8 @@ class WalletBalanceScroll extends ConsumerWidget {
           scrollDirection: Axis.horizontal,
           padding: const EdgeInsets.symmetric(horizontal: 24),
           itemCount: 3,
-          separatorBuilder: (_, __) => const SizedBox(width: 16),
-          itemBuilder: (_, __) => const ShimmerBox(width: 176, height: 140),
+          separatorBuilder: (_, _) => const SizedBox(width: 16),
+          itemBuilder: (_, _) => const ShimmerBox(width: 176, height: 140),
         ),
       ),
       error: (error, _) => Text('Could not load wallets: $error'),
@@ -41,7 +41,7 @@ class WalletBalanceScroll extends ConsumerWidget {
             scrollDirection: Axis.horizontal,
             padding: const EdgeInsets.symmetric(horizontal: 24),
             itemCount: wallets.length,
-            separatorBuilder: (_, __) => const SizedBox(width: 16),
+            separatorBuilder: (_, _) => const SizedBox(width: 16),
             itemBuilder: (context, index) {
               final wallet = wallets[index];
               return FadeSlideIn(

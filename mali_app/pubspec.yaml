@@ -1,5 +1,5 @@
 name: mali_app
-description: "A new Flutter project."
+description: "Mali — offline-first personal finance app for multi-currency wallets, budgets and savings goals."
 # The following line prevents the package from being accidentally published to
 # pub.dev using `flutter pub publish`. This is preferred for private packages.
 publish_to: 'none' # Remove this line if you wish to publish to pub.dev

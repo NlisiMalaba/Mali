@@ -112,7 +112,7 @@ void main() {
     final listView = tester.widget<ReorderableListView>(
       find.byKey(GoalPriorityScreen.listKey),
     );
-    listView.onReorder(0, 2);
+    listView.onReorderItem!(0, 1);
     await tester.pumpAndSettle();
 
     expect(useCase.lastOrderedIds, ['g-2', 'g-1']);

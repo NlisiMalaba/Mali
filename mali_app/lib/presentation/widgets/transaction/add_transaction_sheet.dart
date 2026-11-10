@@ -4,12 +4,15 @@ import 'package:intl/intl.dart';
 import 'package:mali_app/application/mappers/add_transaction_mapper.dart';
 import 'package:mali_app/application/providers/add_transaction_provider.dart';
 import 'package:mali_app/application/providers/auth_provider.dart';
+import 'package:mali_app/application/providers/receipt_scan_providers.dart';
 import 'package:mali_app/application/providers/recent_wallets_provider.dart';
 import 'package:mali_app/application/providers/transfer_exchange_rate_provider.dart';
 import 'package:mali_app/application/providers/wallet_providers.dart';
 import 'package:mali_app/domain/entities/category.dart';
 import 'package:mali_app/domain/entities/wallet.dart';
+import 'package:mali_app/domain/repositories/receipt_text_recognizer.dart';
 import 'package:mali_app/domain/value_objects/currency_code.dart';
+import 'package:mali_app/domain/value_objects/receipt_scan.dart';
 import 'package:mali_app/presentation/constants/system_categories.dart';
 import 'package:mali_app/presentation/utils/amount_keypad_input.dart';
 import 'package:mali_app/presentation/utils/currency_display.dart';
@@ -69,6 +72,7 @@ class _AddTransactionSheetState extends ConsumerState<AddTransactionSheet> {
   bool _submitted = false;
   bool _defaultWalletApplied = false;
   bool _showSuccess = false;
+  bool _isScanning = false;
 
   static const _successDismissDelay = Duration(milliseconds: 900);
 
@@ -231,6 +235,95 @@ class _AddTransactionSheetState extends ConsumerState<AddTransactionSheet> {
     }
   }
 
+  Future<void> _scanReceipt() async {
+    final source = await showModalBottomSheet<ReceiptImageSource>(
+      context: context,
+      showDragHandle: true,
+      builder: (sheetContext) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              key: const Key('receipt-source-camera'),
+              leading: const Icon(Icons.photo_camera_outlined),
+              title: const Text('Take a photo'),
+              onTap: () =>
+                  Navigator.of(sheetContext).pop(ReceiptImageSource.camera),
+            ),
+            ListTile(
+              key: const Key('receipt-source-gallery'),
+              leading: const Icon(Icons.photo_library_outlined),
+              title: const Text('Choose from gallery'),
+              onTap: () =>
+                  Navigator.of(sheetContext).pop(ReceiptImageSource.gallery),
+            ),
+          ],
+        ),
+      ),
+    );
+    if (source == null || !mounted) {
+      return;
+    }
+
+    setState(() => _isScanning = true);
+    final result = await ref.read(scanReceiptUseCaseProvider)(source);
+    if (!mounted) {
+      return;
+    }
+    setState(() => _isScanning = false);
+
+    result.fold(
+      (failure) => ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(failure.message)),
+      ),
+      (scan) {
+        if (scan == null) {
+          return;
+        }
+        _applyReceiptScan(scan);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              scan.amount == null
+                  ? 'Couldn\'t find a total — enter the amount.'
+                  : 'Filled from receipt. Check the amount before saving.',
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  void _applyReceiptScan(ReceiptScan scan) {
+    setState(() {
+      final currency = scan.currency;
+      if (currency != null) {
+        _currency = currency;
+      }
+      final amount = scan.amount;
+      if (amount != null) {
+        _amount = AmountKeypadInput.clampToDecimalPlaces(
+          amount,
+          _currency.decimalPlaces,
+        );
+      }
+      final date = scan.date;
+      if (date != null) {
+        _transactionDate = DateTime(
+          date.year,
+          date.month,
+          date.day,
+          _transactionDate.hour,
+          _transactionDate.minute,
+        );
+      }
+      final merchant = scan.merchant;
+      if (merchant != null && _notesController.text.trim().isEmpty) {
+        _notesController.text = merchant;
+      }
+    });
+  }
+
   String _transactionTitle() {
     if (_selectedCategory != null) {
       return _selectedCategory!.name;
@@ -333,7 +426,7 @@ class _AddTransactionSheetState extends ConsumerState<AddTransactionSheet> {
         ),
         boxShadow: [
           BoxShadow(
-            color: const Color(0x26000000),
+            color: Color(0x26000000),
             blurRadius: 50,
             offset: Offset(0, -20),
           ),
@@ -443,6 +536,13 @@ class _AddTransactionSheetState extends ConsumerState<AddTransactionSheet> {
                   selected: _type,
                   onChanged: _onTypeChanged,
                 ),
+                if (_type == TransactionType.expense) ...[
+                  const SizedBox(height: 14),
+                  _ScanReceiptCard(
+                    isScanning: _isScanning,
+                    onTap: _isScanning ? null : _scanReceipt,
+                  ),
+                ],
                 const SizedBox(height: 20),
                 Text(
                   'Category',
@@ -516,7 +616,7 @@ class _AddTransactionSheetState extends ConsumerState<AddTransactionSheet> {
                 const SizedBox(height: 20),
                 GradientButton(
                   key: const Key('add-transaction-submit'),
-                  label: 'Confirm Transaction',
+                  label: 'Save transaction',
                   icon: Icons.arrow_forward,
                   isLoading: isSaving,
                   onPressed: isSaving ? null : _submit,
@@ -613,6 +713,79 @@ class _CurrencyChip extends StatelessWidget {
               color: AppColors.secondary,
             ),
           ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Navy call-to-action that opens the receipt scanner. Sits right under the
+/// amount because scanning is the fastest way to log an expense.
+class _ScanReceiptCard extends StatelessWidget {
+  const _ScanReceiptCard({required this.isScanning, required this.onTap});
+
+  final bool isScanning;
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Material(
+      key: const Key('add-transaction-scan-receipt'),
+      color: AppColors.navy,
+      borderRadius: BorderRadius.circular(18),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(18),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+          child: Row(
+            children: [
+              Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  color: AppColors.silver,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: isScanning
+                    ? const Padding(
+                        padding: EdgeInsets.all(10),
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: AppColors.navy,
+                        ),
+                      )
+                    : const Icon(
+                        Icons.document_scanner_outlined,
+                        color: AppColors.navy,
+                        size: 20,
+                      ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      isScanning ? 'Reading receipt…' : 'Scan a receipt',
+                      style: theme.textTheme.titleSmall?.copyWith(
+                        color: AppColors.onPrimary,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    Text(
+                      'Fills amount, date and shop for you',
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: AppColors.onNavyMuted,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const Icon(Icons.chevron_right, color: AppColors.silver),
+            ],
+          ),
         ),
       ),
     );

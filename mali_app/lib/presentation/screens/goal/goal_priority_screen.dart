@@ -32,13 +32,11 @@ class _GoalPriorityScreenState extends ConsumerState<GoalPriorityScreen> {
       return;
     }
 
+    // `newIndex` comes from onReorderItem, which already accounts for the
+    // item being removed from its old slot.
     final current = [...(_ordered ?? displayed)];
-    var destination = newIndex;
-    if (destination > oldIndex) {
-      destination -= 1;
-    }
     final moved = current.removeAt(oldIndex);
-    current.insert(destination, moved);
+    current.insert(newIndex, moved);
     setState(() => _ordered = current);
 
     setState(() => _isSaving = true);
@@ -112,7 +110,7 @@ class _GoalPriorityScreenState extends ConsumerState<GoalPriorityScreen> {
                   padding: const EdgeInsets.fromLTRB(8, 0, 8, 24),
                   itemCount: ordered.length,
                   buildDefaultDragHandles: false,
-                  onReorder: (oldIndex, newIndex) {
+                  onReorderItem: (oldIndex, newIndex) {
                     _onReorder(oldIndex, newIndex, ordered);
                   },
                   itemBuilder: (context, index) {

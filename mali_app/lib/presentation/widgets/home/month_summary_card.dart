@@ -37,9 +37,9 @@ class MonthSummaryCard extends ConsumerWidget {
               final legend = Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  _LegendDot(color: AppColors.primary, label: 'Income'),
+                  _LegendDot(color: AppColors.success, label: 'Income'),
                   const SizedBox(width: 12),
-                  _LegendDot(color: AppColors.secondary, label: 'Expenses'),
+                  _LegendDot(color: AppColors.moneyOut, label: 'Expenses'),
                 ],
               );
 
@@ -94,7 +94,7 @@ class MonthSummaryCard extends ConsumerWidget {
                       child: _StatTile(
                         label: 'Savings Rate',
                         value: _savingsRate(summary),
-                        valueColor: AppColors.primary,
+                        valueColor: AppColors.success,
                       ),
                     ),
                     const SizedBox(width: 16),
@@ -102,7 +102,7 @@ class MonthSummaryCard extends ConsumerWidget {
                       child: _StatTile(
                         label: 'Burn Rate',
                         value: _burnRate(summary),
-                        valueColor: AppColors.secondary,
+                        valueColor: AppColors.moneyOut,
                       ),
                     ),
                   ],
@@ -213,8 +213,8 @@ class _MiniBarChart extends StatelessWidget {
                           .clamp(1, 100),
                       child: Container(
                         decoration: BoxDecoration(
-                          color: (i.isEven ? AppColors.primary : AppColors.secondary)
-                              .withValues(alpha: i == 8 ? 0.4 : 0.2),
+                          color: (i.isEven ? AppColors.success : AppColors.moneyOut)
+                              .withValues(alpha: i == 8 ? 1 : 0.35),
                           borderRadius: const BorderRadius.vertical(
                             top: Radius.circular(8),
                           ),

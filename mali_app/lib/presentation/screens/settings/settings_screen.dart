@@ -1,13 +1,21 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:intl/intl.dart';
+import 'package:mali_app/application/providers/app_preferences_provider.dart';
 import 'package:mali_app/application/providers/auth_provider.dart';
-import 'package:mali_app/application/providers/display_currency_provider.dart';
+import 'package:mali_app/application/providers/pin_lock_providers.dart';
+import 'package:mali_app/application/providers/sync_providers.dart';
+import 'package:mali_app/application/providers/sync_status_provider.dart';
 import 'package:mali_app/core/constants/app_info.dart';
+import 'package:mali_app/data/sync/background_sync_service.dart';
+import 'package:mali_app/domain/entities/app_preferences.dart';
 import 'package:mali_app/domain/entities/user.dart';
+import 'package:mali_app/domain/value_objects/currency_code.dart';
 import 'package:mali_app/presentation/screens/settings/export_screen.dart';
 import 'package:mali_app/presentation/theme/app_colors.dart';
 import 'package:mali_app/presentation/theme/app_decorations.dart';
+import 'package:mali_app/presentation/theme/app_typography.dart';
 import 'package:mali_app/presentation/widgets/settings/settings_section.dart';
 import 'package:mali_app/presentation/widgets/settings/settings_tile.dart';
 import 'package:mali_app/presentation/widgets/sovereign/sovereign_app_bar.dart';
@@ -22,11 +30,7 @@ class SettingsScreen extends ConsumerStatefulWidget {
 }
 
 class _SettingsScreenState extends ConsumerState<SettingsScreen> {
-  bool _biometricEnabled = true;
-  bool _cloudSyncEnabled = false;
-  bool _darkModeEnabled = false;
-  bool _pushNotificationsEnabled = true;
-  bool _smsPermissionsEnabled = true;
+  bool _isSyncing = false;
 
   Future<void> _confirmSignOut(BuildContext context, WidgetRef ref) async {
     final shouldSignOut = await showDialog<bool>(
@@ -62,6 +66,154 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     );
   }
 
+  Future<void> _syncNow() async {
+    if (_isSyncing) {
+      return;
+    }
+    setState(() => _isSyncing = true);
+    final messenger = ScaffoldMessenger.of(context);
+
+    String message;
+    try {
+      final result =
+          await ref.read(backgroundSyncServiceProvider).runSyncIfOnline();
+      message = switch (result.status) {
+        BackgroundSyncStatus.succeeded => 'Your ledger is up to date.',
+        BackgroundSyncStatus.skippedOffline =>
+          'You\'re offline. Changes are saved and will sync later.',
+        BackgroundSyncStatus.failed =>
+          result.message ?? 'Sync failed. Try again in a moment.',
+      };
+    } catch (_) {
+      message = 'Sync failed. Try again in a moment.';
+    }
+
+    ref.invalidate(lastSyncTimeProvider);
+    if (!mounted) {
+      return;
+    }
+    setState(() => _isSyncing = false);
+    messenger.showSnackBar(SnackBar(content: Text(message)));
+  }
+
+  String _syncSubtitle(AsyncValue<DateTime?> lastSync) {
+    if (_isSyncing) {
+      return 'Syncing…';
+    }
+    return lastSync.when(
+      loading: () => 'Checking…',
+      error: (_, _) => 'Tap to sync now',
+      data: (time) => time == null
+          ? 'Never synced — tap to sync now'
+          : 'Last synced ${_formatSyncTime(time)}',
+    );
+  }
+
+  String _formatSyncTime(DateTime time) {
+    final now = DateTime.now();
+    final difference = now.difference(time);
+    if (difference.inMinutes < 1) {
+      return 'just now';
+    }
+    if (difference.inHours < 1) {
+      return '${difference.inMinutes} min ago';
+    }
+    final isToday = now.year == time.year &&
+        now.month == time.month &&
+        now.day == time.day;
+    if (isToday) {
+      return 'today at ${DateFormat.jm().format(time)}';
+    }
+    return DateFormat('d MMM, HH:mm').format(time);
+  }
+
+  String _appLockSubtitle(AsyncValue<PinLockState> pinLock) {
+    return pinLock.when(
+      loading: () => 'Checking…',
+      error: (_, _) => 'Manage PIN and biometrics',
+      data: (state) {
+        if (!state.isEnabled) {
+          return 'Off';
+        }
+        return state.isBiometricEnabled ? 'PIN + biometrics' : 'PIN';
+      },
+    );
+  }
+
+  Future<void> _pickTheme(AppThemePreference current) async {
+    final selected = await showModalBottomSheet<AppThemePreference>(
+      context: context,
+      showDragHandle: true,
+      builder: (sheetContext) => SafeArea(
+        child: RadioGroup<AppThemePreference>(
+          groupValue: current,
+          onChanged: (value) => Navigator.of(sheetContext).pop(value),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              for (final option in AppThemePreference.values)
+                RadioListTile<AppThemePreference>(
+                  value: option,
+                  title: Text(_themeLabel(option)),
+                  subtitle: option == AppThemePreference.light
+                      ? null
+                      : const Text('Preview — some screens are still light'),
+                ),
+            ],
+          ),
+        ),
+      ),
+    );
+    if (selected != null && selected != current) {
+      await ref
+          .read(appPreferencesProvider.notifier)
+          .setThemePreference(selected);
+    }
+  }
+
+  String _themeLabel(AppThemePreference preference) {
+    return switch (preference) {
+      AppThemePreference.light => 'Light',
+      AppThemePreference.dark => 'Dark',
+      AppThemePreference.system => 'Match system',
+    };
+  }
+
+  Future<void> _pickDisplayCurrency(CurrencyCode current) async {
+    final selected = await showModalBottomSheet<CurrencyCode>(
+      context: context,
+      showDragHandle: true,
+      builder: (sheetContext) => SafeArea(
+        child: RadioGroup<CurrencyCode>(
+          groupValue: current,
+          onChanged: (value) => Navigator.of(sheetContext).pop(value),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Padding(
+                padding: EdgeInsets.fromLTRB(24, 0, 24, 8),
+                child: Text(
+                  'Net worth, digests and reminders are shown in this '
+                  'currency. Your transactions keep their original currency.',
+                ),
+              ),
+              for (final code in CurrencyCode.values)
+                RadioListTile<CurrencyCode>(
+                  value: code,
+                  title: Text(code.value),
+                ),
+            ],
+          ),
+        ),
+      ),
+    );
+    if (selected != null && selected != current) {
+      await ref
+          .read(appPreferencesProvider.notifier)
+          .setDisplayCurrency(selected);
+    }
+  }
+
   Widget _profileHeader(User user) {
     final theme = Theme.of(context);
     final email = user.email?.trim();
@@ -75,69 +227,55 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         ? user.name.characters.first.toUpperCase()
         : '?';
 
-    return Column(
-      children: [
-        Stack(
-          children: [
-            Container(
-              width: 96,
-              height: 96,
-              padding: const EdgeInsets.all(3),
-              decoration: const BoxDecoration(
-                shape: BoxShape.circle,
-                gradient: LinearGradient(
-                  colors: [AppColors.primary, AppColors.secondary],
-                ),
-              ),
-              child: CircleAvatar(
-                backgroundColor: AppColors.surface,
-                child: Text(
-                  initial,
-                  style: theme.textTheme.headlineMedium?.copyWith(
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      decoration: AppDecorations.heroCard(radius: AppDecorations.radiusXl),
+      child: Row(
+        children: [
+          CircleAvatar(
+            radius: 26,
+            backgroundColor: AppColors.silver,
+            child: Text(
+              initial,
+              style: AppTypography.money(fontSize: 22, color: AppColors.navy),
+            ),
+          ),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  user.name,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    color: AppColors.onPrimary,
                     fontWeight: FontWeight.w700,
-                    color: AppColors.primary,
                   ),
                 ),
-              ),
-            ),
-            Positioned(
-              bottom: 0,
-              right: 0,
-              child: Container(
-                padding: const EdgeInsets.all(6),
-                decoration: const BoxDecoration(
-                  color: AppColors.primary,
-                  shape: BoxShape.circle,
-                  border: Border.fromBorderSide(
-                    BorderSide(color: AppColors.surface, width: 2),
+                Text(
+                  contact,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: AppColors.onNavyMuted,
                   ),
                 ),
-                child: const Icon(Icons.edit, size: 14, color: Colors.white),
-              ),
+              ],
             ),
-          ],
-        ),
-        const SizedBox(height: 16),
-        Text(
-          user.name,
-          style: theme.textTheme.headlineSmall?.copyWith(
-            fontWeight: FontWeight.w800,
           ),
-        ),
-        Text(
-          contact,
-          style: theme.textTheme.bodyMedium?.copyWith(
-            color: AppColors.onSurfaceVariant,
-          ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 
   @override
   Widget build(BuildContext context) {
     final auth = ref.watch(authProvider);
-    final displayCurrency = ref.watch(displayCurrencyProvider);
+    final preferences = ref.watch(appPreferencesProvider);
+    final pinLock = ref.watch(pinLockControllerProvider);
+    final lastSync = ref.watch(lastSyncTimeProvider);
 
     return Scaffold(
       key: SettingsScreen.screenKey,
@@ -153,35 +291,33 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 return const SizedBox.shrink();
               }
               return Padding(
-                padding: const EdgeInsets.only(bottom: 40),
+                padding: const EdgeInsets.only(bottom: 28),
                 child: _profileHeader(user),
               );
             },
           ),
           SettingsSection(
-            title: 'Security & Backup',
+            title: 'Security & Sync',
             children: [
-              SettingsToggleTile(
-                icon: Icons.fingerprint,
-                title: 'Biometric Lock',
-                subtitle: 'Use FaceID or TouchID to unlock',
-                value: _biometricEnabled,
-                onChanged: (value) {
-                  setState(() => _biometricEnabled = value);
-                  if (value) {
-                    context.push('/settings/security');
-                  }
-                },
+              SettingsTile(
+                icon: Icons.lock_outline,
+                title: 'App lock',
+                subtitle: _appLockSubtitle(pinLock),
+                onTap: () => context.push('/settings/security'),
               ),
-              SettingsToggleTile(
+              SettingsTile(
                 icon: Icons.cloud_sync,
-                title: 'Cloud Sync',
-                subtitle: 'Backup ledger data to secure vault',
-                value: _cloudSyncEnabled,
-                onChanged: (value) {
-                  setState(() => _cloudSyncEnabled = value);
-                  _showComingSoon(context, 'Cloud sync');
-                },
+                title: 'Sync now',
+                subtitle: _syncSubtitle(lastSync),
+                showChevron: false,
+                trailing: _isSyncing
+                    ? const SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : null,
+                onTap: _isSyncing ? null : _syncNow,
               ),
             ],
           ),
@@ -189,25 +325,17 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           SettingsSection(
             title: 'Preferences',
             children: [
-              SettingsToggleTile(
+              SettingsTile(
                 icon: Icons.dark_mode_outlined,
-                title: 'Dark Mode',
-                subtitle: 'Switch to high-contrast dark theme',
-                value: _darkModeEnabled,
-                onChanged: (value) {
-                  setState(() => _darkModeEnabled = value);
-                  _showComingSoon(context, 'Dark mode');
-                },
+                title: 'Appearance',
+                subtitle: _themeLabel(preferences.themePreference),
+                onTap: () => _pickTheme(preferences.themePreference),
               ),
-              SettingsToggleTile(
+              SettingsTile(
                 icon: Icons.notifications_active_outlined,
-                title: 'Push Notifications',
-                subtitle: 'Real-time alerts for transactions',
-                value: _pushNotificationsEnabled,
-                onChanged: (value) {
-                  setState(() => _pushNotificationsEnabled = value);
-                  context.push('/settings/notifications');
-                },
+                title: 'Notifications',
+                subtitle: 'Budget alerts, weekly digest, goal reminders',
+                onTap: () => context.push('/settings/notifications'),
               ),
             ],
           ),
@@ -224,8 +352,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               SettingsTile(
                 icon: Icons.currency_exchange,
                 title: 'Display currency',
-                subtitle: displayCurrency.value,
-                onTap: () => _showComingSoon(context, 'Display currency'),
+                subtitle: preferences.displayCurrency.value,
+                onTap: () =>
+                    _pickDisplayCurrency(preferences.displayCurrency),
               ),
               SettingsTile(
                 icon: Icons.trending_up,
@@ -237,35 +366,13 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           ),
           const SizedBox(height: 32),
           SettingsSection(
-            title: 'Integrations',
-            children: [
-              SettingsToggleTile(
-                icon: Icons.sms_outlined,
-                title: 'SMS Permissions',
-                subtitle: 'Sync Ecocash & bank SMS alerts',
-                value: _smsPermissionsEnabled,
-                onChanged: (value) {
-                  setState(() => _smsPermissionsEnabled = value);
-                  _showComingSoon(context, 'SMS permissions');
-                },
-              ),
-            ],
-          ),
-          const SizedBox(height: 32),
-          SettingsSection(
-            title: 'Data & Backup',
+            title: 'Data',
             children: [
               SettingsTile(
                 icon: Icons.cloud_upload_outlined,
                 title: 'Export data',
                 subtitle: 'Download your transactions as PDF or CSV',
                 onTap: () => context.push(ExportScreen.location),
-              ),
-              SettingsTile(
-                icon: Icons.lock_outline,
-                title: 'PIN & app lock',
-                subtitle: 'Require PIN when opening Mali',
-                onTap: () => context.push('/settings/security'),
               ),
             ],
           ),
@@ -276,7 +383,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               SettingsTile(
                 icon: Icons.description_outlined,
                 title: 'Terms of Service',
-                subtitle: 'Last updated October 2023',
+                subtitle: 'Coming soon',
                 onTap: () => _showComingSoon(context, 'Terms of Service'),
               ),
               SettingsTile(
@@ -307,7 +414,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           ),
           const SizedBox(height: 24),
           Text(
-            '${AppInfo.name} Sovereign v${AppInfo.version} • Built for Ledger',
+            '${AppInfo.name} · v${AppInfo.version}',
             textAlign: TextAlign.center,
             style: Theme.of(context).textTheme.labelSmall?.copyWith(
               letterSpacing: 2,

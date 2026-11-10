@@ -20,7 +20,7 @@ class PdfExportRenderer implements IExportRenderer {
   @override
   String get mimeType => 'application/pdf';
 
-  static final PdfColor _brand = PdfColor.fromInt(0xFF0D9488);
+  static final PdfColor _brand = PdfColor.fromInt(0xFF0B1B3F);
   static final PdfColor _muted = PdfColor.fromInt(0xFF64748B);
   static final PdfColor _headerFill = PdfColor.fromInt(0xFFF1F5F9);
 
@@ -35,7 +35,7 @@ class PdfExportRenderer implements IExportRenderer {
   @override
   Future<Uint8List> render(TransactionExport export) async {
     final document = pw.Document(
-      title: 'Mali transactions',
+      title: 'Master of Coin transactions',
       author: export.userName,
     );
 
@@ -76,7 +76,7 @@ class PdfExportRenderer implements IExportRenderer {
               _logoMark(),
               pw.SizedBox(width: 10),
               pw.Text(
-                'Mali',
+                'Master of Coin',
                 style: pw.TextStyle(
                   fontSize: 24,
                   fontWeight: pw.FontWeight.bold,
@@ -120,25 +120,48 @@ class PdfExportRenderer implements IExportRenderer {
     );
   }
 
-  /// Vector stand-in for the in-app [MaliLogo] widget.
+  /// Vector stand-in for the in-app [MaliLogo]: the eight-coin cut of the
+  /// coin-stacks mark on a navy tile, laid out on the logo's 100-unit grid.
   pw.Widget _logoMark() {
+    const unit = _logoSize / 100;
+    final coin = PdfColor.fromInt(0xFFE6EAF2);
+    const coins = [
+      [18.0, 68.0], [40.0, 68.0], [62.0, 68.0],
+      [18.0, 52.0], [62.0, 52.0],
+      [18.0, 36.0], [62.0, 36.0],
+      [62.0, 20.0],
+    ];
+    const coinWidth = 20.0;
+    const coinHeight = 13.0;
+    const coinRadius = 5.0;
+
     return pw.Container(
       width: _logoSize,
       height: _logoSize,
-      alignment: pw.Alignment.center,
       decoration: pw.BoxDecoration(
         color: _brand,
         borderRadius: pw.BorderRadius.all(
           pw.Radius.circular(_logoCornerRadius),
         ),
       ),
-      child: pw.Text(
-        'M',
-        style: pw.TextStyle(
-          fontSize: 17,
-          fontWeight: pw.FontWeight.bold,
-          color: PdfColors.white,
-        ),
+      child: pw.Stack(
+        children: [
+          for (final c in coins)
+            pw.Positioned(
+              left: c[0] * unit,
+              top: c[1] * unit,
+              child: pw.Container(
+                width: coinWidth * unit,
+                height: coinHeight * unit,
+                decoration: pw.BoxDecoration(
+                  color: coin,
+                  borderRadius: pw.BorderRadius.all(
+                    pw.Radius.circular(coinRadius * unit),
+                  ),
+                ),
+              ),
+            ),
+        ],
       ),
     );
   }
