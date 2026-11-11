@@ -25,10 +25,11 @@ class MoneyFlowCards extends ConsumerWidget {
               child: _FlowCard(
                 label: 'Money in',
                 icon: Icons.north_east_rounded,
-                iconColor: AppColors.success,
-                amount: MoneyDisplay.compact(
+                color: AppColors.income,
+                amount: MoneyDisplay.compactSigned(
                   amount: summary.income.toString(),
                   currencyCode: currency,
+                  prefix: '+',
                 ),
               ),
             ),
@@ -37,10 +38,11 @@ class MoneyFlowCards extends ConsumerWidget {
               child: _FlowCard(
                 label: 'Money out',
                 icon: Icons.south_east_rounded,
-                iconColor: AppColors.moneyOut,
-                amount: MoneyDisplay.compact(
+                color: AppColors.expense,
+                amount: MoneyDisplay.compactSigned(
                   amount: summary.expenses.toString(),
                   currencyCode: currency,
+                  prefix: '\u2212',
                 ),
               ),
             ),
@@ -55,13 +57,14 @@ class _FlowCard extends StatelessWidget {
   const _FlowCard({
     required this.label,
     required this.icon,
-    required this.iconColor,
+    required this.color,
     required this.amount,
   });
 
   final String label;
   final IconData icon;
-  final Color iconColor;
+  /// Income green or expense red, used for both the arrow and the amount.
+  final Color color;
   final String amount;
 
   @override
@@ -79,7 +82,7 @@ class _FlowCard extends StatelessWidget {
         children: [
           Row(
             children: [
-              Icon(icon, size: 14, color: iconColor),
+              Icon(icon, size: 14, color: color),
               const SizedBox(width: 6),
               Text(
                 label,
@@ -98,7 +101,7 @@ class _FlowCard extends StatelessWidget {
               amount,
               style: AppTypography.money(
                 fontSize: 22,
-                color: AppColors.onSurface,
+                color: color,
               ),
             ),
           ),

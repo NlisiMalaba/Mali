@@ -7,6 +7,7 @@ import 'package:mali_app/presentation/theme/app_colors.dart';
 import 'package:mali_app/presentation/theme/app_decorations.dart';
 import 'package:mali_app/presentation/utils/category_icons.dart';
 import 'package:mali_app/presentation/utils/money_display.dart';
+import 'package:mali_app/presentation/utils/transaction_amount_style.dart';
 
 class TransactionTile extends ConsumerWidget {
   const TransactionTile({
@@ -17,22 +18,6 @@ class TransactionTile extends ConsumerWidget {
 
   final Transaction transaction;
   final bool compact;
-
-  Color _amountColor(String type) {
-    return switch (type) {
-      'income' => AppColors.success,
-      'expense' => AppColors.onSurface,
-      _ => AppColors.onSurface,
-    };
-  }
-
-  String _amountPrefix(String type) {
-    return switch (type) {
-      'income' => '+',
-      'expense' => '-',
-      _ => '',
-    };
-  }
 
   Color _avatarColor(Color categoryColor) {
     return categoryColor.withValues(alpha: 0.18);
@@ -115,11 +100,12 @@ class TransactionTile extends ConsumerWidget {
         MoneyDisplay.compactSigned(
           amount: transaction.amount,
           currencyCode: transaction.currencyCode,
-          prefix: _amountPrefix(transaction.type),
+          prefix: TransactionAmountStyle.prefixFor(transaction.type),
         ),
         style: theme.textTheme.titleSmall?.copyWith(
-          color: _amountColor(transaction.type),
+          color: TransactionAmountStyle.colorFor(transaction.type),
           fontWeight: FontWeight.w700,
+          fontFeatures: const [FontFeature.tabularFigures()],
         ),
       ),
     );

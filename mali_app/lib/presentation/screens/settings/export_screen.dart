@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:mali_app/application/export/export_request.dart';
 import 'package:mali_app/application/providers/category_providers.dart';
 import 'package:mali_app/application/providers/export_controller.dart';
@@ -13,6 +14,7 @@ import 'package:mali_app/domain/value_objects/export_filters.dart';
 import 'package:mali_app/domain/value_objects/export_format.dart';
 import 'package:mali_app/presentation/theme/app_colors.dart';
 import 'package:mali_app/presentation/theme/app_typography.dart';
+import 'package:mali_app/presentation/utils/currency_display.dart';
 import 'package:mali_app/presentation/utils/export_date_range.dart';
 
 enum ExportPeriodPreset {
@@ -373,90 +375,136 @@ class _Header extends StatelessWidget {
 class _DocumentPreview extends StatelessWidget {
   const _DocumentPreview({required this.format});
 
+  static const String _csvSample = 'date,amount,cur\n'
+      '2026-11-10,-24.50,USD\n'
+      '2026-11-10,-2.00,USD\n'
+      '2026-11-09,-32.00,USD\n'
+      '2026-11-09,-134.00,ZWG\n'
+      '2026-11-08,146.00,USD\n'
+      '2026-11-08,-536.00,ZWG';
+
   final ExportFormat format;
 
   @override
   Widget build(BuildContext context) {
     final isPdf = format == ExportFormat.pdf;
     return Center(
-      child: Container(
-        key: ExportScreen.previewKey,
-        width: 140,
-        height: 182,
-        padding: const EdgeInsets.fromLTRB(14, 14, 14, 16),
-        decoration: BoxDecoration(
-          color: AppColors.surfaceContainerLowest,
-          borderRadius: BorderRadius.circular(12),
-          boxShadow: [
-            BoxShadow(
-              color: AppColors.navy.withValues(alpha: 0.18),
-              blurRadius: 28,
-              offset: const Offset(8, 18),
-            ),
-          ],
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
-              decoration: BoxDecoration(
-                color: isPdf
-                    ? AppColors.errorContainer
-                    : AppColors.successContainer,
-                borderRadius: BorderRadius.circular(6),
+      child: AnimatedSwitcher(
+        duration: const Duration(milliseconds: 220),
+        child: Container(
+          key: ExportScreen.previewKey,
+          width: 140,
+          height: 182,
+          padding: const EdgeInsets.fromLTRB(14, 14, 14, 16),
+          decoration: BoxDecoration(
+            color: AppColors.surfaceContainerLowest,
+            borderRadius: BorderRadius.circular(12),
+            boxShadow: [
+              BoxShadow(
+                color: AppColors.navy.withValues(alpha: 0.18),
+                blurRadius: 28,
+                offset: const Offset(8, 18),
               ),
-              child: Text(
-                isPdf ? 'PDF' : 'CSV',
-                style: TextStyle(
-                  fontSize: 10,
-                  fontWeight: FontWeight.w700,
-                  color: isPdf ? AppColors.error : AppColors.success,
+            ],
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+                decoration: BoxDecoration(
+                  color: isPdf
+                      ? AppColors.errorContainer
+                      : AppColors.successContainer,
+                  borderRadius: BorderRadius.circular(6),
                 ),
-              ),
-            ),
-            const SizedBox(height: 12),
-            Container(
-              width: 78,
-              height: 8,
-              decoration: BoxDecoration(
-                color: AppColors.navy,
-                borderRadius: BorderRadius.circular(4),
-              ),
-            ),
-            const SizedBox(height: 8),
-            Container(
-              width: 50,
-              height: 5,
-              decoration: BoxDecoration(
-                color: const Color(0xFFC8CFDD),
-                borderRadius: BorderRadius.circular(2.5),
-              ),
-            ),
-            const SizedBox(height: 10),
-            Container(
-              width: double.infinity,
-              height: 28,
-              decoration: BoxDecoration(
-                color: AppColors.successContainer,
-                borderRadius: BorderRadius.circular(6),
-              ),
-            ),
-            const SizedBox(height: 10),
-            for (final width in [1.0, 1.0, 0.8, 1.0, 0.6]) ...[
-              FractionallySizedBox(
-                widthFactor: width,
-                child: Container(
-                  height: 4,
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFDCE1EC),
-                    borderRadius: BorderRadius.circular(2),
+                child: Text(
+                  isPdf ? 'PDF' : 'CSV',
+                  style: TextStyle(
+                    fontSize: 10,
+                    fontWeight: FontWeight.w700,
+                    color: isPdf ? AppColors.error : AppColors.success,
                   ),
                 ),
               ),
-              const SizedBox(height: 6),
+              const SizedBox(height: 12),
+              if (isPdf) const _PdfPreviewBody() else const _CsvPreviewBody(),
             ],
-          ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _PdfPreviewBody extends StatelessWidget {
+  const _PdfPreviewBody();
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Container(
+          width: 78,
+          height: 8,
+          decoration: BoxDecoration(
+            color: AppColors.navy,
+            borderRadius: BorderRadius.circular(4),
+          ),
+        ),
+        const SizedBox(height: 8),
+        Container(
+          width: 50,
+          height: 5,
+          decoration: BoxDecoration(
+            color: const Color(0xFFC8CFDD),
+            borderRadius: BorderRadius.circular(2.5),
+          ),
+        ),
+        const SizedBox(height: 10),
+        Container(
+          width: double.infinity,
+          height: 28,
+          decoration: BoxDecoration(
+            color: AppColors.successContainer,
+            borderRadius: BorderRadius.circular(6),
+          ),
+        ),
+        const SizedBox(height: 10),
+        for (final width in [1.0, 1.0, 0.8, 1.0, 0.6]) ...[
+          FractionallySizedBox(
+            widthFactor: width,
+            child: Container(
+              height: 4,
+              decoration: BoxDecoration(
+                color: const Color(0xFFDCE1EC),
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+          ),
+          const SizedBox(height: 6),
+        ],
+      ],
+    );
+  }
+}
+
+class _CsvPreviewBody extends StatelessWidget {
+  const _CsvPreviewBody();
+
+  @override
+  Widget build(BuildContext context) {
+    return Expanded(
+      child: Text(
+        _DocumentPreview._csvSample,
+        maxLines: 8,
+        overflow: TextOverflow.clip,
+        style: GoogleFonts.jetBrainsMono(
+          fontSize: 8.5,
+          height: 1.45,
+          color: const Color(0xFF3A4560),
+          fontWeight: FontWeight.w400,
         ),
       ),
     );
@@ -758,7 +806,9 @@ class _WalletFilterSheet extends StatelessWidget {
           ...wallets.map(
             (wallet) => ListTile(
               title: Text(wallet.name),
-              subtitle: Text(wallet.currencyCode),
+              subtitle: Text(
+                CurrencyDisplay.codeWithFlagForCode(wallet.currencyCode),
+              ),
               trailing: selectedWalletId == wallet.id
                   ? Icon(Icons.check, color: theme.colorScheme.primary)
                   : null,

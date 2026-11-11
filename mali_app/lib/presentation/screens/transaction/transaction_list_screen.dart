@@ -22,6 +22,8 @@ class TransactionListScreen extends ConsumerStatefulWidget {
     super.key,
   });
 
+  static const Key exportButtonKey = Key('activity-export-button');
+
   final String? walletId;
 
   @override
@@ -149,20 +151,25 @@ class _TransactionListScreenState extends ConsumerState<TransactionListScreen> {
     required IconData icon,
     required String tooltip,
     required VoidCallback onPressed,
+    Key? key,
   }) {
-    return Material(
-      color: AppColors.surfaceContainerLowest,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(14),
-        side: const BorderSide(color: AppColors.outlineVariant),
-      ),
-      child: InkWell(
-        onTap: onPressed,
-        borderRadius: BorderRadius.circular(14),
-        child: SizedBox(
-          width: 46,
-          height: 46,
-          child: Icon(icon, color: AppColors.onSurface, size: 20),
+    return Tooltip(
+      message: tooltip,
+      child: Material(
+        key: key,
+        color: AppColors.surfaceContainerLowest,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(14),
+          side: const BorderSide(color: AppColors.outlineVariant),
+        ),
+        child: InkWell(
+          onTap: onPressed,
+          borderRadius: BorderRadius.circular(14),
+          child: SizedBox(
+            width: 46,
+            height: 46,
+            child: Icon(icon, color: AppColors.onSurface, size: 20),
+          ),
         ),
       ),
     );
@@ -232,9 +239,10 @@ class _TransactionListScreenState extends ConsumerState<TransactionListScreen> {
                     ),
                   ),
                   _headerButton(
+                    key: TransactionListScreen.exportButtonKey,
                     icon: Icons.file_download_outlined,
                     tooltip: 'Export',
-                    onPressed: () => context.push('/settings/export'),
+                    onPressed: () => context.push('/export'),
                   ),
                 ],
               ),

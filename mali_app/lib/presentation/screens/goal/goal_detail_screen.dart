@@ -11,6 +11,8 @@ import 'package:mali_app/presentation/theme/app_colors.dart';
 import 'package:mali_app/presentation/theme/app_typography.dart';
 import 'package:mali_app/presentation/utils/goal_progress.dart';
 import 'package:mali_app/presentation/utils/money_display.dart';
+import 'package:mali_app/presentation/widgets/common/fade_slide_in.dart';
+import 'package:mali_app/presentation/widgets/common/pressable_scale.dart';
 import 'package:mali_app/presentation/widgets/goal/add_goal_sheet.dart';
 import 'package:mali_app/presentation/widgets/goal/contribute_to_goal_sheet.dart';
 import 'package:mali_app/presentation/widgets/goal/goal_contribution_tile.dart';
@@ -70,23 +72,28 @@ class GoalDetailScreen extends ConsumerWidget {
           : SafeArea(
               child: Padding(
                 padding: const EdgeInsets.fromLTRB(20, 8, 20, 16),
-                child: SizedBox(
-                  height: 56,
-                  child: FilledButton(
+                child: FadeSlideIn(
+                  index: 5,
+                  child: PressableScale(
                     key: addContributionButtonKey,
-                    onPressed: () => _openContribute(context, goal),
-                    style: FilledButton.styleFrom(
-                      backgroundColor: AppColors.navy,
-                      foregroundColor: AppColors.silver,
-                      shape: RoundedRectangleBorder(
+                    onTap: () => _openContribute(context, goal),
+                    child: Container(
+                      height: 56,
+                      alignment: Alignment.center,
+                      decoration: BoxDecoration(
+                        color: AppColors.navy,
                         borderRadius: BorderRadius.circular(18),
                       ),
-                      textStyle: const TextStyle(
-                        fontSize: 17,
-                        fontWeight: FontWeight.w700,
+                      child: const Text(
+                        'Add money',
+                        style: TextStyle(
+                          color: AppColors.silver,
+                          fontSize: 17,
+                          fontWeight: FontWeight.w700,
+                          fontFamily: 'Inter',
+                        ),
                       ),
                     ),
-                    child: const Text('Add money'),
                   ),
                 ),
               ),
@@ -173,53 +180,55 @@ class _GoalDetailBody extends ConsumerWidget {
 
     return Column(
       children: [
-        Padding(
-          padding: const EdgeInsets.fromLTRB(20, 8, 20, 0),
-          child: Row(
-            children: [
-              _HeaderIconButton(
-                icon: Icons.chevron_left,
-                tooltip: 'Back',
-                onPressed: () {
-                  if (context.canPop()) {
-                    context.pop();
-                  }
-                },
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Text(
-                  goal.name,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: AppTypography.money(
-                    fontSize: 24,
-                    color: AppColors.onSurface,
+        FadeSlideIn(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(20, 8, 20, 0),
+            child: Row(
+              children: [
+                _HeaderIconButton(
+                  icon: Icons.chevron_left,
+                  tooltip: 'Back',
+                  onPressed: () {
+                    if (context.canPop()) {
+                      context.pop();
+                    }
+                  },
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    goal.name,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: AppTypography.money(
+                      fontSize: 24,
+                      color: AppColors.onSurface,
+                    ),
                   ),
                 ),
-              ),
-              const SizedBox(width: 12),
-              _HeaderIconButton(
-                key: GoalDetailScreen.editGoalButtonKey,
-                icon: Icons.edit_outlined,
-                tooltip: 'Edit goal',
-                onPressed: onEdit,
-              ),
-            ],
+                const SizedBox(width: 12),
+                _HeaderIconButton(
+                  key: GoalDetailScreen.editGoalButtonKey,
+                  icon: Icons.edit_outlined,
+                  tooltip: 'Edit goal',
+                  onPressed: onEdit,
+                ),
+              ],
+            ),
           ),
         ),
         Expanded(
           child: ListView(
             padding: const EdgeInsets.fromLTRB(20, 18, 20, 24),
             children: [
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  GoalSavingsJar(progress: progress),
-                  const SizedBox(width: 18),
-                  Expanded(
-                    child: Padding(
-                      padding: const EdgeInsets.only(top: 28),
+              FadeSlideIn(
+                index: 1,
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    GoalSavingsJar(progress: progress),
+                    const SizedBox(width: 18),
+                    Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
@@ -228,8 +237,9 @@ class _GoalDetailBody extends ConsumerWidget {
                             style: AppTypography.money(
                               fontSize: 44,
                               color: AppColors.onSurface,
-                            ),
+                            ).copyWith(letterSpacing: -1.5, height: 1),
                           ),
+                          const SizedBox(height: 6),
                           Text(
                             '$savedLabel saved',
                             style: const TextStyle(
@@ -253,11 +263,11 @@ class _GoalDetailBody extends ConsumerWidget {
                             Container(
                               padding: const EdgeInsets.symmetric(
                                 horizontal: 10,
-                                vertical: 6,
+                                vertical: 5,
                               ),
                               decoration: BoxDecoration(
                                 color: trackChip.background,
-                                borderRadius: BorderRadius.circular(13),
+                                borderRadius: BorderRadius.circular(99),
                               ),
                               child: Text(
                                 trackChip.label,
@@ -272,52 +282,61 @@ class _GoalDetailBody extends ConsumerWidget {
                         ],
                       ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
               const SizedBox(height: 20),
-              Row(
-                children: [
-                  Expanded(
-                    child: _MetaCard(
-                      key: GoalDetailScreen.neededEachMonthKey,
-                      label: 'Needed each month',
-                      value: requiredThisMonth == null
-                          ? '—'
-                          : MoneyDisplay.compact(
-                              amount: requiredThisMonth.amount.toString(),
-                              currencyCode: goal.currencyCode,
-                              trimTrailingZeros: true,
-                            ),
-                      navy: true,
+              FadeSlideIn(
+                index: 2,
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: _MetaCard(
+                        key: GoalDetailScreen.neededEachMonthKey,
+                        label: 'Needed each month',
+                        value: requiredThisMonth == null
+                            ? '—'
+                            : MoneyDisplay.compact(
+                                amount: requiredThisMonth.amount.toString(),
+                                currencyCode: goal.currencyCode,
+                                trimTrailingZeros: true,
+                              ),
+                        navy: true,
+                      ),
                     ),
-                  ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: _MetaCard(
-                      label: 'Target date',
-                      value: goal.targetDate == null
-                          ? '—'
-                          : DateFormat('d MMM yyyy').format(goal.targetDate!),
-                      navy: false,
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: _MetaCard(
+                        label: 'Target date',
+                        value: goal.targetDate == null
+                            ? '—'
+                            : DateFormat('d MMM yyyy').format(goal.targetDate!),
+                        navy: false,
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
               const SizedBox(height: 14),
-              GoalMilestonesCard(goal: goal, now: _now),
+              FadeSlideIn(
+                index: 3,
+                child: GoalMilestonesCard(goal: goal, now: _now),
+              ),
               const SizedBox(height: 14),
-              contributionsAsync.when(
-                loading: () => const Padding(
-                  padding: EdgeInsets.symmetric(vertical: 24),
-                  child: Center(child: CircularProgressIndicator()),
-                ),
-                error: (error, _) => Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  child: Text('Could not load contributions: $error'),
-                ),
-                data: (contributions) => _ContributionHistory(
-                  contributions: contributions,
+              FadeSlideIn(
+                index: 4,
+                child: contributionsAsync.when(
+                  loading: () => const Padding(
+                    padding: EdgeInsets.symmetric(vertical: 24),
+                    child: Center(child: CircularProgressIndicator()),
+                  ),
+                  error: (error, _) => Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    child: Text('Could not load contributions: $error'),
+                  ),
+                  data: (contributions) => _ContributionHistory(
+                    contributions: contributions,
+                  ),
                 ),
               ),
             ],
@@ -446,7 +465,7 @@ class _MetaCard extends StatelessWidget {
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
             style: AppTypography.money(
-              fontSize: 20,
+              fontSize: 22,
               color: navy ? AppColors.silver : AppColors.onSurface,
             ),
           ),

@@ -241,7 +241,7 @@ final class AnalyticsTrendsProvider
   }
 }
 
-String _$analyticsTrendsHash() => r'9b5c54fcf5bbe0b6a35d1198e1f6f4d41153d452';
+String _$analyticsTrendsHash() => r'396487eb56bad326245c04075ac6f5adafd15b1e';
 
 @ProviderFor(TrendsDisabledCurrencies)
 final trendsDisabledCurrenciesProvider = TrendsDisabledCurrenciesProvider._();

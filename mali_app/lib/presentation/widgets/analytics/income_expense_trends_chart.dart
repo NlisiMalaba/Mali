@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:mali_app/domain/usecases/get_analytics_trends_usecase.dart';
 import 'package:mali_app/presentation/theme/app_colors.dart';
+import 'package:mali_app/presentation/utils/currency_display.dart';
 
 class IncomeExpenseTrendsChart extends StatelessWidget {
   const IncomeExpenseTrendsChart({
@@ -70,7 +71,9 @@ class IncomeExpenseTrendsChart extends StatelessWidget {
             for (final series in trends.currencies)
               FilterChip(
                 key: currencyToggleKey(series.currencyCode),
-                label: Text(series.currencyCode),
+                label: Text(
+                  CurrencyDisplay.codeWithFlagForCode(series.currencyCode),
+                ),
                 selected: visibleCurrencies.contains(series.currencyCode),
                 onSelected: (_) => onCurrencyToggled(series.currencyCode),
               ),

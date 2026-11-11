@@ -5,7 +5,7 @@ import 'package:mali_app/application/providers/auth_provider.dart';
 import 'package:mali_app/application/providers/use_case_providers.dart';
 import 'package:mali_app/domain/usecases/create_wallet_usecase.dart';
 import 'package:mali_app/domain/value_objects/currency_code.dart';
-import 'package:mali_app/presentation/widgets/wallet/currency_option_card.dart';
+import 'package:mali_app/presentation/widgets/wallet/currency_option_grid.dart';
 import 'package:mali_app/presentation/widgets/wallet/wallet_draft_card.dart';
 
 class WalletSetupScreen extends ConsumerStatefulWidget {
@@ -114,6 +114,22 @@ class _WalletSetupScreenState extends ConsumerState<WalletSetupScreen> {
     if (!mounted) return;
 
     setState(() => _isSubmitting = false);
+    _leaveSetup(context);
+  }
+
+  void _leaveSetup(BuildContext context) {
+    final router = GoRouter.maybeOf(context);
+    if (router != null) {
+      if (router.canPop()) {
+        router.pop();
+      } else {
+        router.go('/home');
+      }
+      return;
+    }
+    if (Navigator.of(context).canPop()) {
+      Navigator.of(context).pop();
+    }
   }
 
   @override
@@ -123,7 +139,10 @@ class _WalletSetupScreenState extends ConsumerState<WalletSetupScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Set up wallets'),
-        automaticallyImplyLeading: false,
+        leading: IconButton(
+          icon: const Icon(Icons.close),
+          onPressed: _isSubmitting ? null : () => _leaveSetup(context),
+        ),
       ),
       body: SafeArea(
         child: Form(
@@ -150,33 +169,20 @@ class _WalletSetupScreenState extends ConsumerState<WalletSetupScreen> {
                           ),
                         ),
                       ),
-                      const SizedBox(height: 28),
+                      const SizedBox(height: 20),
                       Text(
                         'Currencies',
                         style: theme.textTheme.titleMedium?.copyWith(
                           fontWeight: FontWeight.w600,
                         ),
                       ),
-                      const SizedBox(height: 12),
-                      GridView.count(
-                        crossAxisCount: 2,
-                        shrinkWrap: true,
-                        physics: const NeverScrollableScrollPhysics(),
-                        mainAxisSpacing: 12,
-                        crossAxisSpacing: 12,
-                        childAspectRatio: 1.1,
-                        children: [
-                          for (final currency in CurrencyCode.values)
-                            CurrencyOptionCard(
-                              currency: currency,
-                              isSelected:
-                                  _selectedCurrencies.contains(currency),
-                              onTap: () => _toggleCurrency(currency),
-                            ),
-                        ],
+                      const SizedBox(height: 8),
+                      CurrencyOptionGrid(
+                        isSelected: _selectedCurrencies.contains,
+                        onCurrencyTap: _toggleCurrency,
                       ),
                       if (_selectedCurrencies.isNotEmpty) ...[
-                        const SizedBox(height: 28),
+                        const SizedBox(height: CurrencyOptionGrid.gapAfter),
                         Text(
                           'Wallet details',
                           style: theme.textTheme.titleMedium?.copyWith(

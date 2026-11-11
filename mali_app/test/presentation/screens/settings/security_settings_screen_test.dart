@@ -49,6 +49,12 @@ Future<void> _pumpScreen(
       ],
       child: MaterialApp(
         theme: AppTheme.lightTheme,
+        builder: (context, child) {
+          return MediaQuery(
+            data: MediaQuery.of(context).copyWith(disableAnimations: true),
+            child: child!,
+          );
+        },
         home: const SecuritySettingsScreen(),
       ),
     ),

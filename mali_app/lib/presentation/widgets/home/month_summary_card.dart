@@ -39,7 +39,7 @@ class MonthSummaryCard extends ConsumerWidget {
                 children: [
                   _LegendDot(color: AppColors.success, label: 'Income'),
                   const SizedBox(width: 12),
-                  _LegendDot(color: AppColors.moneyOut, label: 'Expenses'),
+                  _LegendDot(color: AppColors.expense, label: 'Expenses'),
                 ],
               );
 
@@ -102,7 +102,7 @@ class MonthSummaryCard extends ConsumerWidget {
                       child: _StatTile(
                         label: 'Burn Rate',
                         value: _burnRate(summary),
-                        valueColor: AppColors.moneyOut,
+                        valueColor: AppColors.expense,
                       ),
                     ),
                   ],
@@ -213,7 +213,7 @@ class _MiniBarChart extends StatelessWidget {
                           .clamp(1, 100),
                       child: Container(
                         decoration: BoxDecoration(
-                          color: (i.isEven ? AppColors.success : AppColors.moneyOut)
+                          color: (i.isEven ? AppColors.income : AppColors.expense)
                               .withValues(alpha: i == 8 ? 1 : 0.35),
                           borderRadius: const BorderRadius.vertical(
                             top: Radius.circular(8),

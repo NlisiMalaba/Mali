@@ -1,11 +1,13 @@
 import 'package:mali_app/domain/entities/exchange_rate.dart';
 import 'package:mali_app/domain/exchange_rates/exchange_rate_catalog.dart';
 import 'package:mali_app/domain/value_objects/currency_code.dart';
+import 'package:mali_app/presentation/utils/currency_display.dart';
 import 'package:mali_app/presentation/utils/exchange_rate_labels.dart';
 
 abstract final class ExchangeRateDisplay {
   static String pairLabel(CurrencyCode base, CurrencyCode quote) {
-    return '1 ${base.value} = ${quote.value}';
+    return '1 ${CurrencyDisplay.codeWithFlag(base)} = '
+        '${CurrencyDisplay.codeWithFlag(quote)}';
   }
 
   static String rateValue(ExchangeRate? rate) {

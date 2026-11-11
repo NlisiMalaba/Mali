@@ -9,6 +9,7 @@ import 'package:mali_app/domain/value_objects/currency_code.dart';
 import 'package:mali_app/presentation/theme/app_colors.dart';
 import 'package:mali_app/presentation/theme/app_decorations.dart';
 import 'package:mali_app/presentation/theme/app_typography.dart';
+import 'package:mali_app/presentation/utils/currency_display.dart';
 import 'package:mali_app/presentation/utils/exchange_rate_row_copy.dart';
 import 'package:mali_app/presentation/utils/money_display.dart';
 import 'package:mali_app/presentation/widgets/settings/edit_exchange_rate_sheet.dart';
@@ -429,7 +430,7 @@ class _ConverterCard extends StatelessWidget {
                 for (final code in targets)
                   Expanded(
                     child: _TargetChip(
-                      label: code.value,
+                      label: CurrencyDisplay.codeWithFlag(code),
                       selected: code == target,
                       onTap: () => onTargetChanged(code),
                     ),
@@ -466,7 +467,7 @@ class _TargetChip extends StatelessWidget {
           child: Text(
             label,
             style: TextStyle(
-              fontSize: 14,
+              fontSize: 12.5,
               fontWeight: FontWeight.w700,
               color: selected ? AppColors.navy : AppColors.onNavyMuted,
             ),
@@ -510,12 +511,8 @@ class _RateRow extends StatelessWidget {
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Text(
-                item.pair.quote.value,
-                style: const TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w700,
-                  color: Color(0xFF3A4560),
-                ),
+                CurrencyDisplay.flagEmoji(item.pair.quote),
+                style: const TextStyle(fontSize: 20, height: 1),
               ),
             ),
             const SizedBox(width: 12),

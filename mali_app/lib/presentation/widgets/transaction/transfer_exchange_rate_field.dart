@@ -1,5 +1,6 @@
 import 'package:decimal/decimal.dart';
 import 'package:flutter/material.dart';
+import 'package:mali_app/presentation/utils/currency_display.dart';
 
 class TransferExchangeRateField extends StatelessWidget {
   const TransferExchangeRateField({
@@ -24,6 +25,8 @@ class TransferExchangeRateField extends StatelessWidget {
     }
 
     final theme = Theme.of(context);
+    final fromLabel = CurrencyDisplay.codeWithFlagForCode(fromCurrency);
+    final toLabel = CurrencyDisplay.codeWithFlagForCode(toCurrency);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -38,8 +41,8 @@ class TransferExchangeRateField extends StatelessWidget {
           controller: controller,
           keyboardType: const TextInputType.numberWithOptions(decimal: true),
           decoration: InputDecoration(
-            labelText: '1 $fromCurrency =',
-            suffixText: toCurrency,
+            labelText: '1 $fromLabel =',
+            suffixText: toLabel,
             helperText: suggestedRate == null
                 ? 'Enter the rate used for this transfer.'
                 : 'Suggested rate: $suggestedRate',

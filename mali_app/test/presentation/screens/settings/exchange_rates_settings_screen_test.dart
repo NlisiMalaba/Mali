@@ -12,6 +12,7 @@ import 'package:mali_app/domain/usecases/calculate_net_worth_usecase.dart';
 import 'package:mali_app/domain/value_objects/currency_code.dart';
 import 'package:mali_app/domain/value_objects/money.dart';
 import 'package:mali_app/presentation/screens/settings/exchange_rates_settings_screen.dart';
+import 'package:mali_app/presentation/utils/currency_display.dart';
 
 ExchangeRate _rate({
   required String quote,
@@ -116,7 +117,7 @@ void main() {
     await tester.tap(
       find.descendant(
         of: find.byKey(ExchangeRatesSettingsScreen.converterKey),
-        matching: find.text('ZAR'),
+        matching: find.text(CurrencyDisplay.codeWithFlag(CurrencyCode.zar)),
       ),
     );
     await tester.pumpAndSettle();

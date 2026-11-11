@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:go_router/go_router.dart';
 import 'package:mali_app/application/providers/auth_provider.dart';
 import 'package:mali_app/application/providers/wallet_providers.dart';
 import 'package:mali_app/domain/entities/user.dart';
@@ -14,6 +15,7 @@ import 'package:mali_app/presentation/screens/goal/goals_screen.dart';
 import 'package:mali_app/presentation/screens/settings/export_screen.dart';
 import 'package:mali_app/presentation/screens/settings/settings_screen.dart';
 import 'package:mali_app/presentation/screens/splash_screen.dart';
+import 'package:mali_app/presentation/screens/transaction/transaction_list_screen.dart';
 
 import '../home/home_test_overrides.dart';
 
@@ -52,6 +54,18 @@ Stream<List<Wallet>> _walletsWithOne() {
 
 Stream<List<Wallet>> _emptyWallets() => Stream.value(const <Wallet>[]);
 
+Widget _routerApp(GoRouter router) {
+  return MaterialApp.router(
+    routerConfig: router,
+    builder: (context, child) {
+      return MediaQuery(
+        data: MediaQuery.of(context).copyWith(disableAnimations: true),
+        child: child ?? const SizedBox.shrink(),
+      );
+    },
+  );
+}
+
 void main() {
   group('GoRouter', () {
     testWidgets('redirects unauthenticated users to login', (tester) async {
@@ -66,7 +80,7 @@ void main() {
       await tester.pumpWidget(
         UncontrolledProviderScope(
           container: container,
-          child: MaterialApp.router(routerConfig: router),
+          child: _routerApp(router),
         ),
       );
       await tester.pump();
@@ -91,7 +105,7 @@ void main() {
       await tester.pumpWidget(
         UncontrolledProviderScope(
           container: container,
-          child: MaterialApp.router(routerConfig: router),
+          child: _routerApp(router),
         ),
       );
       await tester.pump();
@@ -131,7 +145,7 @@ void main() {
       await tester.pumpWidget(
         UncontrolledProviderScope(
           container: container,
-          child: MaterialApp.router(routerConfig: router),
+          child: _routerApp(router),
         ),
       );
       await tester.pumpAndSettle();
@@ -148,12 +162,15 @@ void main() {
       expect(find.text('Register'), findsOneWidget);
     });
 
-    testWidgets('redirects authenticated users without wallets to wallet setup',
-        (tester) async {
+    testWidgets('Activity download button opens Export', (tester) async {
+      await tester.binding.setSurfaceSize(const Size(800, 1400));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+
       final container = ProviderContainer(
         overrides: [
           authProvider.overrideWith(_AuthenticatedAuth.new),
-          activeWalletsProvider.overrideWith((ref) => _emptyWallets()),
+          activeWalletsProvider.overrideWith((ref) => _walletsWithOne()),
+          ...homeScreenTestOverrides(),
         ],
       );
       addTearDown(container.dispose);
@@ -162,11 +179,82 @@ void main() {
       await tester.pumpWidget(
         UncontrolledProviderScope(
           container: container,
-          child: MaterialApp.router(routerConfig: router),
+          child: _routerApp(router),
         ),
       );
       await tester.pump();
       await tester.pump(SplashScreen.minimumDisplayDuration);
+      await tester.pumpAndSettle();
+
+      router.go('/transactions');
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byKey(TransactionListScreen.exportButtonKey));
+      await tester.pumpAndSettle();
+
+      expect(find.byKey(ExportScreen.screenKey), findsOneWidget);
+    });
+
+    testWidgets(
+        'lets authenticated users without wallets reach home',
+        (tester) async {
+      final container = ProviderContainer(
+        overrides: [
+          authProvider.overrideWith(_AuthenticatedAuth.new),
+          activeWalletsProvider.overrideWith((ref) => _emptyWallets()),
+          ...homeScreenTestOverrides(),
+        ],
+      );
+      addTearDown(container.dispose);
+
+      final router = container.read(appRouterProvider);
+      await tester.pumpWidget(
+        UncontrolledProviderScope(
+          container: container,
+          child: _routerApp(router),
+        ),
+      );
+      await tester.pump();
+      await tester.pump(SplashScreen.minimumDisplayDuration);
+      await tester.pumpAndSettle();
+
+      expect(find.byKey(const Key('home-screen')), findsOneWidget);
+      expect(find.byKey(const Key('create-wallet-prompt-card')), findsOneWidget);
+      expect(find.text('Set up wallets'), findsNothing);
+    });
+
+    testWidgets(
+        'notification alert opens wallet setup when no wallets exist',
+        (tester) async {
+      await tester.binding.setSurfaceSize(const Size(800, 1400));
+      addTearDown(() => tester.binding.setSurfaceSize(null));
+
+      final container = ProviderContainer(
+        overrides: [
+          authProvider.overrideWith(_AuthenticatedAuth.new),
+          activeWalletsProvider.overrideWith((ref) => _emptyWallets()),
+          ...homeScreenTestOverrides(),
+        ],
+      );
+      addTearDown(container.dispose);
+
+      final router = container.read(appRouterProvider);
+      await tester.pumpWidget(
+        UncontrolledProviderScope(
+          container: container,
+          child: _routerApp(router),
+        ),
+      );
+      await tester.pump();
+      await tester.pump(SplashScreen.minimumDisplayDuration);
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byIcon(Icons.notifications_outlined));
+      await tester.pumpAndSettle();
+
+      expect(find.byKey(const Key('no-wallet-alert-sheet')), findsOneWidget);
+
+      await tester.tap(find.text('Create wallet'));
       await tester.pumpAndSettle();
 
       expect(find.text('Set up wallets'), findsOneWidget);

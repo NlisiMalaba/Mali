@@ -64,7 +64,7 @@ final class TransactionListFiltersNotifierProvider
 }
 
 String _$transactionListFiltersNotifierHash() =>
-    r'd28778bcd315af2f7eb787908a01194ebed9de14';
+    r'cf5675cd0297ca43d45457b7aa02a2df8f5d178e';
 
 final class TransactionListFiltersNotifierFamily extends $Family
     with

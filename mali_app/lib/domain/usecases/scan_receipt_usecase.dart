@@ -21,11 +21,13 @@ class ScanReceiptUseCase {
     final recognized = await _recognizer.recognize(source);
     return recognized.fold(
       (failure) => left<Failure, ReceiptScan?>(failure),
-      (text) {
-        if (text == null) {
+      (capture) {
+        if (capture == null) {
           return right<Failure, ReceiptScan?>(null);
         }
-        final scan = _parser.parse(text);
+        final scan = _parser.parse(capture.text).copyWith(
+              imagePath: capture.imagePath,
+            );
         if (scan.isEmpty) {
           return left<Failure, ReceiptScan?>(
             const ValidationFailure(

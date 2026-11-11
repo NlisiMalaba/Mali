@@ -9,6 +9,7 @@ import 'package:mali_app/domain/entities/wallet.dart';
 import 'package:mali_app/domain/usecases/calculate_net_worth_usecase.dart';
 import 'package:mali_app/domain/value_objects/currency_code.dart';
 import 'package:mali_app/domain/value_objects/money.dart';
+import 'package:mali_app/presentation/utils/currency_display.dart';
 import 'package:mali_app/presentation/widgets/home/net_worth_card.dart';
 
 Wallet _wallet({
@@ -140,7 +141,10 @@ void main() {
       final currencyLabel = tester.widget<Text>(
         find.byKey(const Key('net-worth-currency')),
       );
-      expect(currencyLabel.data, 'Net worth · in USD ›');
+      expect(
+        currencyLabel.data,
+        'Net worth · in ${CurrencyDisplay.codeWithFlag(CurrencyCode.usd)} ›',
+      );
       expect(find.byKey(const Key('net-worth-total')), findsOneWidget);
       expect(find.textContaining('this month'), findsOneWidget);
     });

@@ -187,19 +187,27 @@ abstract class _$TransactionListController
   }
 }
 
+/// Kept alive so pull-to-refresh can await sync across home rebuilds without
+/// the autoDispose Ref being discarded mid-flight.
+
 @ProviderFor(refreshTransactionsSync)
 final refreshTransactionsSyncProvider = RefreshTransactionsSyncProvider._();
+
+/// Kept alive so pull-to-refresh can await sync across home rebuilds without
+/// the autoDispose Ref being discarded mid-flight.
 
 final class RefreshTransactionsSyncProvider
     extends $FunctionalProvider<AsyncValue<void>, void, FutureOr<void>>
     with $FutureModifier<void>, $FutureProvider<void> {
+  /// Kept alive so pull-to-refresh can await sync across home rebuilds without
+  /// the autoDispose Ref being discarded mid-flight.
   RefreshTransactionsSyncProvider._()
     : super(
         from: null,
         argument: null,
         retry: null,
         name: r'refreshTransactionsSyncProvider',
-        isAutoDispose: true,
+        isAutoDispose: false,
         dependencies: null,
         $allTransitiveDependencies: null,
       );
@@ -219,4 +227,4 @@ final class RefreshTransactionsSyncProvider
 }
 
 String _$refreshTransactionsSyncHash() =>
-    r'4ba5c259a4f7cac679690b522997027a961a73d3';
+    r'cd3938b2f4c0618a85749e58d2074d4c59fd9609';

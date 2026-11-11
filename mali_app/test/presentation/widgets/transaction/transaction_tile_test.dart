@@ -84,12 +84,12 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('Lunch'), findsOneWidget);
-      expect(find.text('-\$25.50'), findsOneWidget);
+      expect(find.text('\u2212\$25.50'), findsOneWidget);
       expect(find.text('Groceries · Cash USD'), findsOneWidget);
       expect(find.text('L'), findsOneWidget);
 
-      final amountText = tester.widget<Text>(find.text('-\$25.50'));
-      expect(amountText.style?.color, AppColors.onSurface);
+      final amountText = tester.widget<Text>(find.text('\u2212\$25.50'));
+      expect(amountText.style?.color, AppColors.expense);
     });
 
     testWidgets('shows income amount in green with plus prefix', (tester) async {
@@ -113,7 +113,33 @@ void main() {
       expect(find.text('+\$100.00'), findsOneWidget);
 
       final amountText = tester.widget<Text>(find.text('+\$100.00'));
-      expect(amountText.style?.color, AppColors.success);
+      expect(amountText.style?.color, AppColors.income);
+    });
+
+    testWidgets('shows transfer amount in neutral black without prefix',
+        (tester) async {
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: _overrides(),
+          child: MaterialApp(
+            home: Scaffold(
+              body: TransactionTile(
+                transaction: _transaction(
+                  type: 'transfer',
+                  amount: '50.00',
+                  categoryId: null,
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('\$50.00'), findsOneWidget);
+
+      final amountText = tester.widget<Text>(find.text('\$50.00'));
+      expect(amountText.style?.color, AppColors.transferAmount);
     });
   });
 }

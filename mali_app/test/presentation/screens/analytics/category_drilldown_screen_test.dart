@@ -9,6 +9,7 @@ import 'package:mali_app/application/models/home_monthly_summary_display.dart';
 import 'package:mali_app/application/providers/analytics_providers.dart';
 import 'package:mali_app/application/providers/budget_providers.dart';
 import 'package:mali_app/application/providers/home_providers.dart';
+import 'package:mali_app/domain/entities/budget.dart';
 import 'package:mali_app/domain/entities/transaction.dart';
 import 'package:mali_app/domain/usecases/get_analytics_overview_usecase.dart';
 import 'package:mali_app/domain/usecases/get_analytics_trends_usecase.dart';
@@ -22,6 +23,7 @@ Transaction _expense({
   String id = 'tx-1',
   String title = 'Market run',
   String amount = '45',
+  DateTime? date,
 }) {
   return Transaction(
     id: id,
@@ -32,16 +34,37 @@ Transaction _expense({
     amount: amount,
     currencyCode: 'USD',
     title: title,
-    transactionDate: DateTime(2026, 4, 12),
+    transactionDate: date ?? DateTime(2026, 4, 12),
     isSynced: false,
     createdAt: DateTime(2026, 4, 12),
     updatedAt: DateTime(2026, 4, 12),
   );
 }
 
+Budget _budget({
+  String amount = '100',
+  String spent = '80',
+}) {
+  return Budget(
+    id: 'b-1',
+    userId: 'u-1',
+    categoryId: 'cat-food',
+    currencyCode: 'USD',
+    amount: amount,
+    spentAmount: spent,
+    month: 4,
+    year: 2026,
+    rolloverEnabled: false,
+    isSynced: false,
+    createdAt: DateTime(2026, 4, 1),
+    updatedAt: DateTime(2026, 4, 1),
+  );
+}
+
 List<Override> _drilldownOverrides({
   List<Transaction> transactions = const [],
   String total = '0',
+  Budget? budget,
 }) {
   final query = CategoryMonthQuery.fromMonth(
     categoryId: 'cat-food',
@@ -72,7 +95,13 @@ List<Override> _drilldownOverrides({
       ),
     ),
     currentMonthBudgetsProvider.overrideWith(
-      (ref) => Stream.value(const []),
+      (ref) => Stream.value(budget == null ? const [] : [budget]),
+    ),
+    budgetsForMonthProvider(query).overrideWith(
+      (ref) => Stream.value(budget == null ? const [] : [budget]),
+    ),
+    categoryMonthBudgetProvider(query).overrideWith(
+      (ref) => Stream.value(budget),
     ),
     categoryMonthTransactionsProvider(query).overrideWith(
       (ref) => Stream.value(transactions),
@@ -127,6 +156,7 @@ Future<void> _pumpDrilldown(
   WidgetTester tester, {
   List<Transaction> transactions = const [],
   String total = '0',
+  Budget? budget,
   String initialLocation = '/analytics/categories/cat-food?year=2026&month=4',
 }) async {
   await tester.binding.setSurfaceSize(const Size(800, 1400));
@@ -137,8 +167,15 @@ Future<void> _pumpDrilldown(
       overrides: _drilldownOverrides(
         transactions: transactions,
         total: total,
+        budget: budget,
       ),
       child: MaterialApp.router(
+        builder: (context, child) {
+          return MediaQuery(
+            data: MediaQuery.of(context).copyWith(disableAnimations: true),
+            child: child!,
+          );
+        },
         routerConfig: _router(initialLocation: initialLocation),
       ),
     ),
@@ -147,26 +184,31 @@ Future<void> _pumpDrilldown(
 }
 
 void main() {
-  testWidgets('shows breadcrumb, month total, and category transactions',
+  testWidgets('shows spent hero, day chart, pace tip, and transactions',
       (tester) async {
     await _pumpDrilldown(
       tester,
       transactions: [
         _expense(),
-        _expense(id: 'tx-2', title: 'Lunch', amount: '35'),
+        _expense(id: 'tx-2', title: 'Lunch', amount: '35', date: DateTime(2026, 4, 10)),
       ],
       total: '80',
+      budget: _budget(),
     );
 
     expect(find.byKey(CategoryDrilldownScreen.screenKey), findsOneWidget);
     expect(find.byKey(AnalyticsBreadcrumbBar.barKey), findsOneWidget);
     expect(find.byKey(AnalyticsBreadcrumbBar.analyticsCrumbKey), findsOneWidget);
-    expect(find.byKey(AnalyticsBreadcrumbBar.spendingCrumbKey), findsOneWidget);
-    expect(find.byKey(AnalyticsBreadcrumbBar.categoryCrumbKey), findsOneWidget);
+    expect(find.text('Insights'), findsOneWidget);
+    expect(find.text('April'), findsOneWidget);
     expect(find.text('Food'), findsWidgets);
-    expect(find.text('April 2026'), findsOneWidget);
+    expect(find.text('Spent so far'), findsOneWidget);
     expect(find.byKey(CategoryDrilldownScreen.totalKey), findsOneWidget);
-    expect(find.text('USD 80.00'), findsOneWidget);
+    expect(find.text('\$80.00'), findsOneWidget);
+    expect(find.byKey(CategoryDrilldownScreen.dayChartKey), findsOneWidget);
+    expect(find.text('Day by day'), findsOneWidget);
+    expect(find.byKey(CategoryDrilldownScreen.paceTipKey), findsOneWidget);
+    expect(find.textContaining('At this pace'), findsOneWidget);
     expect(find.text('Market run'), findsOneWidget);
     expect(find.text('Lunch'), findsOneWidget);
   });
@@ -176,7 +218,7 @@ void main() {
     await _pumpDrilldown(tester);
 
     expect(find.text('No transactions in this category.'), findsOneWidget);
-    expect(find.text('USD 0.00'), findsOneWidget);
+    expect(find.text('\$0.00'), findsOneWidget);
   });
 
   testWidgets('Insights breadcrumb opens the Insights screen', (tester) async {
@@ -190,7 +232,7 @@ void main() {
     expect(find.text('Insights'), findsOneWidget);
   });
 
-  testWidgets('Spending breadcrumb opens the Insights screen', (tester) async {
+  testWidgets('month breadcrumb opens the Insights screen', (tester) async {
     await _pumpDrilldown(tester, transactions: [_expense()], total: '45');
 
     await tester.tap(find.byKey(AnalyticsBreadcrumbBar.spendingCrumbKey));

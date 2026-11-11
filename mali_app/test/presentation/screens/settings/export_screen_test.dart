@@ -121,6 +121,10 @@ void main() {
 
     await tester.tap(find.text('CSV spreadsheet'));
     await tester.pumpAndSettle();
+
+    expect(find.text('CSV'), findsOneWidget);
+    expect(find.textContaining('date,amount,cur'), findsOneWidget);
+
     await tester.tap(find.byKey(ExportScreen.submitKey));
     await tester.pumpAndSettle();
 

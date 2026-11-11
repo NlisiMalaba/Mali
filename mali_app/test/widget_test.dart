@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mali_app/application/providers/auth_provider.dart';
@@ -15,6 +16,12 @@ class _ImmediateUnauthenticatedAuth extends Auth {
 void main() {
   testWidgets('unauthenticated users are redirected to welcome',
       (WidgetTester tester) async {
+    tester.view.platformDispatcher.accessibilityFeaturesTestValue =
+        const FakeAccessibilityFeatures(disableAnimations: true);
+    addTearDown(
+      tester.view.platformDispatcher.clearAccessibilityFeaturesTestValue,
+    );
+
     await tester.pumpWidget(
       ProviderScope(
         overrides: [

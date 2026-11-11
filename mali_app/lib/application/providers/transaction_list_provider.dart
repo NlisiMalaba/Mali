@@ -125,11 +125,21 @@ class TransactionListController extends _$TransactionListController {
   }
 }
 
-@riverpod
+/// Kept alive so pull-to-refresh can await sync across home rebuilds without
+/// the autoDispose Ref being discarded mid-flight.
+@Riverpod(keepAlive: true)
 Future<void> refreshTransactionsSync(Ref ref) async {
   final store = ref.read(lastSyncStoreProvider);
+  final sync = ref.read(syncUseCaseProvider);
   final since = await store.readSince();
-  final result = await ref.read(syncUseCaseProvider)(since: since);
+  if (!ref.mounted) {
+    return;
+  }
+
+  final result = await sync(since: since);
+  if (!ref.mounted) {
+    return;
+  }
 
   return result.fold(
     (failure) => throw failure,

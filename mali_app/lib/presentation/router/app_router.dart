@@ -181,6 +181,11 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         path: '/transactions',
         builder: (context, state) => const TransactionListScreen(),
       ),
+      // Sibling of Activity so export can be pushed from outside the shell.
+      GoRoute(
+        path: '/export',
+        builder: (context, state) => const ExportScreen(),
+      ),
       GoRoute(
         path: '/add-transaction',
         builder: (context, state) => const AddTransactionScreen(),
@@ -218,16 +223,12 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       }
 
       if (isAuthenticated) {
-        final needsSetup = ref.read(needsWalletSetupProvider);
-
         if (isPublicEntry) {
-          return needsSetup ? '/wallet-setup' : '/home';
+          return '/home';
         }
 
-        if (needsSetup && !isWalletSetup && location != '/') {
-          return '/wallet-setup';
-        }
-
+        // Wallet setup is optional; once wallets exist, leave the setup route.
+        final needsSetup = ref.read(needsWalletSetupProvider);
         if (!needsSetup && isWalletSetup) {
           return '/home';
         }

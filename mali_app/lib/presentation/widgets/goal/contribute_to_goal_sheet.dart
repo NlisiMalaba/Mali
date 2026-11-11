@@ -10,7 +10,7 @@ import 'package:mali_app/domain/value_objects/currency_code.dart';
 import 'package:mali_app/presentation/utils/goal_form_validators.dart';
 import 'package:mali_app/presentation/utils/shell_insets.dart';
 import 'package:mali_app/presentation/widgets/goal/milestone_celebration_overlay.dart';
-import 'package:mali_app/presentation/widgets/wallet/currency_option_card.dart';
+import 'package:mali_app/presentation/widgets/wallet/currency_option_grid.dart';
 
 class ContributeToGoalSheet extends ConsumerStatefulWidget {
   const ContributeToGoalSheet({
@@ -192,24 +192,13 @@ class _ContributeToGoalSheetState extends ConsumerState<ContributeToGoalSheet> {
                 'Currency',
                 style: theme.textTheme.titleSmall,
               ),
-              const SizedBox(height: 12),
-              GridView.count(
-                crossAxisCount: 2,
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                mainAxisSpacing: 12,
-                crossAxisSpacing: 12,
-                childAspectRatio: 1.1,
-                children: [
-                  for (final currency in CurrencyCode.values)
-                    CurrencyOptionCard(
-                      currency: currency,
-                      isSelected: _selectedCurrency == currency,
-                      onTap: () => setState(() => _selectedCurrency = currency),
-                    ),
-                ],
+              const SizedBox(height: 8),
+              CurrencyOptionGrid(
+                isSelected: (currency) => _selectedCurrency == currency,
+                onCurrencyTap: (currency) =>
+                    setState(() => _selectedCurrency = currency),
               ),
-              const SizedBox(height: 20),
+              const SizedBox(height: CurrencyOptionGrid.gapAfter),
               TextFormField(
                 key: const Key('contribution-amount-field'),
                 controller: _amountController,

@@ -3,8 +3,12 @@ import 'package:mali_app/domain/value_objects/currency_code.dart';
 class CurrencyDisplay {
   const CurrencyDisplay._();
 
-  static String flagEmoji(CurrencyCode currency) {
-    switch (currency.value) {
+  static String flagEmoji(CurrencyCode currency) =>
+      flagEmojiForCode(currency.value);
+
+  /// Flag for a raw ISO code such as wallet `currencyCode` strings.
+  static String flagEmojiForCode(String currencyCode) {
+    switch (currencyCode.trim().toUpperCase()) {
       case 'USD':
         return '🇺🇸';
       case 'ZWG':
@@ -14,8 +18,17 @@ class CurrencyDisplay {
       case 'BWP':
         return '🇧🇼';
       default:
-        return currency.value;
+        return '🏳️';
     }
+  }
+
+  /// Compact "🇺🇸 USD" label used in pickers, chips, and list rows.
+  static String codeWithFlag(CurrencyCode currency) =>
+      '${flagEmoji(currency)} ${currency.value}';
+
+  static String codeWithFlagForCode(String currencyCode) {
+    final normalized = currencyCode.trim().toUpperCase();
+    return '${flagEmojiForCode(normalized)} $normalized';
   }
 
   static String label(CurrencyCode currency) {

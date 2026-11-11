@@ -152,7 +152,15 @@ void main() {
         overrides: [
           activeGoalsProvider.overrideWith((ref) => Stream.value(goals)),
         ],
-        child: MaterialApp.router(routerConfig: router),
+        child: MaterialApp.router(
+          routerConfig: router,
+          builder: (context, child) {
+            return MediaQuery(
+              data: MediaQuery.of(context).copyWith(disableAnimations: true),
+              child: child ?? const SizedBox.shrink(),
+            );
+          },
+        ),
       ),
     );
     await tester.pumpAndSettle();

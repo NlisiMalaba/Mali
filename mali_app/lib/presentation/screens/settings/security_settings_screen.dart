@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -11,8 +13,11 @@ import 'package:mali_app/domain/repositories/biometric_authenticator.dart';
 import 'package:mali_app/domain/usecases/set_biometric_unlock_usecase.dart';
 import 'package:mali_app/presentation/theme/app_colors.dart';
 import 'package:mali_app/presentation/theme/app_decorations.dart';
+import 'package:mali_app/presentation/theme/app_motion.dart';
 import 'package:mali_app/presentation/theme/app_typography.dart';
 import 'package:mali_app/presentation/utils/biometric_labels.dart';
+import 'package:mali_app/presentation/widgets/common/fade_slide_in.dart';
+import 'package:mali_app/presentation/widgets/common/pressable_scale.dart';
 import 'package:mali_app/presentation/widgets/security/pin_entry_panel.dart';
 
 class SecuritySettingsScreen extends ConsumerWidget {
@@ -174,58 +179,76 @@ class SecuritySettingsScreen extends ConsumerWidget {
             final capability = capabilityAsync.asData?.value;
             return Column(
               children: [
-                const _Header(),
+                const FadeSlideIn(child: _Header()),
                 Expanded(
                   child: ListView(
                     padding: const EdgeInsets.fromLTRB(20, 14, 20, 28),
                     children: [
-                      _StatusHero(
-                        isEnabled: pinLock.isEnabled,
-                        isBiometricEnabled: pinLock.isBiometricEnabled,
-                        grace: preferences.appLockGrace,
+                      FadeSlideIn(
+                        index: 1,
+                        child: _StatusHero(
+                          isEnabled: pinLock.isEnabled,
+                          isBiometricEnabled: pinLock.isBiometricEnabled,
+                          grace: preferences.appLockGrace,
+                        ),
                       ),
                       const SizedBox(height: 16),
-                      _ControlsCard(
-                        pinEnabled: pinLock.isEnabled,
-                        biometricEnabled: pinLock.isBiometricEnabled,
-                        capability: capability,
-                        capabilityLoading: capabilityAsync.isLoading,
-                        onPinChanged: (enabled) async {
-                          if (enabled) {
-                            await _enablePin(context, ref);
-                          } else {
-                            await _disablePin(context, ref);
-                          }
-                        },
-                        onBiometricChanged: (enabled) => _setBiometricUnlock(
-                          context,
-                          ref,
-                          enabled: enabled,
+                      FadeSlideIn(
+                        index: 2,
+                        child: _ControlsCard(
+                          pinEnabled: pinLock.isEnabled,
+                          biometricEnabled: pinLock.isBiometricEnabled,
+                          capability: capability,
+                          capabilityLoading: capabilityAsync.isLoading,
+                          onPinChanged: (enabled) async {
+                            if (enabled) {
+                              await _enablePin(context, ref);
+                            } else {
+                              await _disablePin(context, ref);
+                            }
+                          },
+                          onBiometricChanged: (enabled) => _setBiometricUnlock(
+                            context,
+                            ref,
+                            enabled: enabled,
+                          ),
+                          onChangePin: () => _changePin(context, ref),
                         ),
-                        onChangePin: () => _changePin(context, ref),
                       ),
                       if (pinLock.isEnabled) ...[
                         const SizedBox(height: 22),
-                        Text(
-                          'LOCK AFTER LEAVING THE APP',
-                          style: AppTypography.sectionLabel(context).copyWith(
-                            fontSize: 12,
-                            letterSpacing: 1,
-                            fontWeight: FontWeight.w700,
+                        FadeSlideIn(
+                          index: 3,
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'LOCK AFTER LEAVING THE APP',
+                                style: AppTypography.sectionLabel(context)
+                                    .copyWith(
+                                  fontSize: 12,
+                                  letterSpacing: 1,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                              const SizedBox(height: 8),
+                              _LockGraceSelector(
+                                selected: preferences.appLockGrace,
+                                onChanged: (grace) {
+                                  ref
+                                      .read(appPreferencesProvider.notifier)
+                                      .setAppLockGrace(grace);
+                                },
+                              ),
+                            ],
                           ),
-                        ),
-                        const SizedBox(height: 8),
-                        _LockGraceSelector(
-                          selected: preferences.appLockGrace,
-                          onChanged: (grace) {
-                            ref
-                                .read(appPreferencesProvider.notifier)
-                                .setAppLockGrace(grace);
-                          },
                         ),
                       ],
                       const SizedBox(height: 28),
-                      const _PinPrivacyNote(),
+                      const FadeSlideIn(
+                        index: 4,
+                        child: _PinPrivacyNote(),
+                      ),
                     ],
                   ),
                 ),
@@ -278,7 +301,7 @@ class _Header extends StatelessWidget {
               style: AppTypography.money(
                 fontSize: 26,
                 color: AppColors.onSurface,
-              ),
+              ).copyWith(letterSpacing: -0.5),
             ),
           ),
         ],
@@ -287,7 +310,7 @@ class _Header extends StatelessWidget {
   }
 }
 
-class _StatusHero extends StatelessWidget {
+class _StatusHero extends StatefulWidget {
   const _StatusHero({
     required this.isEnabled,
     required this.isBiometricEnabled,
@@ -299,80 +322,181 @@ class _StatusHero extends StatelessWidget {
   final AppLockGrace grace;
 
   @override
+  State<_StatusHero> createState() => _StatusHeroState();
+}
+
+class _StatusHeroState extends State<_StatusHero>
+    with TickerProviderStateMixin {
+  late final AnimationController _entrance;
+  late final AnimationController _ambient;
+  late final Animation<double> _entranceCurve;
+
+  @override
+  void initState() {
+    super.initState();
+    _entrance = AnimationController(
+      vsync: this,
+      duration: AppMotion.celebration,
+    );
+    _ambient = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 4800),
+    );
+    _entranceCurve = CurvedAnimation(
+      parent: _entrance,
+      curve: AppMotion.standard,
+    );
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final reduceMotion = MediaQuery.disableAnimationsOf(context);
+    if (reduceMotion) {
+      _entrance.value = 1;
+      if (_ambient.isAnimating) {
+        _ambient.stop();
+      }
+      _ambient.value = 0;
+      return;
+    }
+    if (_entrance.status == AnimationStatus.dismissed) {
+      _entrance.forward();
+    }
+    if (!_ambient.isAnimating) {
+      _ambient.repeat();
+    }
+  }
+
+  @override
+  void dispose() {
+    _entrance.dispose();
+    _ambient.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final title = isEnabled ? 'Your ledger is locked' : 'Your ledger is open';
-    final method = !isEnabled
+    final title =
+        widget.isEnabled ? 'Your ledger is locked' : 'Your ledger is open';
+    final method = !widget.isEnabled
         ? 'Turn on a PIN to protect balances'
-        : isBiometricEnabled
+        : widget.isBiometricEnabled
             ? 'PIN + fingerprint'
             : 'PIN';
-    final subtitle = isEnabled ? '$method · ${grace.heroPhrase}' : method;
+    final subtitle =
+        widget.isEnabled ? '$method · ${widget.grace.heroPhrase}' : method;
+    final reduceMotion = MediaQuery.disableAnimationsOf(context);
 
-    return Container(
-      key: SecuritySettingsScreen.statusHeroKey,
-      width: double.infinity,
-      padding: const EdgeInsets.fromLTRB(18, 18, 18, 18),
-      decoration: AppDecorations.heroCard(radius: 24),
-      child: Row(
-        children: [
-          SizedBox(
-            width: 72,
-            height: 72,
-            child: Stack(
-              alignment: Alignment.center,
-              children: [
-                CustomPaint(
-                  size: const Size(72, 72),
-                  painter: _OrbitPainter(
-                    accent: isEnabled
-                        ? AppColors.silver
-                        : AppColors.onNavyMuted,
+    return AnimatedBuilder(
+      animation: Listenable.merge([_entranceCurve, _ambient]),
+      builder: (context, _) {
+        final enter = reduceMotion ? 1.0 : _entranceCurve.value;
+        final orbit = reduceMotion ? 0.0 : _ambient.value * math.pi * 2;
+        final float = reduceMotion
+            ? 0.0
+            : math.sin(_ambient.value * math.pi * 2) * 2.5;
+
+        return Transform(
+          alignment: Alignment.center,
+          transform: Matrix4.identity()
+            ..setEntry(3, 2, 0.0012)
+            ..translateByDouble(0, (1 - enter) * 18 + float * 0.4, 0, 1)
+            ..rotateX(-0.04 + (1 - enter) * 0.1),
+          child: Opacity(
+            opacity: enter.clamp(0.0, 1.0),
+            child: Container(
+              key: SecuritySettingsScreen.statusHeroKey,
+              width: double.infinity,
+              padding: const EdgeInsets.all(18),
+              decoration: AppDecorations.heroCard(radius: 24),
+              child: Row(
+                children: [
+                  SizedBox(
+                    width: 72,
+                    height: 72,
+                    child: Stack(
+                      alignment: Alignment.center,
+                      children: [
+                        Transform.rotate(
+                          angle: orbit,
+                          child: CustomPaint(
+                            size: const Size(72, 72),
+                            painter: _OrbitPainter(
+                              accent: widget.isEnabled
+                                  ? AppColors.silver
+                                  : AppColors.onNavyMuted,
+                            ),
+                          ),
+                        ),
+                        Transform(
+                          alignment: Alignment.center,
+                          transform: Matrix4.identity()
+                            ..setEntry(3, 2, 0.002)
+                            ..translateByDouble(0, float, 0, 1)
+                            ..rotateY(
+                              reduceMotion
+                                  ? 0
+                                  : math.sin(orbit + 0.8) * 0.08,
+                            ),
+                          child: Container(
+                            width: 48,
+                            height: 48,
+                            decoration: BoxDecoration(
+                              color: AppColors.navyRaised,
+                              borderRadius: BorderRadius.circular(16),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: AppColors.silver.withValues(
+                                    alpha: widget.isEnabled ? 0.18 : 0.06,
+                                  ),
+                                  blurRadius: 16,
+                                  spreadRadius: 1,
+                                ),
+                              ],
+                            ),
+                            child: Icon(
+                              widget.isEnabled
+                                  ? Icons.shield_outlined
+                                  : Icons.lock_open_outlined,
+                              color: AppColors.silver,
+                              size: 26,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
-                ),
-                Container(
-                  width: 48,
-                  height: 48,
-                  decoration: BoxDecoration(
-                    color: AppColors.navyRaised,
-                    borderRadius: BorderRadius.circular(16),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          title,
+                          style: AppTypography.money(
+                            fontSize: 20,
+                            color: AppColors.onPrimary,
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          subtitle,
+                          style: const TextStyle(
+                            color: AppColors.onNavyMuted,
+                            fontSize: 13.5,
+                            height: 1.25,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
-                  child: Icon(
-                    isEnabled
-                        ? Icons.shield_outlined
-                        : Icons.lock_open_outlined,
-                    color: AppColors.silver,
-                    size: 26,
-                  ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  style: AppTypography.money(
-                    fontSize: 20,
-                    color: AppColors.onPrimary,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  subtitle,
-                  style: const TextStyle(
-                    color: AppColors.onNavyMuted,
-                    fontSize: 13.5,
-                    height: 1.25,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
+        );
+      },
     );
   }
 }
@@ -386,28 +510,22 @@ class _OrbitPainter extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     final center = Offset(size.width / 2, size.height / 2);
     final radius = (size.shortestSide / 2) - 3;
-    final ring = Paint()
-      ..color = const Color(0xFF2B4580)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 2;
-    canvas.drawCircle(center, radius, ring);
 
-    // Dashed feel via short arcs.
     final dash = Paint()
       ..color = const Color(0xFF2B4580)
       ..style = PaintingStyle.stroke
       ..strokeWidth = 2
       ..strokeCap = StrokeCap.round;
-    const dashCount = 18;
+    const dashCount = 24;
     for (var i = 0; i < dashCount; i++) {
       if (i.isOdd) {
         continue;
       }
-      final start = (i / dashCount) * 6.28318530718;
+      final start = (i / dashCount) * math.pi * 2;
       canvas.drawArc(
         Rect.fromCircle(center: center, radius: radius),
         start,
-        0.16,
+        0.14,
         false,
         dash,
       );
@@ -499,13 +617,10 @@ class _ControlsCard extends StatelessWidget {
                     showDivider: pinEnabled,
                   ),
           if (pinEnabled)
-            InkWell(
+            PressableScale(
               onTap: onChangePin,
-              borderRadius: const BorderRadius.vertical(
-                bottom: Radius.circular(20),
-              ),
               child: const Padding(
-                padding: EdgeInsets.fromLTRB(14, 18, 14, 18),
+                padding: EdgeInsets.fromLTRB(14, 16, 14, 16),
                 child: Row(
                   children: [
                     Expanded(
@@ -520,7 +635,7 @@ class _ControlsCard extends StatelessWidget {
                     ),
                     Icon(
                       Icons.chevron_right,
-                      size: 20,
+                      size: 16,
                       color: AppColors.onSurfaceVariant,
                     ),
                   ],
@@ -580,9 +695,11 @@ class _ToggleRow extends StatelessWidget {
                   ],
                 ),
               ),
-              Switch(
+              Switch.adaptive(
                 value: value,
                 onChanged: onChanged,
+                activeTrackColor: AppColors.success,
+                activeThumbColor: Colors.white,
               ),
             ],
           ),
@@ -640,29 +757,27 @@ class _GraceChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Material(
-      color: selected ? AppColors.navy : AppColors.surfaceContainerLowest,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(14),
-        side: BorderSide(
-          color: selected ? AppColors.navy : const Color(0xFFE1E5EE),
-          width: 0.8,
+    return PressableScale(
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: AppMotion.normal,
+        curve: AppMotion.standard,
+        height: 46,
+        alignment: Alignment.center,
+        decoration: BoxDecoration(
+          color: selected ? AppColors.navy : AppColors.surfaceContainerLowest,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(
+            color: selected ? AppColors.navy : const Color(0xFFE1E5EE),
+            width: 0.8,
+          ),
         ),
-      ),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(14),
-        child: SizedBox(
-          height: 46,
-          child: Center(
-            child: Text(
-              label,
-              style: TextStyle(
-                fontSize: 13.5,
-                fontWeight: FontWeight.w600,
-                color: selected ? AppColors.silver : AppColors.onSurface,
-              ),
-            ),
+        child: Text(
+          label,
+          style: TextStyle(
+            fontSize: 13.5,
+            fontWeight: FontWeight.w600,
+            color: selected ? AppColors.silver : AppColors.onSurface,
           ),
         ),
       ),

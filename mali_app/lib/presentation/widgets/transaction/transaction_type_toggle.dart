@@ -22,6 +22,20 @@ extension TransactionTypeX on TransactionType {
         TransactionType.transfer => 'Save transfer',
       };
 
+  /// Expense red, income green, transfer navy — the same colours used for
+  /// amounts, so the type can be told apart without reading the label.
+  Color get color => switch (this) {
+        TransactionType.expense => AppColors.expense,
+        TransactionType.income => AppColors.income,
+        TransactionType.transfer => AppColors.navy,
+      };
+
+  IconData get icon => switch (this) {
+        TransactionType.expense => Icons.south_east_rounded,
+        TransactionType.income => Icons.north_east_rounded,
+        TransactionType.transfer => Icons.swap_horiz_rounded,
+      };
+
   static TransactionType fromValue(String value) {
     return switch (value) {
       'income' => TransactionType.income,
@@ -57,6 +71,8 @@ class TransactionTypeToggle extends StatelessWidget {
             Expanded(
               child: _Segment(
                 label: type.label,
+                icon: type.icon,
+                color: type.color,
                 selected: selected == type,
                 onTap: () => onChanged(type),
               ),
@@ -70,33 +86,59 @@ class TransactionTypeToggle extends StatelessWidget {
 class _Segment extends StatelessWidget {
   const _Segment({
     required this.label,
+    required this.icon,
+    required this.color,
     required this.selected,
     required this.onTap,
   });
 
   final String label;
+  final IconData icon;
+  final Color color;
   final bool selected;
   final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
-    return Material(
-      color: selected ? AppColors.surfaceContainerLowest : Colors.transparent,
-      elevation: selected ? 1.5 : 0,
-      shadowColor: AppColors.navy.withValues(alpha: 0.18),
-      borderRadius: BorderRadius.circular(11),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(11),
-        child: Center(
-          child: Text(
-            label,
-            style: TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.w600,
-              color: selected
-                  ? AppColors.navy
-                  : AppColors.onSurfaceVariant,
+    final ink = selected ? Colors.white : color;
+    return Semantics(
+      selected: selected,
+      button: true,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        curve: Curves.easeOut,
+        decoration: BoxDecoration(
+          color: selected ? color : Colors.transparent,
+          borderRadius: BorderRadius.circular(11),
+          boxShadow: selected
+              ? [
+                  BoxShadow(
+                    color: color.withValues(alpha: 0.35),
+                    blurRadius: 10,
+                    offset: const Offset(0, 4),
+                  ),
+                ]
+              : null,
+        ),
+        child: Material(
+          type: MaterialType.transparency,
+          child: InkWell(
+            onTap: onTap,
+            borderRadius: BorderRadius.circular(11),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(icon, size: 16, color: ink),
+                const SizedBox(width: 6),
+                Text(
+                  label,
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: selected ? Colors.white : AppColors.onSurface,
+                  ),
+                ),
+              ],
             ),
           ),
         ),

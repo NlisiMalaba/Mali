@@ -5,6 +5,7 @@ import 'package:mali_app/application/providers/goal_providers.dart';
 import 'package:mali_app/presentation/theme/app_colors.dart';
 import 'package:mali_app/presentation/theme/app_typography.dart';
 import 'package:mali_app/presentation/widgets/common/fade_slide_in.dart';
+import 'package:mali_app/presentation/widgets/common/pressable_scale.dart';
 import 'package:mali_app/presentation/widgets/goal/add_goal_sheet.dart';
 import 'package:mali_app/presentation/widgets/goal/goal_list_tile.dart';
 import 'package:mali_app/presentation/widgets/goal/goal_priority_hero.dart';
@@ -63,52 +64,61 @@ class GoalsScreen extends ConsumerWidget {
             final otherGoals = goals.skip(1).toList();
 
             return ListView(
-              padding: const EdgeInsets.fromLTRB(20, 12, 20, 32),
+              padding: const EdgeInsets.fromLTRB(20, 22, 20, 100),
               children: [
-                _GoalsHeader(onNewGoal: () => _openAddGoal(context)),
-                const SizedBox(height: 18),
                 FadeSlideIn(
                   index: 0,
+                  offsetY: 12,
+                  child: _GoalsHeader(onNewGoal: () => _openAddGoal(context)),
+                ),
+                const SizedBox(height: 16),
+                FadeSlideIn(
+                  index: 1,
+                  offsetY: 28,
                   child: GoalPriorityHero(goal: topGoal),
                 ),
                 if (otherGoals.isNotEmpty) ...[
-                  const SizedBox(height: 24),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: Text(
-                          'Also saving for',
-                          style: Theme.of(context)
-                              .textTheme
-                              .titleMedium
-                              ?.copyWith(
-                                fontWeight: FontWeight.w700,
-                                fontSize: 16,
-                                color: AppColors.onSurface,
-                              ),
-                        ),
-                      ),
-                      TextButton(
-                        key: reorderButtonKey,
-                        onPressed: () => context.push('/goals/priority'),
-                        style: TextButton.styleFrom(
-                          foregroundColor: AppColors.link,
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 4,
-                            vertical: 8,
-                          ),
-                          minimumSize: Size.zero,
-                          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                        ),
-                        child: const Text(
-                          'Change order',
-                          style: TextStyle(
-                            fontSize: 13,
-                            fontWeight: FontWeight.w600,
+                  const SizedBox(height: 20),
+                  FadeSlideIn(
+                    index: 2,
+                    offsetY: 16,
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            'Also saving for',
+                            style: Theme.of(context)
+                                .textTheme
+                                .titleMedium
+                                ?.copyWith(
+                                  fontWeight: FontWeight.w700,
+                                  fontSize: 16,
+                                  color: AppColors.onSurface,
+                                ),
                           ),
                         ),
-                      ),
-                    ],
+                        TextButton(
+                          key: reorderButtonKey,
+                          onPressed: () => context.push('/goals/priority'),
+                          style: TextButton.styleFrom(
+                            foregroundColor: AppColors.link,
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 4,
+                              vertical: 8,
+                            ),
+                            minimumSize: Size.zero,
+                            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                          ),
+                          child: const Text(
+                            'Change order',
+                            style: TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                   const SizedBox(height: 12),
                   ...otherGoals.asMap().entries.map(
@@ -117,7 +127,8 @@ class GoalsScreen extends ConsumerWidget {
                         bottom: entry.key == otherGoals.length - 1 ? 0 : 16,
                       ),
                       child: FadeSlideIn(
-                        index: entry.key + 1,
+                        index: entry.key + 3,
+                        offsetY: 20,
                         child: GoalListTile(
                           goal: entry.value,
                           index: entry.key,
@@ -153,21 +164,30 @@ class _GoalsHeader extends StatelessWidget {
             ),
           ),
         ),
-        FilledButton.icon(
+        PressableScale(
           key: GoalsScreen.newGoalButtonKey,
-          onPressed: onNewGoal,
-          icon: const Icon(Icons.add, size: 16),
-          label: const Text('New goal'),
-          style: FilledButton.styleFrom(
-            backgroundColor: AppColors.navy,
-            foregroundColor: AppColors.silver,
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-            shape: RoundedRectangleBorder(
+          onTap: onNewGoal,
+          child: Container(
+            height: 44,
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            decoration: BoxDecoration(
+              color: AppColors.navy,
               borderRadius: BorderRadius.circular(14),
             ),
-            textStyle: const TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.w700,
+            child: const Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(Icons.add, size: 16, color: AppColors.silver),
+                SizedBox(width: 6),
+                Text(
+                  'New goal',
+                  style: TextStyle(
+                    color: AppColors.silver,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ],
             ),
           ),
         ),

@@ -53,8 +53,7 @@ class GoalListTile extends StatelessWidget {
       key: tileKey(goal.id),
       onTap: () => _openDetail(context),
       child: Container(
-        height: 72,
-        padding: const EdgeInsets.symmetric(horizontal: 16),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         decoration: AppDecorations.surfaceCard(
           radius: AppDecorations.radiusLg,
           withShadow: false,
@@ -78,6 +77,7 @@ class GoalListTile extends StatelessWidget {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
                 children: [
                   Row(
                     children: [
@@ -104,7 +104,7 @@ class GoalListTile extends StatelessWidget {
                       ),
                     ],
                   ),
-                  const SizedBox(height: 8),
+                  const SizedBox(height: 6),
                   AnimatedProgressBar(
                     value: progress,
                     color: palette.bar,

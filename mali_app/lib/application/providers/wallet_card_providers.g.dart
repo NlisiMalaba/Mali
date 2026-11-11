@@ -59,7 +59,7 @@ final class WalletEquivalentLabelProvider
 }
 
 String _$walletEquivalentLabelHash() =>
-    r'90607ff99930a5c4f36834922a1306a6a8834913';
+    r'40502a025e64468d8fa7ffda09a44592a59356eb';
 
 final class WalletEquivalentLabelFamily extends $Family
     with $FunctionalFamilyOverride<FutureOr<String?>, WalletEquivalentKey> {

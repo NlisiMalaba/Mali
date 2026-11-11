@@ -8,8 +8,10 @@ import 'package:mali_app/presentation/theme/app_colors.dart';
 import 'package:mali_app/presentation/theme/app_decorations.dart';
 import 'package:mali_app/presentation/theme/app_motion.dart';
 import 'package:mali_app/presentation/theme/app_typography.dart';
+import 'package:mali_app/presentation/utils/currency_display.dart';
 import 'package:mali_app/presentation/utils/money_display.dart';
 import 'package:mali_app/presentation/widgets/common/shimmer_box.dart';
+import 'package:mali_app/presentation/widgets/common/currency_flag_badge.dart';
 
 /// Navy hero card on Home: total net worth that counts up on load, a one-time
 /// light sheen, sparkline, and per-currency chips.
@@ -53,7 +55,8 @@ class NetWorthCard extends ConsumerWidget {
                               onTap: () =>
                                   GoRouter.maybeOf(context)?.push('/wallets'),
                               child: Text(
-                                'Net worth · in $currency ›',
+                                'Net worth · in '
+                                '${CurrencyDisplay.codeWithFlagForCode(currency)} ›',
                                 key: const Key('net-worth-currency'),
                                 style: theme.textTheme.bodySmall?.copyWith(
                                   color: AppColors.onNavyMuted,
@@ -224,13 +227,20 @@ class _BreakdownChip extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            entry.wallet.currencyCode,
-            style: theme.textTheme.labelSmall?.copyWith(
-              color: AppColors.onNavyMuted,
-              letterSpacing: 0.6,
-              fontWeight: FontWeight.w600,
-            ),
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              CurrencyFlag(entry.wallet.currencyCode, size: 13),
+              const SizedBox(width: 5),
+              Text(
+                entry.wallet.currencyCode,
+                style: theme.textTheme.labelSmall?.copyWith(
+                  color: AppColors.onNavyMuted,
+                  letterSpacing: 0.6,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
           ),
           const SizedBox(height: 2),
           FittedBox(

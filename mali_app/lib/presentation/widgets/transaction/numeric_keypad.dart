@@ -3,6 +3,7 @@ import 'package:mali_app/domain/value_objects/currency_code.dart';
 import 'package:mali_app/presentation/theme/app_colors.dart';
 import 'package:mali_app/presentation/theme/app_typography.dart';
 import 'package:mali_app/presentation/utils/amount_keypad_input.dart';
+import 'package:mali_app/presentation/utils/currency_display.dart';
 
 /// Custom numeric keypad for currency amount entry.
 class NumericKeypad extends StatelessWidget {
@@ -64,7 +65,7 @@ class NumericKeypad extends StatelessWidget {
           ),
           const SizedBox(height: 4),
           Text(
-            currency.value,
+            CurrencyDisplay.codeWithFlag(currency),
             textAlign: TextAlign.center,
             style: Theme.of(context).textTheme.labelMedium?.copyWith(
                   color: AppColors.onSurfaceVariant,

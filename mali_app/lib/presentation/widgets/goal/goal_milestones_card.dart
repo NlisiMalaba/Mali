@@ -3,11 +3,12 @@ import 'package:flutter/material.dart';
 import 'package:mali_app/domain/entities/savings_goal.dart';
 import 'package:mali_app/domain/services/goal_required_monthly.dart';
 import 'package:mali_app/presentation/theme/app_colors.dart';
+import 'package:mali_app/presentation/theme/app_motion.dart';
 import 'package:mali_app/presentation/utils/goal_progress.dart';
 import 'package:mali_app/presentation/utils/money_display.dart';
 
 /// Milestone track (25 / 50 / 75 / 100) with next-target copy.
-class GoalMilestonesCard extends StatelessWidget {
+class GoalMilestonesCard extends StatefulWidget {
   const GoalMilestonesCard({
     required this.goal,
     this.now,
@@ -21,12 +22,67 @@ class GoalMilestonesCard extends StatelessWidget {
   final DateTime? now;
 
   @override
+  State<GoalMilestonesCard> createState() => _GoalMilestonesCardState();
+}
+
+class _GoalMilestonesCardState extends State<GoalMilestonesCard>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _progress;
+  late final Animation<double> _progressCurve;
+
+  @override
+  void initState() {
+    super.initState();
+    _progress = AnimationController(
+      vsync: this,
+      duration: AppMotion.progress,
+    );
+    _progressCurve = CurvedAnimation(
+      parent: _progress,
+      curve: AppMotion.standard,
+    );
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (MediaQuery.disableAnimationsOf(context)) {
+      _progress.value = 1;
+      return;
+    }
+    if (_progress.status == AnimationStatus.dismissed) {
+      _progress.forward();
+    }
+  }
+
+  @override
+  void didUpdateWidget(covariant GoalMilestonesCard oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.goal.currentAmount != widget.goal.currentAmount &&
+        !MediaQuery.disableAnimationsOf(context)) {
+      _progress
+        ..value = 0
+        ..forward();
+    }
+  }
+
+  @override
+  void dispose() {
+    _progress.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final progress = GoalProgress.ratio(goal).clamp(0.0, 1.0);
-    final next = _nextMilestone(goal: goal, progress: progress, now: now);
+    final progress = GoalProgress.ratio(widget.goal).clamp(0.0, 1.0);
+    final next = _nextMilestone(
+      goal: widget.goal,
+      progress: progress,
+      now: widget.now,
+    );
 
     return Container(
-      key: cardKey,
+      key: GoalMilestonesCard.cardKey,
       width: double.infinity,
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
       decoration: BoxDecoration(
@@ -47,43 +103,55 @@ class GoalMilestonesCard extends StatelessWidget {
           const SizedBox(height: 18),
           SizedBox(
             height: 28,
-            child: LayoutBuilder(
-              builder: (context, constraints) {
-                final trackWidth = constraints.maxWidth - 28;
-                return Stack(
-                  alignment: Alignment.centerLeft,
-                  children: [
-                    Positioned(
-                      left: 14,
-                      right: 14,
-                      child: Container(
-                        height: 4,
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFDCE1EC),
-                          borderRadius: BorderRadius.circular(2),
+            child: AnimatedBuilder(
+              animation: _progressCurve,
+              builder: (context, _) {
+                final animated = progress * _progressCurve.value;
+                return LayoutBuilder(
+                  builder: (context, constraints) {
+                    final trackWidth = constraints.maxWidth - 28;
+                    return Stack(
+                      alignment: Alignment.centerLeft,
+                      children: [
+                        Positioned(
+                          left: 14,
+                          right: 14,
+                          child: Container(
+                            height: 4,
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFDCE1EC),
+                              borderRadius: BorderRadius.circular(2),
+                            ),
+                          ),
                         ),
-                      ),
-                    ),
-                    Positioned(
-                      left: 14,
-                      child: Container(
-                        width: trackWidth * progress,
-                        height: 4,
-                        decoration: BoxDecoration(
-                          color: AppColors.success,
-                          borderRadius: BorderRadius.circular(2),
+                        Positioned(
+                          left: 14,
+                          child: Container(
+                            width: trackWidth * animated,
+                            height: 4,
+                            decoration: BoxDecoration(
+                              color: AppColors.success,
+                              borderRadius: BorderRadius.circular(2),
+                            ),
+                          ),
                         ),
-                      ),
-                    ),
-                    for (var i = 0; i < markers.length; i++)
-                      Positioned(
-                        left: (trackWidth * markers[i]),
-                        child: _MilestoneDot(
-                          label: (markers[i] * 100).round().toString(),
-                          reached: progress + 0.001 >= markers[i],
-                        ),
-                      ),
-                  ],
+                        for (var i = 0; i < GoalMilestonesCard.markers.length; i++)
+                          Positioned(
+                            left: trackWidth * GoalMilestonesCard.markers[i],
+                            child: _MilestoneDot(
+                              label: (GoalMilestonesCard.markers[i] * 100)
+                                  .round()
+                                  .toString(),
+                              reached: animated + 0.001 >=
+                                  GoalMilestonesCard.markers[i],
+                              highlight: progress + 0.001 >=
+                                      GoalMilestonesCard.markers[i] &&
+                                  _progressCurve.value > 0.85,
+                            ),
+                          ),
+                      ],
+                    );
+                  },
                 );
               },
             ),
@@ -110,7 +178,7 @@ class GoalMilestonesCard extends StatelessWidget {
     DateTime? now,
   }) {
     double? nextFraction;
-    for (final marker in markers) {
+    for (final marker in GoalMilestonesCard.markers) {
       if (progress + 0.001 < marker) {
         nextFraction = marker;
         break;
@@ -123,8 +191,7 @@ class GoalMilestonesCard extends StatelessWidget {
     try {
       final target = Decimal.parse(goal.targetAmount);
       final milestoneAmount =
-          (target * Decimal.parse(nextFraction.toString()))
-              .round(scale: 2);
+          (target * Decimal.parse(nextFraction.toString())).round(scale: 2);
       final percent = (nextFraction * 100).round();
       final amountLabel = MoneyDisplay.compact(
         amount: milestoneAmount.toString(),
@@ -189,30 +256,48 @@ class _MilestoneDot extends StatelessWidget {
   const _MilestoneDot({
     required this.label,
     required this.reached,
+    required this.highlight,
   });
 
   final String label;
   final bool reached;
+  final bool highlight;
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      width: 28,
-      height: 28,
-      alignment: Alignment.center,
-      decoration: BoxDecoration(
-        color: reached ? AppColors.success : AppColors.surfaceContainerLowest,
-        shape: BoxShape.circle,
-        border: reached
-            ? null
-            : Border.all(color: const Color(0xFFC8CFDD), width: 1.6),
-      ),
-      child: Text(
-        label,
-        style: TextStyle(
-          fontSize: 10,
-          fontWeight: FontWeight.w700,
-          color: reached ? Colors.white : AppColors.onSurfaceVariant,
+    return AnimatedScale(
+      scale: reached && highlight ? 1.08 : 1,
+      duration: AppMotion.fast,
+      curve: AppMotion.standard,
+      child: AnimatedContainer(
+        duration: AppMotion.normal,
+        curve: AppMotion.standard,
+        width: 28,
+        height: 28,
+        alignment: Alignment.center,
+        decoration: BoxDecoration(
+          color: reached ? AppColors.success : AppColors.surfaceContainerLowest,
+          shape: BoxShape.circle,
+          border: reached
+              ? null
+              : Border.all(color: const Color(0xFFC8CFDD), width: 1.6),
+          boxShadow: reached && highlight
+              ? [
+                  BoxShadow(
+                    color: AppColors.success.withValues(alpha: 0.35),
+                    blurRadius: 10,
+                    spreadRadius: 1,
+                  ),
+                ]
+              : null,
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+            fontSize: 10,
+            fontWeight: FontWeight.w700,
+            color: reached ? Colors.white : AppColors.onSurfaceVariant,
+          ),
         ),
       ),
     );

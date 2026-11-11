@@ -14,10 +14,12 @@ import 'package:mali_app/domain/repositories/receipt_text_recognizer.dart';
 import 'package:mali_app/domain/value_objects/currency_code.dart';
 import 'package:mali_app/domain/value_objects/receipt_scan.dart';
 import 'package:mali_app/presentation/constants/system_categories.dart';
+import 'package:mali_app/presentation/screens/transactions/receipt_scan_review_screen.dart';
 import 'package:mali_app/presentation/theme/app_colors.dart';
 import 'package:mali_app/presentation/theme/app_typography.dart';
 import 'package:mali_app/presentation/utils/amount_keypad_input.dart';
 import 'package:mali_app/presentation/utils/currency_display.dart';
+import 'package:mali_app/presentation/utils/transaction_amount_style.dart';
 import 'package:mali_app/presentation/widgets/transaction/category_selector.dart';
 import 'package:mali_app/presentation/widgets/transaction/numeric_keypad.dart';
 import 'package:mali_app/presentation/widgets/transaction/transaction_success_overlay.dart';
@@ -263,7 +265,9 @@ class _AddTransactionSheetState extends ConsumerState<AddTransactionSheet> {
                   color: AppColors.success,
                 ),
                 title: Text(wallet.name),
-                subtitle: Text(wallet.currencyCode),
+                subtitle: Text(
+                  CurrencyDisplay.codeWithFlagForCode(wallet.currencyCode),
+                ),
                 trailing: wallet.id == _fromWalletId
                     ? const Icon(Icons.check, color: AppColors.navy)
                     : null,
@@ -280,50 +284,64 @@ class _AddTransactionSheetState extends ConsumerState<AddTransactionSheet> {
   }
 
   Future<void> _scanReceipt() async {
-    final source = await showModalBottomSheet<ReceiptImageSource>(
-      context: context,
-      showDragHandle: true,
-      builder: (sheetContext) => SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            ListTile(
-              key: const Key('receipt-source-camera'),
-              leading: const Icon(Icons.photo_camera_outlined),
-              title: const Text('Take a photo'),
-              onTap: () =>
-                  Navigator.of(sheetContext).pop(ReceiptImageSource.camera),
-            ),
-            ListTile(
-              key: const Key('receipt-source-gallery'),
-              leading: const Icon(Icons.photo_library_outlined),
-              title: const Text('Choose from gallery'),
-              onTap: () =>
-                  Navigator.of(sheetContext).pop(ReceiptImageSource.gallery),
-            ),
-          ],
+    while (mounted) {
+      final source = await showModalBottomSheet<ReceiptImageSource>(
+        context: context,
+        showDragHandle: true,
+        builder: (sheetContext) => SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ListTile(
+                key: const Key('receipt-source-camera'),
+                leading: const Icon(Icons.photo_camera_outlined),
+                title: const Text('Take a photo'),
+                onTap: () =>
+                    Navigator.of(sheetContext).pop(ReceiptImageSource.camera),
+              ),
+              ListTile(
+                key: const Key('receipt-source-gallery'),
+                leading: const Icon(Icons.photo_library_outlined),
+                title: const Text('Choose from gallery'),
+                onTap: () =>
+                    Navigator.of(sheetContext).pop(ReceiptImageSource.gallery),
+              ),
+            ],
+          ),
         ),
-      ),
-    );
-    if (source == null || !mounted) {
-      return;
-    }
+      );
+      if (source == null || !mounted) {
+        return;
+      }
 
-    setState(() => _isScanning = true);
-    final result = await ref.read(scanReceiptUseCaseProvider)(source);
-    if (!mounted) {
-      return;
-    }
-    setState(() => _isScanning = false);
+      setState(() => _isScanning = true);
+      final result = await ref.read(scanReceiptUseCaseProvider)(source);
+      if (!mounted) {
+        return;
+      }
+      setState(() => _isScanning = false);
 
-    result.fold(
-      (failure) => ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(failure.message)),
-      ),
-      (scan) {
-        if (scan == null) {
-          return;
-        }
+      final scan = result.fold<ReceiptScan?>(
+        (failure) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(failure.message)),
+          );
+          return null;
+        },
+        (value) => value,
+      );
+      if (scan == null || !mounted) {
+        return;
+      }
+
+      final confirmed = await ReceiptScanReviewScreen.open(
+        context,
+        scan: scan,
+      );
+      if (!mounted) {
+        return;
+      }
+      if (confirmed == true) {
         _applyReceiptScan(scan);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -334,8 +352,14 @@ class _AddTransactionSheetState extends ConsumerState<AddTransactionSheet> {
             ),
           ),
         );
-      },
-    );
+        return;
+      }
+      if (confirmed == false) {
+        // Retake — loop back to camera/gallery picker.
+        continue;
+      }
+      return;
+    }
   }
 
   void _applyReceiptScan(ReceiptScan scan) {
@@ -610,6 +634,7 @@ class _AddTransactionSheetState extends ConsumerState<AddTransactionSheet> {
                                             _AmountDisplay(
                                               amount: _amount,
                                               currency: _currency,
+                                              type: _type,
                                             ),
                                             if (_type ==
                                                 TransactionType.expense) ...[
@@ -737,10 +762,12 @@ class _AmountDisplay extends StatelessWidget {
   const _AmountDisplay({
     required this.amount,
     required this.currency,
+    required this.type,
   });
 
   final String amount;
   final CurrencyCode currency;
+  final TransactionType type;
 
   @override
   Widget build(BuildContext context) {
@@ -749,6 +776,7 @@ class _AmountDisplay extends StatelessWidget {
       currency.decimalPlaces,
     );
     final symbol = CurrencyDisplay.symbol(currency);
+    final amountColor = TransactionAmountStyle.colorFor(type.value);
 
     return Column(
       children: [
@@ -771,7 +799,7 @@ class _AmountDisplay extends StatelessWidget {
                 symbol,
                 style: AppTypography.money(
                   fontSize: 28,
-                  color: AppColors.onSurfaceVariant,
+                  color: amountColor.withValues(alpha: 0.7),
                 ),
               ),
             ),
@@ -780,7 +808,7 @@ class _AmountDisplay extends StatelessWidget {
               digits,
               style: AppTypography.money(
                 fontSize: 56,
-                color: AppColors.navy,
+                color: amountColor,
               ).copyWith(letterSpacing: -2),
             ),
             const SizedBox(width: 4),
@@ -789,7 +817,7 @@ class _AmountDisplay extends StatelessWidget {
               height: 44,
               margin: const EdgeInsets.only(bottom: 8),
               decoration: BoxDecoration(
-                color: AppColors.success,
+                color: amountColor,
                 borderRadius: BorderRadius.circular(1.5),
               ),
             ),

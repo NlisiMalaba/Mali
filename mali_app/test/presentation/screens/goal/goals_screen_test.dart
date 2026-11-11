@@ -43,7 +43,15 @@ Future<void> _pumpGoalsScreen(
       overrides: [
         activeGoalsProvider.overrideWith((ref) => Stream.value(goals)),
       ],
-      child: const MaterialApp(home: GoalsScreen()),
+      child: MaterialApp(
+        builder: (context, child) {
+          return MediaQuery(
+            data: MediaQuery.of(context).copyWith(disableAnimations: true),
+            child: child!,
+          );
+        },
+        home: const GoalsScreen(),
+      ),
     ),
   );
   await tester.pumpAndSettle();
@@ -121,7 +129,15 @@ void main() {
             (ref) => Stream.value(const []),
           ),
         ],
-        child: MaterialApp.router(routerConfig: router),
+        child: MaterialApp.router(
+          builder: (context, child) {
+            return MediaQuery(
+              data: MediaQuery.of(context).copyWith(disableAnimations: true),
+              child: child!,
+            );
+          },
+          routerConfig: router,
+        ),
       ),
     );
     await tester.pumpAndSettle();

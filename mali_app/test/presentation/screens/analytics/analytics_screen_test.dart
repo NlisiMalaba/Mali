@@ -360,8 +360,22 @@ void main() {
               currency: CurrencyCode.usd,
             ),
           ),
+          budgetsForMonthProvider(query).overrideWith(
+            (ref) => Stream.value(const []),
+          ),
+          categoryMonthBudgetProvider(query).overrideWith(
+            (ref) => Stream.value(null),
+          ),
         ],
-        child: MaterialApp.router(routerConfig: router),
+        child: MaterialApp.router(
+          builder: (context, child) {
+            return MediaQuery(
+              data: MediaQuery.of(context).copyWith(disableAnimations: true),
+              child: child!,
+            );
+          },
+          routerConfig: router,
+        ),
       ),
     );
     await tester.pumpAndSettle();
@@ -372,9 +386,9 @@ void main() {
     expect(find.byKey(CategoryDrilldownScreen.screenKey), findsOneWidget);
     expect(find.byKey(AnalyticsBreadcrumbBar.barKey), findsOneWidget);
     expect(find.text('Food'), findsWidgets);
-    expect(find.text('April 2026'), findsWidgets);
+    expect(find.text('April'), findsWidgets);
     expect(find.byKey(CategoryDrilldownScreen.totalKey), findsOneWidget);
-    expect(find.text('USD 80.00'), findsWidgets);
+    expect(find.text('\$80.00'), findsWidgets);
     expect(find.text('Market run'), findsOneWidget);
 
     await tester.tap(find.byKey(AnalyticsBreadcrumbBar.spendingCrumbKey));

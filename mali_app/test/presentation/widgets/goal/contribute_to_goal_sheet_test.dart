@@ -122,6 +122,12 @@ void main() {
           ),
         ],
         child: MaterialApp(
+          builder: (context, child) {
+            return MediaQuery(
+              data: MediaQuery.of(context).copyWith(disableAnimations: true),
+              child: child!,
+            );
+          },
           home: GoalDetailScreen(
             goalId: goal.id,
             now: DateTime(2026, 5, 10),

@@ -5,7 +5,7 @@ import 'package:mali_app/application/providers/use_case_providers.dart';
 import 'package:mali_app/domain/usecases/create_wallet_usecase.dart';
 import 'package:mali_app/domain/value_objects/currency_code.dart';
 import 'package:mali_app/presentation/utils/shell_insets.dart';
-import 'package:mali_app/presentation/widgets/wallet/currency_option_card.dart';
+import 'package:mali_app/presentation/widgets/wallet/currency_option_grid.dart';
 import 'package:mali_app/presentation/widgets/wallet/wallet_draft_card.dart';
 
 class AddWalletSheet extends ConsumerStatefulWidget {
@@ -128,25 +128,14 @@ class _AddWalletSheetState extends ConsumerState<AddWalletSheet> {
                 'Add wallet',
                 style: theme.textTheme.titleLarge,
               ),
-              const SizedBox(height: 20),
-              GridView.count(
-                crossAxisCount: 2,
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                mainAxisSpacing: 12,
-                crossAxisSpacing: 12,
-                childAspectRatio: 1.1,
-                children: [
-                  for (final currency in CurrencyCode.values)
-                    CurrencyOptionCard(
-                      currency: currency,
-                      isSelected: _selectedCurrency == currency,
-                      onTap: () => setState(() => _selectedCurrency = currency),
-                    ),
-                ],
+              const SizedBox(height: 16),
+              CurrencyOptionGrid(
+                isSelected: (currency) => _selectedCurrency == currency,
+                onCurrencyTap: (currency) =>
+                    setState(() => _selectedCurrency = currency),
               ),
               if (_selectedCurrency != null) ...[
-                const SizedBox(height: 20),
+                const SizedBox(height: CurrencyOptionGrid.gapAfter),
                 WalletDraftCard(
                   currency: _selectedCurrency!,
                   nameController: _nameController,

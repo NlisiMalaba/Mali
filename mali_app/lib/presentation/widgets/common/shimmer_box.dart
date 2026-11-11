@@ -26,7 +26,22 @@ class _ShimmerBoxState extends State<ShimmerBox>
     _controller = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 1400),
-    )..repeat();
+    );
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (MediaQuery.disableAnimationsOf(context)) {
+      if (_controller.isAnimating) {
+        _controller.stop();
+      }
+      _controller.value = 0;
+      return;
+    }
+    if (!_controller.isAnimating) {
+      _controller.repeat();
+    }
   }
 
   @override

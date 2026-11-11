@@ -18,7 +18,9 @@ import 'package:mali_app/presentation/screens/settings/export_screen.dart';
 import 'package:mali_app/presentation/theme/app_colors.dart';
 import 'package:mali_app/presentation/theme/app_decorations.dart';
 import 'package:mali_app/presentation/theme/app_typography.dart';
+import 'package:mali_app/presentation/utils/currency_display.dart';
 import 'package:mali_app/presentation/utils/exchange_rate_labels.dart';
+import 'package:mali_app/presentation/widgets/common/currency_flag_badge.dart';
 import 'package:mali_app/presentation/widgets/settings/settings_section.dart';
 import 'package:mali_app/presentation/widgets/settings/settings_tile.dart';
 
@@ -164,7 +166,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               for (final code in CurrencyCode.values)
                 RadioListTile<CurrencyCode>(
                   value: code,
-                  title: Text(code.value),
+                  title: Text(CurrencyDisplay.codeWithFlag(code)),
+                  subtitle: Text(CurrencyDisplay.label(code)),
                 ),
             ],
           ),
@@ -408,23 +411,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                   iconBackground: AppColors.infoContainer,
                   title: 'Display currency',
                   showChevron: false,
-                  trailing: Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 10,
-                      vertical: 4,
-                    ),
-                    decoration: BoxDecoration(
-                      color: AppColors.surfaceContainer,
-                      borderRadius: BorderRadius.circular(99),
-                    ),
-                    child: Text(
-                      preferences.displayCurrency.value,
-                      style: const TextStyle(
-                        fontWeight: FontWeight.w700,
-                        fontSize: 13.5,
-                        color: AppColors.onSurface,
-                      ),
-                    ),
+                  trailing: CurrencyFlagBadge.fromCode(
+                    preferences.displayCurrency,
+                    background: AppColors.surfaceContainer,
                   ),
                   onTap: () =>
                       _pickDisplayCurrency(preferences.displayCurrency),

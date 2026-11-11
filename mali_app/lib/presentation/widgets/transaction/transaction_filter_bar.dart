@@ -5,6 +5,7 @@ import 'package:mali_app/application/providers/transaction_list_filters_provider
 import 'package:mali_app/application/providers/wallet_providers.dart';
 import 'package:mali_app/domain/entities/category.dart';
 import 'package:mali_app/domain/entities/wallet.dart';
+import 'package:mali_app/presentation/utils/currency_display.dart';
 import 'package:mali_app/presentation/utils/transaction_filter_labels.dart';
 
 class TransactionFilterBar extends ConsumerWidget {
@@ -284,7 +285,9 @@ class _WalletFilterSheet extends StatelessWidget {
           ...wallets.map(
             (wallet) => ListTile(
               title: Text(wallet.name),
-              subtitle: Text(wallet.currencyCode),
+              subtitle: Text(
+                CurrencyDisplay.codeWithFlagForCode(wallet.currencyCode),
+              ),
               trailing: selectedWalletId == wallet.id
                   ? Icon(Icons.check, color: theme.colorScheme.primary)
                   : null,

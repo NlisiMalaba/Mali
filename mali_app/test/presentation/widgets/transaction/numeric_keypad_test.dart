@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mali_app/domain/value_objects/currency_code.dart';
 import 'package:mali_app/presentation/utils/amount_keypad_input.dart';
+import 'package:mali_app/presentation/utils/currency_display.dart';
 import 'package:mali_app/presentation/widgets/transaction/numeric_keypad.dart';
 
 void main() {
@@ -129,7 +130,7 @@ void main() {
       await tester.pump();
 
       expect(find.text('12.5'), findsOneWidget);
-      expect(find.text('USD'), findsOneWidget);
+      expect(find.text(CurrencyDisplay.codeWithFlag(CurrencyCode.usd)), findsOneWidget);
     });
 
     testWidgets('blocks extra fractional digits for selected currency',

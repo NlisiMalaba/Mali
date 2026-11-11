@@ -10,7 +10,7 @@ import 'package:mali_app/domain/value_objects/currency_code.dart';
 import 'package:mali_app/presentation/utils/budget_form_validators.dart';
 import 'package:mali_app/presentation/utils/shell_insets.dart';
 import 'package:mali_app/presentation/widgets/transaction/category_selector.dart';
-import 'package:mali_app/presentation/widgets/wallet/currency_option_card.dart';
+import 'package:mali_app/presentation/widgets/wallet/currency_option_grid.dart';
 
 class AddBudgetSheet extends ConsumerStatefulWidget {
   const AddBudgetSheet({super.key});
@@ -175,24 +175,13 @@ class _AddBudgetSheetState extends ConsumerState<AddBudgetSheet> {
                 'Currency',
                 style: theme.textTheme.titleSmall,
               ),
-              const SizedBox(height: 12),
-              GridView.count(
-                crossAxisCount: 2,
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                mainAxisSpacing: 12,
-                crossAxisSpacing: 12,
-                childAspectRatio: 1.1,
-                children: [
-                  for (final currency in CurrencyCode.values)
-                    CurrencyOptionCard(
-                      currency: currency,
-                      isSelected: _selectedCurrency == currency,
-                      onTap: () => setState(() => _selectedCurrency = currency),
-                    ),
-                ],
+              const SizedBox(height: 8),
+              CurrencyOptionGrid(
+                isSelected: (currency) => _selectedCurrency == currency,
+                onCurrencyTap: (currency) =>
+                    setState(() => _selectedCurrency = currency),
               ),
-              const SizedBox(height: 20),
+              const SizedBox(height: CurrencyOptionGrid.gapAfter),
               TextFormField(
                 controller: _amountController,
                 keyboardType: const TextInputType.numberWithOptions(

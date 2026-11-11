@@ -20,6 +20,10 @@ class AppColors {
   static const Color onNavyMuted = Color(0xFFB8C4E0);
   static const Color navInactive = Color(0xFFA3B1D1);
 
+  /// Hollow PIN dots and soft links on the unlock screen.
+  static const Color pinDotRing = Color(0xFF5A73B0);
+  static const Color onNavyLink = Color(0xFFB5C9FF);
+
   /// Text links and small interactive accents on light surfaces.
   static const Color link = Color(0xFF2F5BEA);
 
@@ -78,8 +82,19 @@ class AppColors {
   static const Color successContainer = Color(0xFFE6F2DA);
   static const Color warning = Color(0xFFE8890C);
 
-  /// Money leaving the user's wallets in charts ("out" bars and legends).
+  /// Amber ink for warnings such as "close to limit" labels.
   static const Color moneyOut = Color(0xFFB85C00);
+
+  // Transaction amounts — the standard finance convention, used everywhere a
+  // signed amount or a money-in / money-out total is shown.
+  /// Money coming in: income rows, "Money in" totals, income chart series.
+  static const Color income = success;
+
+  /// Money going out: expense rows, "Money out" totals, expense chart series.
+  static const Color expense = Color(0xFFB42318);
+
+  /// Money moving between the user's own wallets: neither gained nor spent.
+  static const Color transferAmount = onSurface;
   static const Color warningText = Color(0xFF8F4A00);
   static const Color warningContainer = Color(0xFFFFE9D1);
 

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:mali_app/domain/usecases/get_monthly_summary_usecase.dart';
 import 'package:mali_app/presentation/theme/app_colors.dart';
 import 'package:mali_app/presentation/utils/money_display.dart';
+import 'package:mali_app/presentation/widgets/common/currency_flag_badge.dart';
 
 class CurrencyNetTable extends StatelessWidget {
   const CurrencyNetTable({
@@ -90,11 +91,9 @@ class _CurrencyNetRow extends StatelessWidget {
         children: [
           Expanded(
             flex: 2,
-            child: Text(
-              total.currencyCode,
-              style: theme.textTheme.bodyMedium?.copyWith(
-                fontWeight: FontWeight.w600,
-              ),
+            child: CurrencyFlagBadge(
+              currencyCode: total.currencyCode,
+              compact: true,
             ),
           ),
           Expanded(

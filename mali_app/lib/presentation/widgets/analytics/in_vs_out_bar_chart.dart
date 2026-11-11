@@ -17,7 +17,8 @@ class InVsOutBarChart extends StatelessWidget {
   static const Key chartKey = Key('in-vs-out-bar-chart');
   static const double barMaxHeight = 96;
   static const double barWidth = 11;
-  static const Color outColor = Color(0xFFC96F00);
+  static const Color inColor = AppColors.income;
+  static const Color outColor = AppColors.expense;
 
   final AnalyticsTrends trends;
   final String currencyCode;
@@ -61,7 +62,7 @@ class InVsOutBarChart extends StatelessWidget {
                     ),
               ),
               const Spacer(),
-              const _LegendDot(color: AppColors.success, label: 'In'),
+              const _LegendDot(color: inColor, label: 'In'),
               const SizedBox(width: 12),
               const _LegendDot(color: outColor, label: 'Out'),
             ],
@@ -169,7 +170,7 @@ class _MonthBars extends StatelessWidget {
                 _Bar(
                   value: income,
                   max: maxAmount,
-                  color: AppColors.success,
+                  color: InVsOutBarChart.inColor,
                 ),
                 const SizedBox(width: 3),
                 _Bar(

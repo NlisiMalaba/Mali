@@ -21,7 +21,9 @@ class MlKitReceiptTextRecognizer implements IReceiptTextRecognizer {
   static const double _rowTolerance = 0.6;
 
   @override
-  Future<Either<Failure, String?>> recognize(ReceiptImageSource source) async {
+  Future<Either<Failure, ReceiptRecognition?>> recognize(
+    ReceiptImageSource source,
+  ) async {
     final XFile? image;
     try {
       image = await _picker.pickImage(
@@ -30,6 +32,7 @@ class MlKitReceiptTextRecognizer implements IReceiptTextRecognizer {
             : ImageSource.gallery,
         maxWidth: _maxImageWidth,
         imageQuality: _imageQuality,
+        preferredCameraDevice: CameraDevice.rear,
       );
     } catch (error) {
       return left(
@@ -49,7 +52,12 @@ class MlKitReceiptTextRecognizer implements IReceiptTextRecognizer {
       final result = await recognizer.processImage(
         InputImage.fromFilePath(image.path),
       );
-      return right(_rowsFrom(result));
+      return right(
+        ReceiptRecognition(
+          imagePath: image.path,
+          text: _rowsFrom(result),
+        ),
+      );
     } catch (error) {
       return left(
         StorageFailure(message: 'Couldn\'t read the photo.', cause: error),
