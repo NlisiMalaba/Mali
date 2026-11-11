@@ -8,15 +8,15 @@ class SystemCategories {
   static const _epoch = '2024-01-01T00:00:00.000Z';
 
   static final List<Category> expense = [
-    _system('cat-food', 'Food', 'restaurant', '#FF6B6B'),
+    _system('cat-groceries', 'Groceries', 'shopping_cart', '#00D2D3'),
     _system('cat-transport', 'Transport', 'directions_bus', '#4ECDC4'),
-    _system('cat-airtime', 'Airtime/Data', 'signal_cellular_alt', '#45B7D1'),
+    _system('cat-entertainment', 'Eating out', 'movie', '#FF9FF3'),
+    _system('cat-airtime', 'Airtime', 'signal_cellular_alt', '#45B7D1'),
+    _system('cat-food', 'Food', 'restaurant', '#FF6B6B'),
     _system('cat-utilities', 'Utilities', 'bolt', '#F7B731'),
     _system('cat-education', 'School/Education', 'school', '#5F27CD'),
     _system('cat-medical', 'Medical', 'local_hospital', '#EE5253'),
     _system('cat-clothing', 'Clothing', 'checkroom', '#10AC84'),
-    _system('cat-entertainment', 'Entertainment', 'movie', '#FF9FF3'),
-    _system('cat-groceries', 'Groceries', 'shopping_cart', '#00D2D3'),
     _system('cat-rent', 'Rent/Housing', 'home', '#576574'),
     _system('cat-other-expense', 'Other Expense', 'receipt_long', '#8395A7'),
   ];

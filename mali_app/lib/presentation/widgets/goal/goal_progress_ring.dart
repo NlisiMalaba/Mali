@@ -13,6 +13,8 @@ class GoalProgressRing extends StatelessWidget {
     this.strokeWidth = defaultStrokeWidth,
     this.milestoneSize = milestoneMarkerSize,
     this.showMilestones = true,
+    this.progressColor,
+    this.trackColor,
     this.child,
     super.key,
   });
@@ -21,6 +23,8 @@ class GoalProgressRing extends StatelessWidget {
   static const double defaultStrokeWidth = 7;
   static const double detailSize = 176;
   static const double detailStrokeWidth = 14;
+  static const double heroSize = 200;
+  static const double heroStrokeWidth = 16;
   static const double milestoneMarkerSize = 6;
   static const double detailMilestoneSize = 10;
   static const double milestoneBorderWidth = 1.5;
@@ -36,12 +40,15 @@ class GoalProgressRing extends StatelessWidget {
   final double strokeWidth;
   final double milestoneSize;
   final bool showMilestones;
+  final Color? progressColor;
+  final Color? trackColor;
   final Widget? child;
 
   @override
   Widget build(BuildContext context) {
     final clamped = progress.clamp(0.0, 1.0);
-    final color = clamped >= 1 ? AppColors.success : AppColors.primary;
+    final color = progressColor ??
+        (clamped >= 1 ? AppColors.success : AppColors.primary);
     final centerSpaceRadius = (size / 2) - strokeWidth;
 
     return SizedBox(
@@ -84,6 +91,8 @@ class GoalProgressRing extends StatelessWidget {
 
   List<PieChartSectionData> _sections(double clamped, Color color) {
     final remaining = 1 - clamped;
+    final unfilled = trackColor ??
+        color.withValues(alpha: unfilledTrackOpacity);
     return [
       if (clamped > 0)
         PieChartSectionData(
@@ -95,7 +104,7 @@ class GoalProgressRing extends StatelessWidget {
       if (remaining > 0)
         PieChartSectionData(
           value: remaining,
-          color: color.withValues(alpha: unfilledTrackOpacity),
+          color: unfilled,
           radius: strokeWidth,
           showTitle: false,
         ),

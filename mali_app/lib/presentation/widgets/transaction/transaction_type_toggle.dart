@@ -10,6 +10,18 @@ extension TransactionTypeX on TransactionType {
         TransactionType.transfer => 'transfer',
       };
 
+  String get label => switch (this) {
+        TransactionType.expense => 'Expense',
+        TransactionType.income => 'Income',
+        TransactionType.transfer => 'Transfer',
+      };
+
+  String get saveLabel => switch (this) {
+        TransactionType.expense => 'Save expense',
+        TransactionType.income => 'Save income',
+        TransactionType.transfer => 'Save transfer',
+      };
+
   static TransactionType fromValue(String value) {
     return switch (value) {
       'income' => TransactionType.income,
@@ -19,6 +31,7 @@ extension TransactionTypeX on TransactionType {
   }
 }
 
+/// Pill segmented control matching the Add Expense redesign.
 class TransactionTypeToggle extends StatelessWidget {
   const TransactionTypeToggle({
     required this.selected,
@@ -31,49 +44,62 @@ class TransactionTypeToggle extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
+    return Container(
+      height: 46,
+      padding: const EdgeInsets.all(4),
+      decoration: BoxDecoration(
+        color: AppColors.surfaceContainer,
+        borderRadius: BorderRadius.circular(14),
+      ),
+      child: Row(
+        children: [
+          for (final type in TransactionType.values)
+            Expanded(
+              child: _Segment(
+                label: type.label,
+                selected: selected == type,
+                onTap: () => onChanged(type),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+}
 
-    return SegmentedButton<TransactionType>(
-      segments: const [
-        ButtonSegment(
-          value: TransactionType.expense,
-          label: Text('Expense'),
-          icon: Icon(Icons.remove_circle_outline, size: 18),
+class _Segment extends StatelessWidget {
+  const _Segment({
+    required this.label,
+    required this.selected,
+    required this.onTap,
+  });
+
+  final String label;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: selected ? AppColors.surfaceContainerLowest : Colors.transparent,
+      elevation: selected ? 1.5 : 0,
+      shadowColor: AppColors.navy.withValues(alpha: 0.18),
+      borderRadius: BorderRadius.circular(11),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(11),
+        child: Center(
+          child: Text(
+            label,
+            style: TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w600,
+              color: selected
+                  ? AppColors.navy
+                  : AppColors.onSurfaceVariant,
+            ),
+          ),
         ),
-        ButtonSegment(
-          value: TransactionType.income,
-          label: Text('Income'),
-          icon: Icon(Icons.add_circle_outline, size: 18),
-        ),
-        ButtonSegment(
-          value: TransactionType.transfer,
-          label: Text('Transfer'),
-          icon: Icon(Icons.swap_horiz, size: 18),
-        ),
-      ],
-      selected: {selected},
-      onSelectionChanged: (selection) {
-        if (selection.isNotEmpty) {
-          onChanged(selection.first);
-        }
-      },
-      style: ButtonStyle(
-        foregroundColor: WidgetStateProperty.resolveWith((states) {
-          if (states.contains(WidgetState.selected)) {
-            return theme.colorScheme.onPrimary;
-          }
-          return theme.colorScheme.onSurface;
-        }),
-        backgroundColor: WidgetStateProperty.resolveWith((states) {
-          if (states.contains(WidgetState.selected)) {
-            return switch (selected) {
-              TransactionType.income => AppColors.success,
-              TransactionType.expense => AppColors.error,
-              TransactionType.transfer => AppColors.tealPrimary,
-            };
-          }
-          return theme.colorScheme.surfaceContainerHighest;
-        }),
       ),
     );
   }

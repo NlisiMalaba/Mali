@@ -12,7 +12,7 @@ import 'package:mali_app/core/storage/recent_category_store.dart';
 import 'package:mali_app/core/storage/recent_wallet_store.dart';
 import 'package:mali_app/domain/entities/user.dart';
 import 'package:mali_app/domain/entities/wallet.dart';
-import 'package:mali_app/presentation/utils/category_icons.dart';
+import 'package:mali_app/presentation/theme/app_colors.dart';
 import 'package:mali_app/presentation/widgets/transaction/add_transaction_sheet.dart';
 
 class _TestAuth extends Auth {
@@ -85,20 +85,12 @@ Wallet _wallet(String id, String name, {required String currencyCode}) {
 final _usdWallet = _wallet('w-usd', 'USD Wallet', currencyCode: 'USD');
 final _zwgWallet = _wallet('w-zwg', 'ZWG Wallet', currencyCode: 'ZWG');
 
-Color? _categoryBorderColor(WidgetTester tester, String categoryId) {
-  final containerFinder = find.descendant(
-    of: find.byKey(Key('category-icon-$categoryId')),
-    matching: find.byType(Container),
-  );
-  if (containerFinder.evaluate().isEmpty) {
+Color? _categoryChipColor(WidgetTester tester, String categoryId) {
+  final finder = find.byKey(Key('category-icon-$categoryId'));
+  if (finder.evaluate().isEmpty) {
     return null;
   }
-  final container = tester.widget<Container>(containerFinder.first);
-  final decoration = container.decoration;
-  if (decoration is! BoxDecoration) {
-    return null;
-  }
-  return decoration.border?.top.color;
+  return tester.widget<Material>(finder).color;
 }
 
 Future<void> _tap(WidgetTester tester, Finder finder) async {
@@ -138,8 +130,11 @@ Future<ProviderContainer> _pumpAddTransactionSheet(
       container: container,
       child: MaterialApp(
         home: Scaffold(
-          body: SingleChildScrollView(
-            child: AddTransactionSheet(initialWalletId: wallets.firstOrNull?.id),
+          body: SizedBox(
+            height: 1200,
+            child: AddTransactionSheet(
+              initialWalletId: wallets.firstOrNull?.id,
+            ),
           ),
         ),
       ),
@@ -181,32 +176,31 @@ void main() {
       expect(find.text('Exchange rate'), findsOneWidget);
     });
 
-    testWidgets('category selection updates icon display', (tester) async {
+    testWidgets('category selection updates chip display', (tester) async {
       await _pumpAddTransactionSheet(
         tester,
         wallets: [_usdWallet],
       );
 
       expect(
-        _categoryBorderColor(tester, 'cat-food'),
-        isNot(Colors.transparent),
+        _categoryChipColor(tester, 'cat-groceries'),
+        AppColors.navy,
       );
       expect(
-        _categoryBorderColor(tester, 'cat-transport'),
-        Colors.transparent,
+        _categoryChipColor(tester, 'cat-transport'),
+        AppColors.surfaceContainerLowest,
       );
-      expect(find.byIcon(Icons.restaurant_outlined), findsWidgets);
-      expect(find.byIcon(Icons.directions_bus_outlined), findsWidgets);
 
       await _tap(tester, find.byKey(const Key('category-icon-cat-transport')));
+      await tester.pumpAndSettle();
 
       expect(
-        _categoryBorderColor(tester, 'cat-transport'),
-        CategoryIcons.colorFromHex('#4ECDC4'),
+        _categoryChipColor(tester, 'cat-transport'),
+        AppColors.navy,
       );
       expect(
-        _categoryBorderColor(tester, 'cat-food'),
-        Colors.transparent,
+        _categoryChipColor(tester, 'cat-groceries'),
+        AppColors.surfaceContainerLowest,
       );
     });
   });

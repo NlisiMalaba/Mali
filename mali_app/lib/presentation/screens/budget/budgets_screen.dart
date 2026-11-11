@@ -1,21 +1,32 @@
 import 'package:decimal/decimal.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
+import 'package:intl/intl.dart';
 import 'package:mali_app/application/providers/budget_providers.dart';
 import 'package:mali_app/domain/entities/budget.dart';
 import 'package:mali_app/presentation/theme/app_colors.dart';
 import 'package:mali_app/presentation/theme/app_decorations.dart';
 import 'package:mali_app/presentation/theme/app_typography.dart';
+import 'package:mali_app/presentation/utils/budget_status.dart';
+import 'package:mali_app/presentation/utils/budget_usage.dart';
 import 'package:mali_app/presentation/utils/money_display.dart';
 import 'package:mali_app/presentation/widgets/budget/add_budget_sheet.dart';
 import 'package:mali_app/presentation/widgets/budget/budget_list_tile.dart';
+import 'package:mali_app/presentation/widgets/budget/budget_overall_gauge.dart';
 import 'package:mali_app/presentation/widgets/common/fade_slide_in.dart';
-import 'package:mali_app/presentation/widgets/sovereign/sovereign_app_bar.dart';
 
 class BudgetsScreen extends ConsumerWidget {
-  const BudgetsScreen({super.key});
+  const BudgetsScreen({
+    this.now,
+    super.key,
+  });
 
   static const Key screenKey = Key('budgets-screen');
+  static const Key newBudgetButtonKey = Key('new-budget-button');
+  static const Key heroKey = Key('budgets-hero');
+
+  final DateTime? now;
 
   Future<void> _openAddBudget(BuildContext context) async {
     final created = await AddBudgetSheet.show(context);
@@ -29,74 +40,82 @@ class BudgetsScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final budgetsAsync = ref.watch(currentMonthBudgetsProvider);
-    final theme = Theme.of(context);
+    final effectiveNow = now ?? DateTime.now();
 
     return Scaffold(
       key: screenKey,
-      appBar: const SovereignAppBar(),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () => _openAddBudget(context),
-        tooltip: 'Add budget',
-        backgroundColor: AppColors.primaryContainer,
-        foregroundColor: AppColors.onPrimaryContainer,
-        child: const Icon(Icons.add),
-      ),
-      body: budgetsAsync.when(
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (error, _) => Center(
-          child: Padding(
-            padding: const EdgeInsets.all(24),
-            child: Text('Could not load budgets: $error'),
+      backgroundColor: AppColors.background,
+      body: SafeArea(
+        child: budgetsAsync.when(
+          loading: () => const Center(child: CircularProgressIndicator()),
+          error: (error, _) => Center(
+            child: Padding(
+              padding: const EdgeInsets.all(24),
+              child: Text('Could not load budgets: $error'),
+            ),
           ),
-        ),
-        data: (budgets) {
-          final totals = _computeTotals(budgets);
+          data: (budgets) {
+            final totals = _computeTotals(budgets);
+            final ordered = _sortedBudgets(budgets);
+            final daysLeft = _daysLeftInMonth(effectiveNow);
+            final monthLabel = DateFormat('MMMM').format(effectiveNow);
 
-          return ListView(
-            padding: const EdgeInsets.fromLTRB(24, 8, 24, 16),
-            children: [
-              _BudgetHeroSummary(
-                totalAllocated: totals.allocated,
-                totalSpent: totals.spent,
-                currencyCode: totals.currencyCode,
-              ),
-              const SizedBox(height: 32),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    'Budget Envelopes',
-                    style: theme.textTheme.titleLarge?.copyWith(
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                  Text(
-                    'MONTHLY VIEW',
-                    style: AppTypography.sectionLabel(context).copyWith(
-                      color: AppColors.primary,
-                      fontSize: 12,
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 24),
-              if (budgets.isEmpty)
-                _EmptyBudgets(onAdd: () => _openAddBudget(context))
-              else
-                ...budgets.asMap().entries.map(
-                  (entry) => Padding(
-                    padding: const EdgeInsets.only(bottom: 16),
-                    child: FadeSlideIn(
-                      index: entry.key,
-                      child: BudgetListTile(budget: entry.value),
-                    ),
+            return ListView(
+              padding: const EdgeInsets.fromLTRB(20, 8, 20, 32),
+              children: [
+                _BudgetsHeader(
+                  subtitle: '$monthLabel · $daysLeft days left',
+                  onNew: () => _openAddBudget(context),
+                ),
+                const SizedBox(height: 14),
+                FadeSlideIn(
+                  index: 0,
+                  child: _BudgetsHero(
+                    totalAllocated: totals.allocated,
+                    totalSpent: totals.spent,
+                    currencyCode: totals.currencyCode,
                   ),
                 ),
-            ],
-          );
-        },
+                const SizedBox(height: 14),
+                if (ordered.isEmpty)
+                  _EmptyBudgets(onAdd: () => _openAddBudget(context))
+                else
+                  ...ordered.asMap().entries.map(
+                    (entry) => Padding(
+                      padding: EdgeInsets.only(
+                        bottom: entry.key == ordered.length - 1 ? 0 : 10,
+                      ),
+                      child: FadeSlideIn(
+                        index: entry.key + 1,
+                        child: BudgetListTile(budget: entry.value),
+                      ),
+                    ),
+                  ),
+              ],
+            );
+          },
+        ),
       ),
     );
+  }
+
+  static List<Budget> _sortedBudgets(List<Budget> budgets) {
+    final sorted = [...budgets]
+      ..sort((a, b) {
+        final rankCompare = BudgetStatus.fromBudget(a)
+            .sortRank
+            .compareTo(BudgetStatus.fromBudget(b).sortRank);
+        if (rankCompare != 0) {
+          return rankCompare;
+        }
+        return BudgetUsage.ratio(b).compareTo(BudgetUsage.ratio(a));
+      });
+    return sorted;
+  }
+
+  static int _daysLeftInMonth(DateTime now) {
+    final lastDay = DateTime(now.year, now.month + 1, 0).day;
+    return (lastDay - now.day + 1).clamp(0, lastDay);
   }
 
   ({Decimal allocated, Decimal spent, String currencyCode}) _computeTotals(
@@ -107,8 +126,8 @@ class BudgetsScreen extends ConsumerWidget {
     String? currency;
 
     for (final budget in budgets) {
-      allocated += Decimal.parse(budget.amount);
-      spent += Decimal.parse(budget.spentAmount);
+      allocated += Decimal.tryParse(budget.amount) ?? Decimal.zero;
+      spent += Decimal.tryParse(budget.spentAmount) ?? Decimal.zero;
       currency ??= budget.currencyCode;
     }
 
@@ -120,8 +139,90 @@ class BudgetsScreen extends ConsumerWidget {
   }
 }
 
-class _BudgetHeroSummary extends StatelessWidget {
-  const _BudgetHeroSummary({
+class _BudgetsHeader extends StatelessWidget {
+  const _BudgetsHeader({
+    required this.subtitle,
+    required this.onNew,
+  });
+
+  final String subtitle;
+  final VoidCallback onNew;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Material(
+          color: AppColors.surfaceContainerLowest,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(14),
+            side: const BorderSide(color: Color(0xFFE1E5EE), width: 0.8),
+          ),
+          child: InkWell(
+            onTap: () {
+              if (context.canPop()) {
+                context.pop();
+              }
+            },
+            borderRadius: BorderRadius.circular(14),
+            child: const SizedBox(
+              width: 44,
+              height: 44,
+              child: Icon(
+                Icons.chevron_left,
+                size: 20,
+                color: AppColors.onSurface,
+              ),
+            ),
+          ),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Budgets',
+                style: AppTypography.money(
+                  fontSize: 28,
+                  color: AppColors.onSurface,
+                ),
+              ),
+              Text(
+                subtitle,
+                style: const TextStyle(
+                  fontSize: 13,
+                  color: AppColors.onSurfaceVariant,
+                ),
+              ),
+            ],
+          ),
+        ),
+        FilledButton.icon(
+          key: BudgetsScreen.newBudgetButtonKey,
+          onPressed: onNew,
+          icon: const Icon(Icons.add, size: 16),
+          label: const Text('New'),
+          style: FilledButton.styleFrom(
+            backgroundColor: AppColors.navy,
+            foregroundColor: AppColors.silver,
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(14),
+            ),
+            textStyle: const TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _BudgetsHero extends StatelessWidget {
+  const _BudgetsHero({
     required this.totalAllocated,
     required this.totalSpent,
     required this.currencyCode,
@@ -133,111 +234,47 @@ class _BudgetHeroSummary extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
+    final progress = totalAllocated <= Decimal.zero
+        ? 0.0
+        : (totalSpent / totalAllocated).toDouble();
     final remaining = totalAllocated - totalSpent;
-
-    return Container(
-      padding: const EdgeInsets.all(32),
-      decoration: AppDecorations.heroCard(),
-      child: Stack(
-        children: [
-          Positioned(
-            top: -32,
-            right: -32,
-            child: Container(
-              width: 128,
-              height: 128,
-              decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.1),
-                shape: BoxShape.circle,
-              ),
-            ),
-          ),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'TOTAL ALLOCATED',
-                style: AppTypography.sectionLabel(context).copyWith(
-                  color: AppColors.onPrimaryContainer.withValues(alpha: 0.8),
-                  letterSpacing: 3,
-                ),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                MoneyDisplay.withCurrency(
-                  amount: totalAllocated.toString(),
-                  currencyCode: currencyCode,
-                ),
-                style: theme.textTheme.displaySmall?.copyWith(
-                  fontWeight: FontWeight.w800,
-                  color: Colors.white,
-                ),
-              ),
-              const SizedBox(height: 24),
-              Row(
-                children: [
-                  Expanded(
-                    child: _HeroStat(
-                      label: 'Spent',
-                      value: MoneyDisplay.withCurrency(
-                        amount: totalSpent.toString(),
-                        currencyCode: currencyCode,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: _HeroStat(
-                      label: 'Remaining',
-                      value: MoneyDisplay.withCurrency(
-                        amount: remaining.toString(),
-                        currencyCode: currencyCode,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ],
-      ),
+    final remainingAbs = remaining < Decimal.zero ? -remaining : remaining;
+    final spentLabel = MoneyDisplay.compact(
+      amount: totalSpent.toString(),
+      currencyCode: currencyCode,
+      trimTrailingZeros: true,
     );
-  }
-}
-
-class _HeroStat extends StatelessWidget {
-  const _HeroStat({required this.label, required this.value});
-
-  final String label;
-  final String value;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
+    final allocatedLabel = MoneyDisplay.compact(
+      amount: totalAllocated.toString(),
+      currencyCode: currencyCode,
+      trimTrailingZeros: true,
+    );
+    final remainingLabel = MoneyDisplay.compact(
+      amount: remainingAbs.toString(),
+      currencyCode: currencyCode,
+      trimTrailingZeros: true,
+    );
+    final remainingCopy = remaining < Decimal.zero
+        ? '$remainingLabel over'
+        : '$remainingLabel left';
 
     return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.1),
-        borderRadius: BorderRadius.circular(AppDecorations.radiusXl),
-      ),
+      key: BudgetsScreen.heroKey,
+      width: double.infinity,
+      padding: const EdgeInsets.fromLTRB(20, 18, 20, 18),
+      decoration: AppDecorations.heroCard(radius: 26),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            label.toUpperCase(),
-            style: AppTypography.sectionLabel(context).copyWith(
-              color: Colors.white.withValues(alpha: 0.7),
-              fontSize: 10,
-            ),
-          ),
+          BudgetOverallGauge(progress: progress.clamp(0.0, 1.0)),
           const SizedBox(height: 4),
           Text(
-            value,
-            style: theme.textTheme.titleMedium?.copyWith(
-              fontWeight: FontWeight.w700,
-              color: Colors.white,
+            totalAllocated <= Decimal.zero
+                ? 'No budgets set this month'
+                : '$spentLabel of $allocatedLabel used · $remainingCopy',
+            textAlign: TextAlign.center,
+            style: const TextStyle(
+              color: AppColors.onNavyMuted,
+              fontSize: 14,
             ),
           ),
         ],

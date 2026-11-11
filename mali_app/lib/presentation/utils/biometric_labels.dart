@@ -19,15 +19,15 @@ abstract final class BiometricLabels {
 
   static String settingsTitle(BiometricCapability capability) {
     if (capability.hasFace && !capability.hasFingerprint) {
-      return 'Face ID unlock';
+      return 'Unlock with Face ID';
     }
     if (capability.hasFingerprint && !capability.hasFace) {
-      return 'Fingerprint unlock';
+      return 'Unlock with fingerprint';
     }
-    return 'Biometric unlock';
+    return 'Unlock with biometrics';
   }
 
   static String settingsSubtitle(BiometricCapability capability) {
-    return 'Unlock with ${unlockAction(capability).toLowerCase()}';
+    return 'Faster than typing your PIN';
   }
 }

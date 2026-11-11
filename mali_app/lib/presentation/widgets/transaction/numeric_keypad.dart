@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:mali_app/domain/value_objects/currency_code.dart';
 import 'package:mali_app/presentation/theme/app_colors.dart';
-import 'package:mali_app/presentation/theme/app_decorations.dart';
+import 'package:mali_app/presentation/theme/app_typography.dart';
 import 'package:mali_app/presentation/utils/amount_keypad_input.dart';
 
 /// Custom numeric keypad for currency amount entry.
@@ -43,7 +43,6 @@ class NumericKeypad extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     final displayAmount = AmountKeypadInput.formatDisplay(
       amount,
       currency.decimalPlaces,
@@ -58,18 +57,18 @@ class NumericKeypad extends StatelessWidget {
             displayAmount,
             key: const Key('numeric-keypad-amount'),
             textAlign: TextAlign.center,
-            style: theme.textTheme.displaySmall?.copyWith(
-              fontWeight: FontWeight.w700,
-              letterSpacing: -0.5,
+            style: AppTypography.money(
+              fontSize: 40,
+              color: AppColors.navy,
             ),
           ),
           const SizedBox(height: 4),
           Text(
             currency.value,
             textAlign: TextAlign.center,
-            style: theme.textTheme.labelMedium?.copyWith(
-              color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
-            ),
+            style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                  color: AppColors.onSurfaceVariant,
+                ),
           ),
           const SizedBox(height: 16),
         ],
@@ -77,9 +76,9 @@ class NumericKeypad extends StatelessWidget {
           shrinkWrap: true,
           physics: const NeverScrollableScrollPhysics(),
           crossAxisCount: 3,
-          mainAxisSpacing: 12,
-          crossAxisSpacing: 12,
-          childAspectRatio: 1.8,
+          mainAxisSpacing: 8,
+          crossAxisSpacing: 8,
+          childAspectRatio: 1.55,
           children: [
             for (final key in _digitKeys)
               _KeypadButton(
@@ -101,10 +100,7 @@ class NumericKeypad extends StatelessWidget {
             _KeypadButton(
               key: const Key('numeric-keypad-backspace'),
               onTap: () => _appendKey('backspace'),
-              child: Icon(
-                Icons.backspace_outlined,
-                color: theme.colorScheme.onSurface,
-              ),
+              label: '⌫',
             ),
           ],
         ),
@@ -117,39 +113,35 @@ class _KeypadButton extends StatelessWidget {
   const _KeypadButton({
     required this.onTap,
     this.label,
-    this.child,
     this.enabled = true,
     super.key,
   });
 
   final VoidCallback onTap;
   final String? label;
-  final Widget? child;
   final bool enabled;
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
     return Material(
       color: enabled
-          ? AppColors.surfaceContainerLow
-          : AppColors.surfaceContainerLow.withValues(alpha: 0.4),
-      borderRadius: BorderRadius.circular(AppDecorations.radiusMd),
+          ? AppColors.surfaceContainerLowest
+          : AppColors.surfaceContainerLowest.withValues(alpha: 0.45),
+      borderRadius: BorderRadius.circular(16),
       child: InkWell(
         onTap: enabled ? onTap : null,
-        borderRadius: BorderRadius.circular(AppDecorations.radiusMd),
+        borderRadius: BorderRadius.circular(16),
         child: Center(
-          child: child ??
-              Text(
-                label!,
-                style: theme.textTheme.headlineSmall?.copyWith(
-                  fontWeight: FontWeight.w700,
-                  color: enabled
-                      ? AppColors.onSurface
-                      : AppColors.onSurface.withValues(alpha: 0.4),
-                ),
-              ),
+          child: Text(
+            label!,
+            style: AppTypography.money(
+              fontSize: 24,
+              fontWeight: FontWeight.w600,
+              color: enabled
+                  ? AppColors.onSurface
+                  : AppColors.onSurface.withValues(alpha: 0.35),
+            ),
+          ),
         ),
       ),
     );

@@ -11,6 +11,7 @@ void main() {
         budgetAlertsEnabled: false,
         weeklyDigestEnabled: false,
         goalRemindersEnabled: true,
+        appLockGrace: AppLockGrace.after5Min,
       );
 
       final restored = AppPreferences.fromJson(prefs.toJson());
@@ -20,6 +21,7 @@ void main() {
       expect(restored.budgetAlertsEnabled, isFalse);
       expect(restored.weeklyDigestEnabled, isFalse);
       expect(restored.goalRemindersEnabled, isTrue);
+      expect(restored.appLockGrace, AppLockGrace.after5Min);
     });
 
     test('falls back to defaults for unknown or malformed values', () {
@@ -27,11 +29,13 @@ void main() {
         'theme': 'neon',
         'displayCurrency': 'XYZ',
         'budgetAlerts': 'yes',
+        'appLockGrace': 'sometime',
       });
 
       expect(restored.themePreference, AppThemePreference.light);
       expect(restored.displayCurrency, CurrencyCode.usd);
       expect(restored.budgetAlertsEnabled, isTrue);
+      expect(restored.appLockGrace, AppLockGrace.immediately);
     });
   });
 }

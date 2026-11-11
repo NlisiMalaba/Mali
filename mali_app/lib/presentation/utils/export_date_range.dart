@@ -20,6 +20,35 @@ class ExportDateRange {
     );
   }
 
+  /// The full calendar month before the one containing [now].
+  static DateRange lastMonth(DateTime now) {
+    final firstOfThisMonth = DateTime(now.year, now.month, 1);
+    final firstOfLastMonth =
+        DateTime(firstOfThisMonth.year, firstOfThisMonth.month - 1, 1);
+    final lastDayOfLastMonth = DateTime(
+      firstOfThisMonth.year,
+      firstOfThisMonth.month,
+      0,
+      23,
+      59,
+      59,
+      999,
+      999,
+    );
+    return DateRange(
+      start: firstOfLastMonth,
+      end: lastDayOfLastMonth,
+    );
+  }
+
+  /// From the 1st of the month two months before [now] through today.
+  static DateRange lastThreeMonths(DateTime now) {
+    return DateRange(
+      start: DateTime(now.year, now.month - 2, 1),
+      end: _endOfDay(now),
+    );
+  }
+
   /// Maps a picker selection onto a query range that includes the whole of
   /// the last chosen day.
   static DateRange fromPicker(DateTimeRange picked) {

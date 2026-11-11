@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:mali_app/presentation/models/analytics_tab.dart';
 import 'package:mali_app/presentation/screens/analytics/analytics_screen.dart';
 
 class AnalyticsBreadcrumbBar extends StatelessWidget {
@@ -29,16 +28,14 @@ class AnalyticsBreadcrumbBar extends StatelessWidget {
         children: [
           _Crumb(
             key: analyticsCrumbKey,
-            label: 'Analytics',
+            label: 'Insights',
             onTap: () => context.go(AnalyticsScreen.location()),
           ),
           _Separator(color: muted),
           _Crumb(
             key: spendingCrumbKey,
-            label: AnalyticsTab.spending.label,
-            onTap: () => context.go(
-              AnalyticsScreen.location(tab: AnalyticsTab.spending),
-            ),
+            label: 'Spending',
+            onTap: () => context.go(AnalyticsScreen.location()),
           ),
           _Separator(color: muted),
           Padding(

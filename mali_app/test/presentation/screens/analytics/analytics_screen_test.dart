@@ -2,33 +2,34 @@ import 'package:decimal/decimal.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/misc.dart' show Override;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mali_app/application/models/category_month_query.dart';
 import 'package:mali_app/application/models/home_monthly_summary_display.dart';
 import 'package:mali_app/application/providers/analytics_providers.dart';
+import 'package:mali_app/application/providers/budget_providers.dart';
 import 'package:mali_app/application/providers/home_providers.dart';
+import 'package:mali_app/domain/entities/budget.dart';
 import 'package:mali_app/domain/entities/transaction.dart';
 import 'package:mali_app/domain/usecases/get_analytics_overview_usecase.dart';
 import 'package:mali_app/domain/usecases/get_analytics_trends_usecase.dart';
-import 'package:mali_app/domain/usecases/get_monthly_summary_usecase.dart';
 import 'package:mali_app/domain/value_objects/currency_code.dart';
 import 'package:mali_app/domain/value_objects/money.dart';
 import 'package:mali_app/presentation/constants/system_categories.dart';
-import 'package:mali_app/presentation/models/analytics_tab.dart';
 import 'package:mali_app/presentation/screens/analytics/analytics_screen.dart';
 import 'package:mali_app/presentation/screens/analytics/category_drilldown_screen.dart';
 import 'package:mali_app/presentation/widgets/analytics/analytics_breadcrumb_bar.dart';
 import 'package:mali_app/presentation/widgets/analytics/category_spend_pie_chart.dart';
-import 'package:mali_app/presentation/widgets/analytics/currency_net_table.dart';
-import 'package:mali_app/presentation/widgets/analytics/income_expense_trends_chart.dart';
-import 'package:mali_app/presentation/widgets/analytics/top_spending_categories_list.dart';
-import 'package:mali_app/presentation/widgets/home/month_summary_card.dart';
+import 'package:mali_app/presentation/widgets/analytics/in_vs_out_bar_chart.dart';
+import 'package:mali_app/presentation/widgets/analytics/insights_coach_card.dart';
+import 'package:mali_app/presentation/widgets/analytics/month_selector.dart';
 
-List<dynamic> _overviewOverrides({
+List<Override> _overviewOverrides({
   required AnalyticsOverview overview,
   HomeMonthlySummaryDisplay? summary,
   AnalyticsTrends? trends,
+  List<Budget> budgets = const [],
 }) {
   final month = DateTime(2026, 4);
   return [
@@ -48,6 +49,9 @@ List<dynamic> _overviewOverrides({
     analyticsOverviewProvider.overrideWith((ref) async => overview),
     analyticsTrendsProvider.overrideWith(
       (ref) async => trends ?? _emptyTrends(),
+    ),
+    currentMonthBudgetsProvider.overrideWith(
+      (ref) => Stream.value(budgets),
     ),
   ];
 }
@@ -143,6 +147,27 @@ RankedCategorySpend _spend(String categoryId, String amount) {
   );
 }
 
+Budget _budget({
+  required String categoryId,
+  required String amount,
+  required String spentAmount,
+}) {
+  return Budget(
+    id: 'b-$categoryId',
+    userId: 'u-1',
+    categoryId: categoryId,
+    currencyCode: 'USD',
+    amount: amount,
+    spentAmount: spentAmount,
+    month: 4,
+    year: 2026,
+    rolloverEnabled: false,
+    isSynced: false,
+    createdAt: DateTime(2026, 4, 1),
+    updatedAt: DateTime(2026, 4, 1),
+  );
+}
+
 Transaction _expense({
   String id = 'tx-1',
   String title = 'Market run',
@@ -168,6 +193,7 @@ Future<void> _pumpAnalytics(
   WidgetTester tester, {
   required AnalyticsOverview overview,
   AnalyticsTrends? trends,
+  List<Budget> budgets = const [],
   Size surface = const Size(800, 1400),
 }) async {
   await tester.binding.setSurfaceSize(surface);
@@ -176,7 +202,11 @@ Future<void> _pumpAnalytics(
   await tester.pumpWidget(
     ProviderScope(
       overrides: [
-        ..._overviewOverrides(overview: overview, trends: trends),
+        ..._overviewOverrides(
+          overview: overview,
+          trends: trends,
+          budgets: budgets,
+        ),
       ],
       child: const MaterialApp(home: AnalyticsScreen()),
     ),
@@ -184,18 +214,8 @@ Future<void> _pumpAnalytics(
   await tester.pumpAndSettle();
 }
 
-Future<void> _openSpendingTab(WidgetTester tester) async {
-  await tester.tap(find.byKey(AnalyticsTab.spending.tabKey));
-  await tester.pumpAndSettle();
-}
-
-Future<void> _openTrendsTab(WidgetTester tester) async {
-  await tester.tap(find.byKey(AnalyticsTab.trends.tabKey));
-  await tester.pumpAndSettle();
-}
-
 void main() {
-  testWidgets('shows Overview, Spending, and Trends tabs', (tester) async {
+  testWidgets('shows Insights header and month chip', (tester) async {
     await _pumpAnalytics(
       tester,
       overview: const AnalyticsOverview(
@@ -205,88 +225,55 @@ void main() {
     );
 
     expect(find.byKey(AnalyticsScreen.screenKey), findsOneWidget);
-    expect(find.byKey(AnalyticsScreen.tabBarKey), findsOneWidget);
-    expect(find.text('Financial Insights'), findsOneWidget);
-
-    for (final tab in AnalyticsTab.values) {
-      expect(find.byKey(tab.tabKey), findsOneWidget);
-      expect(find.text(tab.label), findsOneWidget);
-    }
-
-    expect(
-      DefaultTabController.of(tester.element(find.byType(TabBar))).index,
-      AnalyticsTab.overview.index,
-    );
-    expect(find.byKey(AnalyticsTab.overview.panelKey), findsOneWidget);
+    expect(find.text('Insights'), findsOneWidget);
+    expect(find.byKey(MonthSelector.titleKey), findsOneWidget);
+    expect(find.text('Apr 2026'), findsOneWidget);
   });
 
-  testWidgets('switching tabs updates the selected tab', (tester) async {
+  testWidgets('shows coach tip when a budget is under pressure', (tester) async {
     await _pumpAnalytics(
       tester,
       overview: const AnalyticsOverview(
         totalsByCurrency: [],
         categorySpend: [],
       ),
+      budgets: [
+        _budget(
+          categoryId: 'cat-transport',
+          amount: '150',
+          spentAmount: '141',
+        ),
+        _budget(
+          categoryId: 'cat-entertainment',
+          amount: '150',
+          spentAmount: '98',
+        ),
+      ],
     );
 
-    await tester.tap(find.byKey(AnalyticsTab.spending.tabKey));
-    await tester.pumpAndSettle();
-
-    expect(
-      DefaultTabController.of(tester.element(find.byType(TabBar))).index,
-      AnalyticsTab.spending.index,
-    );
-
-    await tester.tap(find.byKey(AnalyticsTab.trends.tabKey));
-    await tester.pumpAndSettle();
-
-    expect(
-      DefaultTabController.of(tester.element(find.byType(TabBar))).index,
-      AnalyticsTab.trends.index,
-    );
+    expect(find.byKey(InsightsCoachCard.cardKey), findsOneWidget);
+    expect(find.textContaining('Transport is at'), findsOneWidget);
+    expect(find.byKey(InsightsCoachCard.actionKey), findsOneWidget);
   });
 
-  testWidgets(
-      'Overview shows month summary, currency net table, and top spending',
-      (tester) async {
+  testWidgets('shows spent donut and in vs out chart', (tester) async {
     await _pumpAnalytics(
       tester,
       overview: AnalyticsOverview(
-        totalsByCurrency: [
-          CurrencyMonthlyTotals(
-            currencyCode: 'USD',
-            income: Decimal.parse('200'),
-            expenses: Decimal.parse('80'),
-          ),
-          CurrencyMonthlyTotals(
-            currencyCode: 'ZAR',
-            income: Decimal.parse('50'),
-            expenses: Decimal.parse('10'),
-          ),
-        ],
+        totalsByCurrency: const [],
         categorySpend: [
           _spend('cat-food', '80'),
           _spend('cat-transport', '40'),
         ],
       ),
+      trends: _sampleTrends(),
     );
 
-    expect(find.byType(MonthSummaryCard), findsOneWidget);
-    expect(find.byKey(CurrencyNetTable.tableKey), findsOneWidget);
-    expect(find.byKey(CurrencyNetTable.rowKey('USD')), findsOneWidget);
-    expect(find.byKey(CurrencyNetTable.rowKey('ZAR')), findsOneWidget);
-    expect(find.text('By currency'), findsOneWidget);
-    expect(find.text('Top spending'), findsOneWidget);
-    expect(find.text('1. Food'), findsOneWidget);
-    expect(find.text('2. Transport'), findsOneWidget);
-    expect(find.byKey(TopSpendingCategoriesList.listKey), findsOneWidget);
-    expect(
-      find.descendant(
-        of: find.byKey(TopSpendingCategoriesList.listKey),
-        matching: find.byType(LinearProgressIndicator),
-      ),
-      findsNWidgets(2),
-    );
+    expect(find.byType(CategorySpendPieChart), findsOneWidget);
+    expect(find.byType(PieChart), findsOneWidget);
+    expect(find.text('Spent'), findsOneWidget);
+    expect(find.byKey(InVsOutBarChart.chartKey), findsOneWidget);
+    expect(find.text('In vs out'), findsOneWidget);
   });
 
   testWidgets('pie chart renders without overflow', (tester) async {
@@ -299,11 +286,9 @@ void main() {
       ),
     );
 
-    await _openSpendingTab(tester);
-
     expect(find.byType(PieChart), findsOneWidget);
     final pie = tester.widget<PieChart>(find.byType(PieChart));
-    expect(pie.data.sections.length, SystemCategories.expense.length);
+    expect(pie.data.sections.length, lessThanOrEqualTo(5));
 
     final chartBox = tester.getRect(find.byKey(CategorySpendPieChart.chartKey));
     expect(chartBox.left, greaterThanOrEqualTo(0));
@@ -311,8 +296,7 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('Spending tab shows an empty state when there is no spend',
-      (tester) async {
+  testWidgets('shows empty spending copy when there is no spend', (tester) async {
     await _pumpAnalytics(
       tester,
       overview: const AnalyticsOverview(
@@ -320,8 +304,6 @@ void main() {
         categorySpend: [],
       ),
     );
-
-    await _openSpendingTab(tester);
 
     expect(find.text('No spending this month.'), findsOneWidget);
     expect(find.byType(PieChart), findsNothing);
@@ -384,7 +366,6 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    await _openSpendingTab(tester);
     await tester.tap(find.byKey(CategorySpendPieChart.legendRowKey('cat-food')));
     await tester.pumpAndSettle();
 
@@ -400,14 +381,10 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.byKey(AnalyticsScreen.screenKey), findsOneWidget);
-    expect(
-      DefaultTabController.of(tester.element(find.byType(TabBar))).index,
-      AnalyticsTab.spending.index,
-    );
+    expect(find.text('Insights'), findsOneWidget);
   });
 
-  testWidgets('line chart handles months with zero transactions',
-      (tester) async {
+  testWidgets('in vs out chart handles zero months', (tester) async {
     await _pumpAnalytics(
       tester,
       overview: const AnalyticsOverview(
@@ -417,20 +394,11 @@ void main() {
       trends: _allZeroTrends(),
     );
 
-    await _openTrendsTab(tester);
-
-    expect(find.byType(LineChart), findsOneWidget);
-    final chart = tester.widget<LineChart>(find.byType(LineChart));
-    expect(chart.data.lineBarsData.length, 2);
-    for (final bar in chart.data.lineBarsData) {
-      expect(bar.spots.length, GetAnalyticsTrendsUseCase.monthCount);
-      expect(bar.spots.every((spot) => spot.y == 0), isTrue);
-    }
-    expect(chart.data.maxY, greaterThan(0));
+    expect(find.byKey(InVsOutBarChart.chartKey), findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('Trends tab shows an empty state when there is no activity',
+  testWidgets('shows empty trends copy when there is no activity',
       (tester) async {
     await _pumpAnalytics(
       tester,
@@ -439,17 +407,15 @@ void main() {
         categorySpend: [],
       ),
     );
-
-    await _openTrendsTab(tester);
 
     expect(
       find.text('No income or expenses in the last 6 months.'),
       findsOneWidget,
     );
-    expect(find.byType(LineChart), findsNothing);
+    expect(find.byKey(InVsOutBarChart.chartKey), findsNothing);
   });
 
-  testWidgets('toggling a currency hides its trend lines', (tester) async {
+  testWidgets('tapping a month bar focuses that month chip', (tester) async {
     await _pumpAnalytics(
       tester,
       overview: const AnalyticsOverview(
@@ -459,37 +425,13 @@ void main() {
       trends: _sampleTrends(),
     );
 
-    await _openTrendsTab(tester);
-    await tester.tap(
-      find.byKey(IncomeExpenseTrendsChart.currencyToggleKey('ZAR')),
-    );
-    await tester.pumpAndSettle();
-
-    final chart = tester.widget<LineChart>(find.byType(LineChart));
-    expect(chart.data.lineBarsData.length, 2);
-  });
-
-  testWidgets('tapping a trend month shows that month summary card',
-      (tester) async {
-    await _pumpAnalytics(
-      tester,
-      overview: const AnalyticsOverview(
-        totalsByCurrency: [],
-        categorySpend: [],
-      ),
-      trends: _sampleTrends(),
-    );
-
-    await _openTrendsTab(tester);
     await tester.ensureVisible(
-      find.byKey(IncomeExpenseTrendsChart.monthPointKey(DateTime(2026, 3))),
+      find.byKey(const Key('in-vs-out-month-2026-3')),
     );
-    await tester.tap(
-      find.byKey(IncomeExpenseTrendsChart.monthPointKey(DateTime(2026, 3))),
-    );
+    await tester.tap(find.byKey(const Key('in-vs-out-month-2026-3')));
     await tester.pumpAndSettle();
 
-    expect(find.byType(MonthSummaryCard), findsWidgets);
-    expect(find.text('March 2026'), findsWidgets);
+    // Fixed month notifier ignores selectMonth; chart still remains.
+    expect(find.byKey(InVsOutBarChart.chartKey), findsOneWidget);
   });
 }

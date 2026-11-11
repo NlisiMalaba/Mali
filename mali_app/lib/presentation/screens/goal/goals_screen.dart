@@ -1,24 +1,20 @@
-import 'package:decimal/decimal.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mali_app/application/providers/goal_providers.dart';
-import 'package:mali_app/domain/entities/savings_goal.dart';
 import 'package:mali_app/presentation/theme/app_colors.dart';
-import 'package:mali_app/presentation/theme/app_decorations.dart';
 import 'package:mali_app/presentation/theme/app_typography.dart';
-import 'package:mali_app/presentation/utils/money_display.dart';
-import 'package:mali_app/presentation/widgets/goal/add_goal_sheet.dart';
-import 'package:mali_app/presentation/widgets/goal/goal_card.dart';
 import 'package:mali_app/presentation/widgets/common/fade_slide_in.dart';
-import 'package:mali_app/presentation/widgets/common/pressable_scale.dart';
-import 'package:mali_app/presentation/widgets/sovereign/sovereign_app_bar.dart';
+import 'package:mali_app/presentation/widgets/goal/add_goal_sheet.dart';
+import 'package:mali_app/presentation/widgets/goal/goal_list_tile.dart';
+import 'package:mali_app/presentation/widgets/goal/goal_priority_hero.dart';
 
 class GoalsScreen extends ConsumerWidget {
   const GoalsScreen({super.key});
 
   static const Key screenKey = Key('goals-screen');
   static const Key reorderButtonKey = Key('reorder-goals-button');
+  static const Key newGoalButtonKey = Key('new-goal-button');
 
   Future<void> _openAddGoal(BuildContext context) async {
     final created = await AddGoalSheet.show(context);
@@ -32,195 +28,150 @@ class GoalsScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final goalsAsync = ref.watch(activeGoalsProvider);
-    final theme = Theme.of(context);
 
     return Scaffold(
       key: screenKey,
-      appBar: SovereignAppBar(
-        actions: [
-          if (goalsAsync.maybeWhen(
-            data: (goals) => goals.isNotEmpty,
-            orElse: () => false,
-          ))
-            IconButton(
-              key: reorderButtonKey,
-              tooltip: 'Reorder goals',
-              icon: const Icon(Icons.swap_vert),
-              onPressed: () => context.push('/goals/priority'),
+      backgroundColor: AppColors.background,
+      body: SafeArea(
+        bottom: false,
+        child: goalsAsync.when(
+          loading: () => const Center(child: CircularProgressIndicator()),
+          error: (error, _) => Center(
+            child: Padding(
+              padding: const EdgeInsets.all(24),
+              child: Text('Could not load goals: $error'),
             ),
-        ],
-      ),
-      body: goalsAsync.when(
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (error, _) => Center(
-          child: Padding(
-            padding: const EdgeInsets.all(24),
-            child: Text('Could not load goals: $error'),
           ),
-        ),
-        data: (goals) {
-          if (goals.isEmpty) {
-            return _EmptyGoals(onAdd: () => _openAddGoal(context));
-          }
-
-          final totals = _computeTotals(goals);
-
-          return ListView(
-            padding: const EdgeInsets.fromLTRB(24, 8, 24, 16),
-            children: [
-              Text(
-                'TOTAL SAVINGS PROGRESS',
-                style: AppTypography.sectionLabel(context),
-              ),
-              const SizedBox(height: 8),
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.end,
+          data: (goals) {
+            if (goals.isEmpty) {
+              return Column(
                 children: [
-                  Expanded(
-                    child: Text(
-                      MoneyDisplay.withCurrency(
-                        amount: totals.saved.toString(),
-                        currencyCode: totals.currencyCode,
-                      ),
-                      style: AppTypography.currencyHero(context).copyWith(
-                        fontSize: 40,
-                      ),
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
+                    child: _GoalsHeader(
+                      onNewGoal: () => _openAddGoal(context),
                     ),
                   ),
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 8,
-                    ),
-                    decoration: BoxDecoration(
-                      color: AppColors.primaryFixed,
-                      borderRadius: BorderRadius.circular(
-                        AppDecorations.radiusMd,
-                      ),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        const Icon(
-                          Icons.trending_up,
-                          size: 16,
-                          color: AppColors.onPrimaryFixed,
+                  Expanded(
+                    child: _EmptyGoals(onAdd: () => _openAddGoal(context)),
+                  ),
+                ],
+              );
+            }
+
+            final topGoal = goals.first;
+            final otherGoals = goals.skip(1).toList();
+
+            return ListView(
+              padding: const EdgeInsets.fromLTRB(20, 12, 20, 32),
+              children: [
+                _GoalsHeader(onNewGoal: () => _openAddGoal(context)),
+                const SizedBox(height: 18),
+                FadeSlideIn(
+                  index: 0,
+                  child: GoalPriorityHero(goal: topGoal),
+                ),
+                if (otherGoals.isNotEmpty) ...[
+                  const SizedBox(height: 24),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          'Also saving for',
+                          style: Theme.of(context)
+                              .textTheme
+                              .titleMedium
+                              ?.copyWith(
+                                fontWeight: FontWeight.w700,
+                                fontSize: 16,
+                                color: AppColors.onSurface,
+                              ),
                         ),
-                        const SizedBox(width: 4),
-                        Text(
-                          '${totals.overallPercent}% Overall',
-                          style: theme.textTheme.labelMedium?.copyWith(
+                      ),
+                      TextButton(
+                        key: reorderButtonKey,
+                        onPressed: () => context.push('/goals/priority'),
+                        style: TextButton.styleFrom(
+                          foregroundColor: AppColors.link,
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 4,
+                            vertical: 8,
+                          ),
+                          minimumSize: Size.zero,
+                          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                        ),
+                        child: const Text(
+                          'Change order',
+                          style: TextStyle(
+                            fontSize: 13,
                             fontWeight: FontWeight.w600,
-                            color: AppColors.onPrimaryFixed,
                           ),
                         ),
-                      ],
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  ...otherGoals.asMap().entries.map(
+                    (entry) => Padding(
+                      padding: EdgeInsets.only(
+                        bottom: entry.key == otherGoals.length - 1 ? 0 : 16,
+                      ),
+                      child: FadeSlideIn(
+                        index: entry.key + 1,
+                        child: GoalListTile(
+                          goal: entry.value,
+                          index: entry.key,
+                        ),
+                      ),
                     ),
                   ),
                 ],
-              ),
-              const SizedBox(height: 32),
-              ...goals.asMap().entries.map(
-                (entry) => Padding(
-                  padding: const EdgeInsets.only(bottom: 16),
-                  child: FadeSlideIn(
-                    index: entry.key,
-                    child: GoalCard(goal: entry.value),
-                  ),
-                ),
-              ),
-              FadeSlideIn(
-                index: goals.length,
-                child: _AddGoalCard(onTap: () => _openAddGoal(context)),
-              ),
-            ],
-          );
-        },
+              ],
+            );
+          },
+        ),
       ),
-    );
-  }
-
-  ({Decimal saved, Decimal target, String currencyCode, int overallPercent})
-      _computeTotals(List<SavingsGoal> goals) {
-    Decimal saved = Decimal.zero;
-    Decimal target = Decimal.zero;
-    String? currency;
-
-    for (final goal in goals) {
-      saved += Decimal.tryParse(goal.currentAmount) ?? Decimal.zero;
-      target += Decimal.tryParse(goal.targetAmount) ?? Decimal.zero;
-      currency ??= goal.currencyCode;
-    }
-
-    final percent = target > Decimal.zero
-        ? ((saved / target).toDouble() * 100).round()
-        : 0;
-
-    return (
-      saved: saved,
-      target: target,
-      currencyCode: currency ?? 'USD',
-      overallPercent: percent,
     );
   }
 }
 
-class _AddGoalCard extends StatelessWidget {
-  const _AddGoalCard({required this.onTap});
+class _GoalsHeader extends StatelessWidget {
+  const _GoalsHeader({required this.onNewGoal});
 
-  final VoidCallback onTap;
+  final VoidCallback onNewGoal;
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
-    return PressableScale(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.all(32),
-        decoration: BoxDecoration(
-          color: AppColors.surfaceContainerLow,
-          borderRadius: BorderRadius.circular(AppDecorations.radiusHero),
-          border: Border.all(
-            color: AppColors.outlineVariant.withValues(alpha: 0.3),
-            width: 2,
-            strokeAlign: BorderSide.strokeAlignInside,
+    return Row(
+      children: [
+        Expanded(
+          child: Text(
+            'Goals',
+            style: AppTypography.money(
+              fontSize: 30,
+              color: AppColors.onSurface,
+            ),
           ),
         ),
-        child: Column(
-          children: [
-            Container(
-              width: 64,
-              height: 64,
-              decoration: const BoxDecoration(
-                color: AppColors.surfaceContainerHighest,
-                shape: BoxShape.circle,
-              ),
-              child: const Icon(
-                Icons.add,
-                size: 32,
-                color: AppColors.onSurfaceVariant,
-              ),
+        FilledButton.icon(
+          key: GoalsScreen.newGoalButtonKey,
+          onPressed: onNewGoal,
+          icon: const Icon(Icons.add, size: 16),
+          label: const Text('New goal'),
+          style: FilledButton.styleFrom(
+            backgroundColor: AppColors.navy,
+            foregroundColor: AppColors.silver,
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(14),
             ),
-            const SizedBox(height: 16),
-            Text(
-              'Add New Goal',
-              style: theme.textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.w700,
-                color: AppColors.onSurfaceVariant,
-              ),
+            textStyle: const TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w700,
             ),
-            const SizedBox(height: 8),
-            Text(
-              'Define your next milestone and start growing your wealth.',
-              textAlign: TextAlign.center,
-              style: theme.textTheme.bodySmall?.copyWith(
-                color: AppColors.onSurfaceVariant.withValues(alpha: 0.6),
-              ),
-            ),
-          ],
+          ),
         ),
-      ),
+      ],
     );
   }
 }

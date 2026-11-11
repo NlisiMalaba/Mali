@@ -3,193 +3,146 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mali_app/application/providers/category_providers.dart';
 import 'package:mali_app/domain/entities/budget.dart';
 import 'package:mali_app/presentation/theme/app_colors.dart';
-import 'package:mali_app/presentation/theme/app_decorations.dart';
-import 'package:mali_app/presentation/theme/app_typography.dart';
+import 'package:mali_app/presentation/utils/budget_status.dart';
 import 'package:mali_app/presentation/utils/budget_usage.dart';
 import 'package:mali_app/presentation/utils/category_icons.dart';
 import 'package:mali_app/presentation/utils/money_display.dart';
+import 'package:mali_app/presentation/widgets/common/animated_progress_bar.dart';
+import 'package:mali_app/presentation/widgets/common/pressable_scale.dart';
 
 class BudgetListTile extends ConsumerWidget {
   const BudgetListTile({
     required this.budget,
+    this.onTap,
     super.key,
   });
 
   final Budget budget;
+  final VoidCallback? onTap;
+
+  static Key tileKey(String budgetId) => Key('budget-tile-$budgetId');
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
     final category = ref.watch(categoryByIdProvider(budget.categoryId));
     final usage = BudgetUsage.ratio(budget);
-    final remaining = BudgetUsage.remainingAmount(budget);
-    final isOver = BudgetUsage.isOverBudget(budget);
     final percentUsed = (usage * 100).round();
-
-    final status = _BudgetStatus.fromUsage(usage, isOver);
-    final categoryIcon = category == null
-        ? Icons.account_balance_wallet_outlined
-        : CategoryIcons.fromKey(category.iconKey);
+    final status = BudgetStatus.fromBudget(budget);
     final categoryName = category?.name ?? 'Budget';
+    final initial = categoryName.isNotEmpty
+        ? categoryName.characters.first.toUpperCase()
+        : '?';
+    final categoryColor = category == null
+        ? status.accentColor
+        : CategoryIcons.colorFromHex(category.colorHex);
+    final avatarInk = status.kind == BudgetStatusKind.onTrack
+        ? categoryColor
+        : status.accentColor;
+    final avatarBg = status.kind == BudgetStatusKind.onTrack
+        ? categoryColor.withValues(alpha: 0.16)
+        : status.iconBackground;
+    final spent = MoneyDisplay.compact(
+      amount: budget.spentAmount,
+      currencyCode: budget.currencyCode,
+      trimTrailingZeros: true,
+    );
+    final limit = MoneyDisplay.compact(
+      amount: budget.amount,
+      currencyCode: budget.currencyCode,
+      trimTrailingZeros: true,
+    );
 
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: AppDecorations.surfaceCard(radius: AppDecorations.radiusHero),
-      child: Column(
-        children: [
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Container(
-                width: 48,
-                height: 48,
-                decoration: BoxDecoration(
-                  color: status.iconBackground,
-                  borderRadius: BorderRadius.circular(AppDecorations.radiusMd),
-                ),
-                child: Icon(categoryIcon, color: status.accentColor, size: 24),
+    return PressableScale(
+      key: tileKey(budget.id),
+      onTap: onTap,
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.fromLTRB(14, 14, 14, 14),
+        decoration: BoxDecoration(
+          color: AppColors.surfaceContainerLowest,
+          borderRadius: BorderRadius.circular(18),
+        ),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Container(
+              width: 40,
+              height: 40,
+              alignment: Alignment.center,
+              decoration: BoxDecoration(
+                color: avatarBg,
+                borderRadius: BorderRadius.circular(12),
               ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      categoryName,
-                      style: theme.textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                    Text(
-                      'Monthly envelope',
-                      style: theme.textTheme.bodySmall?.copyWith(
-                        color: AppColors.onSurfaceVariant,
-                      ),
-                    ),
-                  ],
+              child: Text(
+                initial,
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w700,
+                  color: avatarInk,
                 ),
               ),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.end,
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text.rich(
-                    TextSpan(
-                      children: [
-                        TextSpan(
-                          text: MoneyDisplay.withCurrency(
-                            amount: budget.spentAmount,
-                            currencyCode: budget.currencyCode,
-                          ),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          categoryName,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                           style: theme.textTheme.titleSmall?.copyWith(
+                            fontWeight: FontWeight.w600,
+                            fontSize: 15,
+                            color: AppColors.onSurface,
+                          ),
+                        ),
+                      ),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 4,
+                        ),
+                        decoration: BoxDecoration(
+                          color: status.chipBackground,
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: Text(
+                          status.chipLabel,
+                          style: TextStyle(
+                            fontSize: 11.5,
                             fontWeight: FontWeight.w700,
+                            color: status.accentColor,
                           ),
                         ),
-                        TextSpan(
-                          text:
-                              ' / ${MoneyDisplay.withCurrency(
-                                amount: budget.amount,
-                                currencyCode: budget.currencyCode,
-                              )}',
-                          style: theme.textTheme.bodySmall?.copyWith(
-                            color: AppColors.onSurfaceVariant,
-                          ),
-                        ),
-                      ],
-                    ),
+                      ),
+                    ],
                   ),
+                  const SizedBox(height: 8),
+                  AnimatedProgressBar(
+                    value: usage.clamp(0.0, 1.0),
+                    color: status.progressColor,
+                    backgroundColor: AppColors.surfaceContainer,
+                    height: 7,
+                  ),
+                  const SizedBox(height: 8),
                   Text(
-                    status.label.toUpperCase(),
-                    style: AppTypography.sectionLabel(context).copyWith(
-                      fontSize: 10,
-                      color: status.accentColor,
+                    '$spent of $limit · $percentUsed%',
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: AppColors.onSurfaceVariant,
+                      fontSize: 12.5,
                     ),
                   ),
                 ],
               ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          ClipRRect(
-            borderRadius: BorderRadius.circular(999),
-            child: LinearProgressIndicator(
-              value: usage.clamp(0, 1),
-              minHeight: 12,
-              backgroundColor: AppColors.surfaceContainer,
-              color: status.progressColor,
             ),
-          ),
-          const SizedBox(height: 8),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                '$percentUsed% used',
-                style: theme.textTheme.bodySmall?.copyWith(
-                  color: AppColors.onSurfaceVariant,
-                ),
-              ),
-              Text(
-                isOver
-                    ? '${MoneyDisplay.withCurrency(
-                        amount: remaining.abs().toString(),
-                        currencyCode: budget.currencyCode,
-                      )} over'
-                    : '${MoneyDisplay.withCurrency(
-                        amount: remaining.toString(),
-                        currencyCode: budget.currencyCode,
-                      )} left',
-                style: theme.textTheme.bodySmall?.copyWith(
-                  fontWeight: FontWeight.w600,
-                  color: status.accentColor,
-                ),
-              ),
-            ],
-          ),
-        ],
+          ],
+        ),
       ),
-    );
-  }
-}
-
-class _BudgetStatus {
-  const _BudgetStatus({
-    required this.label,
-    required this.accentColor,
-    required this.progressColor,
-    required this.iconBackground,
-  });
-
-  final String label;
-  final Color accentColor;
-  final Color progressColor;
-  final Color iconBackground;
-
-  static const double _closeToLimit = 0.9;
-
-  /// Meaning colours only: green on track, amber close to the limit, red over.
-  /// The label is spelled out so status never depends on colour alone.
-  static _BudgetStatus fromUsage(double usage, bool isOver) {
-    if (isOver || usage > 1) {
-      return const _BudgetStatus(
-        label: 'Over budget',
-        accentColor: AppColors.error,
-        progressColor: AppColors.error,
-        iconBackground: AppColors.errorContainer,
-      );
-    }
-    if (usage >= _closeToLimit) {
-      return const _BudgetStatus(
-        label: 'Close to limit',
-        accentColor: AppColors.warningText,
-        progressColor: AppColors.warning,
-        iconBackground: AppColors.warningContainer,
-      );
-    }
-    return const _BudgetStatus(
-      label: 'On track',
-      accentColor: AppColors.success,
-      progressColor: AppColors.success,
-      iconBackground: AppColors.successContainer,
     );
   }
 }

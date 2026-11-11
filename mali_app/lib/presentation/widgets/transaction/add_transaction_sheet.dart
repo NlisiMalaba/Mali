@@ -14,17 +14,15 @@ import 'package:mali_app/domain/repositories/receipt_text_recognizer.dart';
 import 'package:mali_app/domain/value_objects/currency_code.dart';
 import 'package:mali_app/domain/value_objects/receipt_scan.dart';
 import 'package:mali_app/presentation/constants/system_categories.dart';
+import 'package:mali_app/presentation/theme/app_colors.dart';
+import 'package:mali_app/presentation/theme/app_typography.dart';
 import 'package:mali_app/presentation/utils/amount_keypad_input.dart';
 import 'package:mali_app/presentation/utils/currency_display.dart';
-import 'package:mali_app/presentation/utils/shell_insets.dart';
 import 'package:mali_app/presentation/widgets/transaction/category_selector.dart';
 import 'package:mali_app/presentation/widgets/transaction/numeric_keypad.dart';
 import 'package:mali_app/presentation/widgets/transaction/transaction_success_overlay.dart';
 import 'package:mali_app/presentation/widgets/transaction/transaction_type_toggle.dart';
 import 'package:mali_app/presentation/widgets/transaction/transfer_exchange_rate_field.dart';
-import 'package:mali_app/presentation/theme/app_colors.dart';
-import 'package:mali_app/presentation/theme/app_typography.dart';
-import 'package:mali_app/presentation/widgets/sovereign/gradient_button.dart';
 import 'package:mali_app/presentation/widgets/transaction/wallet_selector.dart';
 
 class AddTransactionSheet extends ConsumerStatefulWidget {
@@ -42,11 +40,14 @@ class AddTransactionSheet extends ConsumerStatefulWidget {
     return showModalBottomSheet<bool>(
       context: context,
       isScrollControlled: true,
-      useSafeArea: true,
+      useSafeArea: false,
       backgroundColor: Colors.transparent,
-      barrierColor: Colors.black.withValues(alpha: 0.4),
-      builder: (context) => AddTransactionSheet(
-        initialWalletId: initialWalletId,
+      barrierColor: Colors.black.withValues(alpha: 0.45),
+      builder: (context) => SizedBox(
+        height: MediaQuery.sizeOf(context).height,
+        child: AddTransactionSheet(
+          initialWalletId: initialWalletId,
+        ),
       ),
     );
   }
@@ -80,7 +81,7 @@ class _AddTransactionSheetState extends ConsumerState<AddTransactionSheet> {
   void initState() {
     super.initState();
     _fromWalletId = widget.initialWalletId;
-    _selectedCategory = SystemCategories.gridForType(_type.value).firstOrNull;
+    _selectedCategory = _defaultCategoryFor(_type);
   }
 
   @override
@@ -88,6 +89,14 @@ class _AddTransactionSheetState extends ConsumerState<AddTransactionSheet> {
     _notesController.dispose();
     _exchangeRateController.dispose();
     super.dispose();
+  }
+
+  Category _defaultCategoryFor(TransactionType type) {
+    final categories = SystemCategories.gridForType(type.value);
+    return categories.firstWhere(
+      (category) => category.id == 'cat-groceries',
+      orElse: () => categories.first,
+    );
   }
 
   bool get _hasValidAmount => AmountKeypadInput.isPositive(_amount);
@@ -171,7 +180,7 @@ class _AddTransactionSheetState extends ConsumerState<AddTransactionSheet> {
       final categories = SystemCategories.gridForType(type.value);
       _selectedCategory = categories.firstWhere(
         (category) => category.id == _selectedCategory?.id,
-        orElse: () => categories.first,
+        orElse: () => _defaultCategoryFor(type),
       );
       if (type != TransactionType.transfer) {
         _toWalletId = null;
@@ -232,6 +241,41 @@ class _AddTransactionSheetState extends ConsumerState<AddTransactionSheet> {
           _transactionDate.minute,
         );
       });
+    }
+  }
+
+  Future<void> _pickWallet(List<Wallet> wallets) async {
+    if (wallets.isEmpty) {
+      return;
+    }
+    final selected = await showModalBottomSheet<Wallet>(
+      context: context,
+      showDragHandle: true,
+      builder: (sheetContext) => SafeArea(
+        child: ListView(
+          shrinkWrap: true,
+          children: [
+            for (final wallet in wallets)
+              ListTile(
+                key: Key('wallet-picker-${wallet.id}'),
+                leading: const Icon(
+                  Icons.account_balance_wallet_outlined,
+                  color: AppColors.success,
+                ),
+                title: Text(wallet.name),
+                subtitle: Text(wallet.currencyCode),
+                trailing: wallet.id == _fromWalletId
+                    ? const Icon(Icons.check, color: AppColors.navy)
+                    : null,
+                onTap: () => Navigator.of(sheetContext).pop(wallet),
+              ),
+          ],
+        ),
+      ),
+    );
+    if (selected != null && mounted) {
+      await ref.read(recentWalletsProvider.notifier).recordUsage(selected.id);
+      _onFromWalletChanged(selected);
     }
   }
 
@@ -340,6 +384,24 @@ class _AddTransactionSheetState extends ConsumerState<AddTransactionSheet> {
     return notes.isEmpty ? null : notes;
   }
 
+  String _walletLabel(Wallet? wallet) {
+    if (wallet == null) {
+      return 'Select wallet';
+    }
+    return '${wallet.name} · ${wallet.currencyCode}';
+  }
+
+  String _dateLabel() {
+    final now = DateTime.now();
+    final isToday = _transactionDate.year == now.year &&
+        _transactionDate.month == now.month &&
+        _transactionDate.day == now.day;
+    if (isToday) {
+      return 'Today';
+    }
+    return DateFormat.MMMd().format(_transactionDate);
+  }
+
   Future<void> _submit() async {
     setState(() => _submitted = true);
     if (!_canSubmit) {
@@ -410,38 +472,25 @@ class _AddTransactionSheetState extends ConsumerState<AddTransactionSheet> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     final walletsAsync = ref.watch(activeWalletsProvider);
     final submitState = ref.watch(addTransactionProvider);
     final isSaving = submitState.isLoading;
-    final dateLabel = DateFormat.yMMMd().format(_transactionDate);
+    final bottomInset = MediaQuery.paddingOf(context).bottom;
 
     ref.listen(addTransactionProvider, _handleSubmitStateChange);
 
-    return Container(
-      decoration: const BoxDecoration(
-        color: AppColors.surfaceContainerLowest,
-        borderRadius: BorderRadius.vertical(
-          top: Radius.circular(40),
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: Color(0x26000000),
-            blurRadius: 50,
-            offset: Offset(0, -20),
-          ),
-        ],
-      ),
-      child: Padding(
-      padding: modalSheetPadding(context, top: 8),
+    return Material(
+      color: AppColors.navy,
       child: walletsAsync.when(
         loading: () => const Center(
-          child: Padding(
-            padding: EdgeInsets.all(48),
-            child: CircularProgressIndicator(),
+          child: CircularProgressIndicator(color: AppColors.silver),
+        ),
+        error: (error, _) => Center(
+          child: Text(
+            'Could not load wallets: $error',
+            style: const TextStyle(color: AppColors.silver),
           ),
         ),
-        error: (error, _) => Text('Could not load wallets: $error'),
         data: (wallets) {
           WidgetsBinding.instance.addPostFrameCallback((_) {
             _applyDefaultWallet(wallets);
@@ -483,244 +532,382 @@ class _AddTransactionSheetState extends ConsumerState<AddTransactionSheet> {
 
           return Stack(
             children: [
-              AbsorbPointer(
-                absorbing: isSaving || _showSuccess,
-                child: SingleChildScrollView(
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                Center(
-                  child: Container(
-                    width: 48,
-                    height: 6,
-                    margin: const EdgeInsets.only(top: 8, bottom: 16),
-                    decoration: BoxDecoration(
-                      color: AppColors.surfaceContainerHighest,
-                      borderRadius: BorderRadius.circular(999),
-                    ),
-                  ),
-                ),
-                Text(
-                  'TRANSACTION AMOUNT',
-                  textAlign: TextAlign.center,
-                  style: AppTypography.sectionLabel(context).copyWith(
-                    fontSize: 11,
-                    letterSpacing: 3,
-                  ),
-                ),
-                const SizedBox(height: 12),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    _CurrencyChip(
-                      currency: _currency,
-                      onTap: () => _showCurrencyPicker(context),
-                    ),
-                    const SizedBox(width: 12),
-                    Text(
-                      AmountKeypadInput.formatDisplay(
-                        _amount,
-                        _currency.decimalPlaces,
-                      ),
-                      style: theme.textTheme.displayMedium?.copyWith(
-                        fontWeight: FontWeight.w800,
-                        color: AppColors.primary,
-                        letterSpacing: -1,
+              Column(
+                children: [
+                  SafeArea(
+                    bottom: false,
+                    child: Padding(
+                      padding: const EdgeInsets.fromLTRB(20, 8, 20, 12),
+                      child: Row(
+                        children: [
+                          GestureDetector(
+                            onTap: () => Navigator.of(context).maybePop(),
+                            child: const Text(
+                              'Cancel',
+                              style: TextStyle(
+                                color: AppColors.onPrimary,
+                                fontWeight: FontWeight.w600,
+                                fontSize: 13,
+                              ),
+                            ),
+                          ),
+                          const Spacer(),
+                          Text(
+                            _walletLabel(fromWallet),
+                            style: const TextStyle(
+                              color: AppColors.onNavyMuted,
+                              fontSize: 13,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
-                  ],
-                ),
-                const SizedBox(height: 8),
-                TransactionTypeToggle(
-                  selected: _type,
-                  onChanged: _onTypeChanged,
-                ),
-                if (_type == TransactionType.expense) ...[
-                  const SizedBox(height: 14),
-                  _ScanReceiptCard(
-                    isScanning: _isScanning,
-                    onTap: _isScanning ? null : _scanReceipt,
+                  ),
+                  Expanded(
+                    child: Container(
+                      decoration: const BoxDecoration(
+                        color: AppColors.surfaceBright,
+                        borderRadius: BorderRadius.vertical(
+                          top: Radius.circular(32),
+                        ),
+                      ),
+                      child: AbsorbPointer(
+                        absorbing: isSaving || _showSuccess,
+                        child: Column(
+                          children: [
+                            const SizedBox(height: 10),
+                            Container(
+                              width: 44,
+                              height: 5,
+                              decoration: BoxDecoration(
+                                color: AppColors.surfaceDim,
+                                borderRadius: BorderRadius.circular(99),
+                              ),
+                            ),
+                            Expanded(
+                              child: Padding(
+                                padding: EdgeInsets.fromLTRB(
+                                  20,
+                                  14,
+                                  20,
+                                  12 + bottomInset,
+                                ),
+                                child: Column(
+                                  crossAxisAlignment:
+                                      CrossAxisAlignment.stretch,
+                                  children: [
+                                    Expanded(
+                                      child: SingleChildScrollView(
+                                        child: Column(
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.stretch,
+                                          children: [
+                                            TransactionTypeToggle(
+                                              selected: _type,
+                                              onChanged: _onTypeChanged,
+                                            ),
+                                            const SizedBox(height: 18),
+                                            _AmountDisplay(
+                                              amount: _amount,
+                                              currency: _currency,
+                                            ),
+                                            if (_type ==
+                                                TransactionType.expense) ...[
+                                              const SizedBox(height: 16),
+                                              _ScanReceiptCard(
+                                                isScanning: _isScanning,
+                                                onTap: _isScanning
+                                                    ? null
+                                                    : _scanReceipt,
+                                              ),
+                                            ],
+                                            const SizedBox(height: 14),
+                                            CategorySelector(
+                                              transactionType: _type.value,
+                                              selectedCategory:
+                                                  _selectedCategory,
+                                              onCategorySelected: (category) {
+                                                setState(
+                                                  () => _selectedCategory =
+                                                      category,
+                                                );
+                                              },
+                                            ),
+                                            const SizedBox(height: 14),
+                                            Row(
+                                              children: [
+                                                Expanded(
+                                                  child: _MetaChip(
+                                                    icon: Icons
+                                                        .account_balance_wallet_outlined,
+                                                    label: _walletLabel(
+                                                      fromWallet,
+                                                    ),
+                                                    onTap: () =>
+                                                        _pickWallet(wallets),
+                                                  ),
+                                                ),
+                                                const SizedBox(width: 8),
+                                                Expanded(
+                                                  child: _MetaChip(
+                                                    icon: Icons
+                                                        .calendar_today_outlined,
+                                                    label: _dateLabel(),
+                                                    onTap: _pickDate,
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                            if (_type ==
+                                                TransactionType.transfer) ...[
+                                              const SizedBox(height: 12),
+                                              WalletSelector(
+                                                wallets: wallets,
+                                                mode:
+                                                    WalletSelectorMode.transfer,
+                                                fromWalletId: _fromWalletId,
+                                                toWalletId: _toWalletId,
+                                                onFromWalletChanged:
+                                                    _onFromWalletChanged,
+                                                onToWalletChanged:
+                                                    _onToWalletChanged,
+                                                exchangeRateController:
+                                                    _exchangeRateController,
+                                                suggestedExchangeRate:
+                                                    suggestedRate,
+                                                onExchangeRateChanged: (value) {
+                                                  setState(
+                                                    () => _exchangeRate = value,
+                                                  );
+                                                },
+                                              ),
+                                            ],
+                                            if (_submitted && !_canSubmit) ...[
+                                              const SizedBox(height: 8),
+                                              Text(
+                                                'Complete required fields before saving.',
+                                                style: Theme.of(context)
+                                                    .textTheme
+                                                    .bodySmall
+                                                    ?.copyWith(
+                                                      color: AppColors.error,
+                                                    ),
+                                              ),
+                                            ],
+                                            const SizedBox(height: 12),
+                                            NumericKeypad(
+                                              amount: _amount,
+                                              currency: _currency,
+                                              onChanged: (value) => setState(
+                                                () => _amount = value,
+                                              ),
+                                              showAmountDisplay: false,
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ),
+                                    const SizedBox(height: 12),
+                                    _SaveButton(
+                                      label: _type.saveLabel,
+                                      isLoading: isSaving,
+                                      onPressed: isSaving ? null : _submit,
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
                   ),
                 ],
-                const SizedBox(height: 20),
-                Text(
-                  'Category',
-                  style: theme.textTheme.titleSmall?.copyWith(
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                CategorySelector(
-                  transactionType: _type.value,
-                  selectedCategory: _selectedCategory,
-                  onCategorySelected: (category) {
-                    setState(() => _selectedCategory = category);
-                  },
-                ),
-                const SizedBox(height: 20),
-                NumericKeypad(
-                  amount: _amount,
-                  currency: _currency,
-                  onChanged: (value) => setState(() => _amount = value),
-                  showAmountDisplay: false,
-                ),
-                const SizedBox(height: 20),
-                WalletSelector(
-                  wallets: wallets,
-                  mode: _type == TransactionType.transfer
-                      ? WalletSelectorMode.transfer
-                      : WalletSelectorMode.single,
-                  fromWalletId: _fromWalletId,
-                  toWalletId: _toWalletId,
-                  onFromWalletChanged: _onFromWalletChanged,
-                  onToWalletChanged: _onToWalletChanged,
-                  exchangeRateController: _exchangeRateController,
-                  suggestedExchangeRate: suggestedRate,
-                  onExchangeRateChanged: (value) {
-                    setState(() => _exchangeRate = value);
-                  },
-                ),
-                const SizedBox(height: 20),
-                TextField(
-                  controller: _notesController,
-                  decoration: const InputDecoration(
-                    labelText: 'Notes',
-                    hintText: 'Optional description',
-                    prefixIcon: Icon(Icons.notes_outlined),
-                  ),
-                  textInputAction: TextInputAction.done,
-                  maxLines: 2,
-                ),
-                const SizedBox(height: 12),
-                InkWell(
-                  onTap: _pickDate,
-                  borderRadius: BorderRadius.circular(12),
-                  child: InputDecorator(
-                    decoration: const InputDecoration(
-                      labelText: 'Date',
-                      prefixIcon: Icon(Icons.calendar_today_outlined),
-                    ),
-                    child: Text(dateLabel),
-                  ),
-                ),
-                if (_submitted && !_canSubmit) ...[
-                  const SizedBox(height: 8),
-                  Text(
-                    'Complete required fields before saving.',
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      color: theme.colorScheme.error,
-                    ),
-                  ),
-                ],
-                const SizedBox(height: 20),
-                GradientButton(
-                  key: const Key('add-transaction-submit'),
-                  label: 'Save transaction',
-                  icon: Icons.arrow_forward,
-                  isLoading: isSaving,
-                  onPressed: isSaving ? null : _submit,
-                ),
-                    ],
-                  ),
-                ),
               ),
               if (_showSuccess) const TransactionSuccessOverlay(),
             ],
           );
         },
       ),
-    ),
-    );
-  }
-
-  void _showCurrencyPicker(BuildContext context) {
-    showModalBottomSheet<void>(
-      context: context,
-      builder: (sheetContext) {
-        return SafeArea(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              for (final currency in CurrencyCode.values)
-                ListTile(
-                  key: Key('currency-${currency.value}'),
-                  leading: Text(CurrencyDisplay.flagEmoji(currency)),
-                  title: Text(currency.value),
-                  trailing: _currency == currency
-                      ? const Icon(Icons.check, color: AppColors.primary)
-                      : null,
-                  onTap: () {
-                    setState(() {
-                      _currency = currency;
-                      _amount = AmountKeypadInput.clampToDecimalPlaces(
-                        _amount,
-                        currency.decimalPlaces,
-                      );
-                    });
-                    Navigator.of(sheetContext).pop();
-                  },
-                ),
-            ],
-          ),
-        );
-      },
     );
   }
 }
 
-class _CurrencyChip extends StatelessWidget {
-  const _CurrencyChip({
+class _AmountDisplay extends StatelessWidget {
+  const _AmountDisplay({
+    required this.amount,
     required this.currency,
+  });
+
+  final String amount;
+  final CurrencyCode currency;
+
+  @override
+  Widget build(BuildContext context) {
+    final digits = AmountKeypadInput.formatDisplay(
+      amount,
+      currency.decimalPlaces,
+    );
+    final symbol = CurrencyDisplay.symbol(currency);
+
+    return Column(
+      children: [
+        const Text(
+          'Amount',
+          style: TextStyle(
+            fontSize: 13,
+            fontWeight: FontWeight.w500,
+            color: AppColors.onSurfaceVariant,
+          ),
+        ),
+        const SizedBox(height: 4),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.end,
+          children: [
+            Padding(
+              padding: const EdgeInsets.only(bottom: 10),
+              child: Text(
+                symbol,
+                style: AppTypography.money(
+                  fontSize: 28,
+                  color: AppColors.onSurfaceVariant,
+                ),
+              ),
+            ),
+            const SizedBox(width: 4),
+            Text(
+              digits,
+              style: AppTypography.money(
+                fontSize: 56,
+                color: AppColors.navy,
+              ).copyWith(letterSpacing: -2),
+            ),
+            const SizedBox(width: 4),
+            Container(
+              width: 3,
+              height: 44,
+              margin: const EdgeInsets.only(bottom: 8),
+              decoration: BoxDecoration(
+                color: AppColors.success,
+                borderRadius: BorderRadius.circular(1.5),
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+}
+
+class _MetaChip extends StatelessWidget {
+  const _MetaChip({
+    required this.icon,
+    required this.label,
     required this.onTap,
   });
 
-  final CurrencyCode currency;
+  final IconData icon;
+  final String label;
   final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        decoration: BoxDecoration(
-          color: AppColors.secondaryContainer.withValues(alpha: 0.1),
-          borderRadius: BorderRadius.circular(999),
-          border: Border.all(
-            color: AppColors.secondaryContainer.withValues(alpha: 0.2),
+    return Material(
+      color: AppColors.surfaceContainerLowest,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+        side: const BorderSide(color: Color(0xFFE1E5EE)),
+      ),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(12),
+        child: SizedBox(
+          height: 44,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 12),
+            child: Row(
+              children: [
+                Icon(icon, size: 16, color: AppColors.success),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    label,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.onSurface,
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Icon(
-              Icons.payments_outlined,
-              size: 18,
-              color: AppColors.secondary,
-            ),
-            const SizedBox(width: 6),
-            Text(
-              currency.value,
-              style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                color: AppColors.secondary,
-                fontWeight: FontWeight.w700,
-              ),
-            ),
-            const Icon(
-              Icons.expand_more,
-              size: 18,
-              color: AppColors.secondary,
-            ),
-          ],
         ),
       ),
     );
   }
 }
 
-/// Navy call-to-action that opens the receipt scanner. Sits right under the
-/// amount because scanning is the fastest way to log an expense.
+class _SaveButton extends StatelessWidget {
+  const _SaveButton({
+    required this.label,
+    required this.isLoading,
+    required this.onPressed,
+  });
+
+  final String label;
+  final bool isLoading;
+  final VoidCallback? onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      height: 56,
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(18),
+          boxShadow: [
+            BoxShadow(
+              color: AppColors.link.withValues(alpha: 0.35),
+              blurRadius: 18,
+              offset: const Offset(0, 10),
+            ),
+          ],
+        ),
+        child: FilledButton(
+          key: const Key('add-transaction-submit'),
+          onPressed: onPressed,
+          style: FilledButton.styleFrom(
+            backgroundColor: AppColors.navy,
+            foregroundColor: AppColors.silver,
+            disabledBackgroundColor: AppColors.navy.withValues(alpha: 0.55),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(18),
+            ),
+            textStyle: const TextStyle(
+              fontSize: 17,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+          child: isLoading
+              ? const SizedBox(
+                  width: 22,
+                  height: 22,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2.2,
+                    color: AppColors.silver,
+                  ),
+                )
+              : Text(label),
+        ),
+      ),
+    );
+  }
+}
+
 class _ScanReceiptCard extends StatelessWidget {
   const _ScanReceiptCard({required this.isScanning, required this.onTap});
 
@@ -729,62 +916,78 @@ class _ScanReceiptCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     return Material(
       key: const Key('add-transaction-scan-receipt'),
-      color: AppColors.navy,
       borderRadius: BorderRadius.circular(18),
       child: InkWell(
         onTap: onTap,
         borderRadius: BorderRadius.circular(18),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-          child: Row(
-            children: [
-              Container(
-                width: 40,
-                height: 40,
-                decoration: BoxDecoration(
-                  color: AppColors.silver,
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: isScanning
-                    ? const Padding(
-                        padding: EdgeInsets.all(10),
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
+        child: Ink(
+          height: 64,
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(18),
+            gradient: const LinearGradient(
+              begin: Alignment.centerLeft,
+              end: Alignment.centerRight,
+              colors: [
+                AppColors.navy,
+                Color(0xFF1D3570),
+                AppColors.navy,
+              ],
+            ),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 14),
+            child: Row(
+              children: [
+                Container(
+                  width: 40,
+                  height: 40,
+                  decoration: BoxDecoration(
+                    color: AppColors.silver,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: isScanning
+                      ? const Padding(
+                          padding: EdgeInsets.all(10),
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: AppColors.navy,
+                          ),
+                        )
+                      : const Icon(
+                          Icons.document_scanner_outlined,
                           color: AppColors.navy,
+                          size: 20,
                         ),
-                      )
-                    : const Icon(
-                        Icons.document_scanner_outlined,
-                        color: AppColors.navy,
-                        size: 20,
-                      ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      isScanning ? 'Reading receipt…' : 'Scan a receipt',
-                      style: theme.textTheme.titleSmall?.copyWith(
-                        color: AppColors.onPrimary,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                    Text(
-                      'Fills amount, date and shop for you',
-                      style: theme.textTheme.bodySmall?.copyWith(
-                        color: AppColors.onNavyMuted,
-                      ),
-                    ),
-                  ],
                 ),
-              ),
-              const Icon(Icons.chevron_right, color: AppColors.silver),
-            ],
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        isScanning ? 'Reading receipt…' : 'Scan a receipt',
+                        style: const TextStyle(
+                          color: AppColors.onPrimary,
+                          fontWeight: FontWeight.w700,
+                          fontSize: 15,
+                        ),
+                      ),
+                      const Text(
+                        'Fills amount, date and shop for you',
+                        style: TextStyle(
+                          color: AppColors.onNavyMuted,
+                          fontSize: 12.5,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const Icon(Icons.chevron_right, color: AppColors.silver),
+              ],
+            ),
           ),
         ),
       ),

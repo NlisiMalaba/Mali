@@ -38,6 +38,9 @@ class AppPreferencesController extends Notifier<AppPreferences> {
   Future<void> setGoalRemindersEnabled(bool value) =>
       _update(state.copyWith(goalRemindersEnabled: value));
 
+  Future<void> setAppLockGrace(AppLockGrace value) =>
+      _update(state.copyWith(appLockGrace: value));
+
   /// Updates the UI immediately; the write happens after so a slow disk
   /// never makes a toggle feel laggy.
   Future<void> _update(AppPreferences next) async {

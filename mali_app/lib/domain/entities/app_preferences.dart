@@ -3,6 +3,31 @@ import 'package:mali_app/domain/value_objects/currency_code.dart';
 /// How the app chooses between the light and dark themes.
 enum AppThemePreference { light, dark, system }
 
+/// How long Mali waits after leaving the app before requiring unlock again.
+enum AppLockGrace {
+  immediately,
+  after1Min,
+  after5Min;
+
+  Duration get delay => switch (this) {
+        AppLockGrace.immediately => Duration.zero,
+        AppLockGrace.after1Min => const Duration(minutes: 1),
+        AppLockGrace.after5Min => const Duration(minutes: 5),
+      };
+
+  String get chipLabel => switch (this) {
+        AppLockGrace.immediately => 'Immediately',
+        AppLockGrace.after1Min => 'After 1 min',
+        AppLockGrace.after5Min => 'After 5 min',
+      };
+
+  String get heroPhrase => switch (this) {
+        AppLockGrace.immediately => 'locks immediately',
+        AppLockGrace.after1Min => 'locks after 1 min',
+        AppLockGrace.after5Min => 'locks after 5 min',
+      };
+}
+
 /// User-level app settings that live on this device only.
 ///
 /// Kept free of Flutter types so background isolates and the domain layer can
@@ -14,6 +39,7 @@ class AppPreferences {
     this.budgetAlertsEnabled = true,
     this.weeklyDigestEnabled = true,
     this.goalRemindersEnabled = true,
+    this.appLockGrace = AppLockGrace.immediately,
   });
 
   final AppThemePreference themePreference;
@@ -21,6 +47,7 @@ class AppPreferences {
   final bool budgetAlertsEnabled;
   final bool weeklyDigestEnabled;
   final bool goalRemindersEnabled;
+  final AppLockGrace appLockGrace;
 
   AppPreferences copyWith({
     AppThemePreference? themePreference,
@@ -28,6 +55,7 @@ class AppPreferences {
     bool? budgetAlertsEnabled,
     bool? weeklyDigestEnabled,
     bool? goalRemindersEnabled,
+    AppLockGrace? appLockGrace,
   }) {
     return AppPreferences(
       themePreference: themePreference ?? this.themePreference,
@@ -35,6 +63,7 @@ class AppPreferences {
       budgetAlertsEnabled: budgetAlertsEnabled ?? this.budgetAlertsEnabled,
       weeklyDigestEnabled: weeklyDigestEnabled ?? this.weeklyDigestEnabled,
       goalRemindersEnabled: goalRemindersEnabled ?? this.goalRemindersEnabled,
+      appLockGrace: appLockGrace ?? this.appLockGrace,
     );
   }
 
@@ -44,6 +73,7 @@ class AppPreferences {
         'budgetAlerts': budgetAlertsEnabled,
         'weeklyDigest': weeklyDigestEnabled,
         'goalReminders': goalRemindersEnabled,
+        'appLockGrace': appLockGrace.name,
       };
 
   /// Unknown or malformed values fall back to defaults so a bad file can
@@ -72,6 +102,12 @@ class AppPreferences {
       return value is bool ? value : fallback;
     }
 
+    final graceName = json['appLockGrace'];
+    final appLockGrace = AppLockGrace.values.firstWhere(
+      (value) => value.name == graceName,
+      orElse: () => defaults.appLockGrace,
+    );
+
     return AppPreferences(
       themePreference: theme,
       displayCurrency: currency,
@@ -81,6 +117,7 @@ class AppPreferences {
           readBool('weeklyDigest', defaults.weeklyDigestEnabled),
       goalRemindersEnabled:
           readBool('goalReminders', defaults.goalRemindersEnabled),
+      appLockGrace: appLockGrace,
     );
   }
 }

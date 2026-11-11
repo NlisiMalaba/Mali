@@ -5,8 +5,8 @@ import 'package:mali_app/application/providers/goal_providers.dart';
 import 'package:mali_app/domain/entities/goal_contribution.dart';
 import 'package:mali_app/domain/entities/savings_goal.dart';
 import 'package:mali_app/presentation/screens/goal/goal_detail_screen.dart';
-import 'package:mali_app/presentation/widgets/goal/goal_progress_ring.dart';
-import 'package:mali_app/presentation/widgets/goal/required_this_month_card.dart';
+import 'package:mali_app/presentation/widgets/goal/goal_milestones_card.dart';
+import 'package:mali_app/presentation/widgets/goal/goal_savings_jar.dart';
 
 SavingsGoal _goal({
   String currentAmount = '0',
@@ -35,7 +35,7 @@ GoalContribution _contribution() {
     goalId: 'g-1',
     amount: '150',
     currencyCode: 'USD',
-    note: 'April deposit',
+    note: 'From April surplus',
     contributionDate: DateTime(2026, 4, 20),
     isSynced: false,
     createdAt: DateTime(2026, 4, 20),
@@ -72,19 +72,24 @@ Future<void> _pumpDetail(
 }
 
 void main() {
-  testWidgets('shows large progress ring, amounts, and action buttons',
+  testWidgets('shows jar hero, amounts, meta cards, and Add money',
       (tester) async {
     await _pumpDetail(tester, goal: _goal(currentAmount: '300'));
 
     expect(find.byKey(GoalDetailScreen.screenKey), findsOneWidget);
-    expect(find.byType(GoalProgressRing), findsOneWidget);
-    expect(find.text('Emergency Fund'), findsWidgets);
-    expect(find.text('🛟'), findsOneWidget);
-    expect(find.text('USD 300.00 of USD 900.00'), findsOneWidget);
+    expect(find.byKey(GoalSavingsJar.jarKey), findsOneWidget);
+    expect(find.text('Emergency Fund'), findsOneWidget);
+    expect(find.text('33%'), findsOneWidget);
+    expect(find.text('\$300 saved'), findsOneWidget);
+    expect(find.textContaining('of \$900'), findsOneWidget);
+    expect(find.byKey(GoalDetailScreen.neededEachMonthKey), findsOneWidget);
+    expect(find.text('Needed each month'), findsOneWidget);
+    expect(find.text('Target date'), findsOneWidget);
+    expect(find.text('30 Jun 2026'), findsOneWidget);
+    expect(find.byKey(GoalMilestonesCard.cardKey), findsOneWidget);
     expect(find.byKey(GoalDetailScreen.addContributionButtonKey), findsOneWidget);
     expect(find.byTooltip('Edit goal'), findsOneWidget);
-    expect(find.text('Add Contribution'), findsOneWidget);
-    expect(find.text('Contribution history'), findsOneWidget);
+    expect(find.text('Add money'), findsOneWidget);
   });
 
   testWidgets('lists contribution history', (tester) async {
@@ -94,18 +99,17 @@ void main() {
       contributions: [_contribution()],
     );
 
-    expect(find.text('+ USD 150.00'), findsOneWidget);
-    expect(find.textContaining('April deposit'), findsOneWidget);
+    expect(find.text('From April surplus'), findsOneWidget);
+    expect(find.textContaining('20 Apr'), findsOneWidget);
+    expect(find.text('+\$150.00'), findsOneWidget);
   });
 
-  testWidgets('shows an adjusted required-this-month amount when behind',
-      (tester) async {
+  testWidgets('shows needed each month when behind schedule', (tester) async {
     await _pumpDetail(tester, goal: _goal());
 
-    expect(find.byKey(RequiredThisMonthCard.cardKey), findsOneWidget);
-    expect(find.text('Required this month'), findsOneWidget);
-    expect(find.text('USD 450.00'), findsOneWidget);
-    expect(find.textContaining('behind schedule'), findsOneWidget);
+    expect(find.byKey(GoalDetailScreen.neededEachMonthKey), findsOneWidget);
+    expect(find.text('Needed each month'), findsOneWidget);
+    expect(find.textContaining('Behind for'), findsOneWidget);
   });
 
   testWidgets('shows empty contribution history copy', (tester) async {

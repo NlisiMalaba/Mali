@@ -43,6 +43,8 @@ class MoneyDisplay {
         return 'R $formatted';
       case 'ZWG':
         return 'ZiG $formatted';
+      case 'BWP':
+        return 'P $formatted';
       default:
         return '$currencyCode $formatted';
     }

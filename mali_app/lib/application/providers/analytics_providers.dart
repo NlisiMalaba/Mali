@@ -76,9 +76,9 @@ Future<Money> categoryMonthDisplayTotal(
 
 @riverpod
 Future<AnalyticsTrends> analyticsTrends(Ref ref) async {
-  final now = DateTime.now();
+  final selectedMonth = ref.watch(homeSelectedMonthProvider);
   final result = await ref.read(getAnalyticsTrendsUseCaseProvider)(
-    endMonth: DateTime(now.year, now.month),
+    endMonth: DateTime(selectedMonth.year, selectedMonth.month),
   );
 
   return result.fold(

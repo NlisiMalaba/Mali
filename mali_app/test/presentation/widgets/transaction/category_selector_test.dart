@@ -102,7 +102,9 @@ void main() {
 
       await tester.pumpAndSettle();
 
-      expect(find.byKey(const Key('category-more-button')), findsOneWidget);
+      expect(find.byType(CategorySelector), findsOneWidget);
+      expect(find.text('More'), findsOneWidget);
+      expect(find.byKey(const Key('category-chip-more')), findsOneWidget);
       expect(find.byKey(const Key('category-icon-cat-transport')), findsOneWidget);
       expect(find.byKey(const Key('category-icon-cat-food')), findsOneWidget);
     });
@@ -128,7 +130,10 @@ void main() {
       );
 
       await tester.pumpAndSettle();
-      await tester.tap(find.byKey(const Key('category-more-button')));
+      final more = find.byKey(const Key('category-chip-more'));
+      await tester.ensureVisible(more);
+      await tester.pumpAndSettle();
+      await tester.tap(more);
       await tester.pumpAndSettle();
 
       expect(find.text('Choose category'), findsOneWidget);

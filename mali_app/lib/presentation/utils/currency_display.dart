@@ -32,4 +32,20 @@ class CurrencyDisplay {
         return currency.value;
     }
   }
+
+  /// Compact currency prefix shown beside the amount entry, e.g. `$`, `R`, `ZiG`.
+  static String symbol(CurrencyCode currency) {
+    switch (currency.value) {
+      case 'USD':
+        return r'$';
+      case 'ZAR':
+        return 'R';
+      case 'ZWG':
+        return 'ZiG';
+      case 'BWP':
+        return 'P';
+      default:
+        return currency.value;
+    }
+  }
 }

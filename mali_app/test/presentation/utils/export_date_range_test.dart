@@ -12,6 +12,20 @@ void main() {
       expect(range.end, DateTime(2026, 9, 19, 23, 59, 59, 999, 999));
     });
 
+    test('lastMonth covers the previous calendar month', () {
+      final range = ExportDateRange.lastMonth(DateTime(2026, 9, 19));
+
+      expect(range.start, DateTime(2026, 8, 1));
+      expect(range.end, DateTime(2026, 8, 31, 23, 59, 59, 999, 999));
+    });
+
+    test('lastThreeMonths starts two months before the current month', () {
+      final range = ExportDateRange.lastThreeMonths(DateTime(2026, 9, 19));
+
+      expect(range.start, DateTime(2026, 7, 1));
+      expect(range.end, DateTime(2026, 9, 19, 23, 59, 59, 999, 999));
+    });
+
     test('fromPicker includes the whole of the last selected day', () {
       final range = ExportDateRange.fromPicker(
         DateTimeRange(

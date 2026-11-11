@@ -18,14 +18,16 @@ SavingsGoal _goal({
   required String name,
   required int priorityOrder,
   String emoji = '🎯',
+  String currentAmount = '100',
+  String targetAmount = '1000',
 }) {
   return SavingsGoal(
     id: id,
     userId: 'u-1',
     name: name,
     emoji: emoji,
-    targetAmount: '1000',
-    currentAmount: '100',
+    targetAmount: targetAmount,
+    currentAmount: currentAmount,
     currencyCode: 'USD',
     targetDate: DateTime(2026, 12, 31),
     priorityOrder: priorityOrder,
@@ -74,28 +76,30 @@ void main() {
     _goal(id: 'g-2', name: 'Car', priorityOrder: 1, emoji: '🚗'),
   ];
 
-  testWidgets('lists goals with drag handles', (tester) async {
+  testWidgets('lists goals with move controls and explainer', (tester) async {
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
           activeGoalsProvider.overrideWith((ref) => Stream.value(goals)),
         ],
-        child: const MaterialApp(home: GoalPriorityScreen()),
+        child: MaterialApp(
+          home: GoalPriorityScreen(now: DateTime(2026, 5, 10)),
+        ),
       ),
     );
     await tester.pumpAndSettle();
 
     expect(find.byKey(GoalPriorityScreen.screenKey), findsOneWidget);
+    expect(find.text('Goal order'), findsOneWidget);
+    expect(find.textContaining('#1 first'), findsOneWidget);
     expect(find.text('Emergency Fund'), findsOneWidget);
     expect(find.text('Car'), findsOneWidget);
-    expect(find.byKey(GoalPriorityScreen.dragHandleKey('g-1')), findsOneWidget);
-    expect(
-      find.text('Drag to change which goals appear first on Home.'),
-      findsOneWidget,
-    );
+    expect(find.byKey(GoalPriorityScreen.moveDownKey('g-1')), findsOneWidget);
+    expect(find.byKey(GoalPriorityScreen.moveUpKey('g-2')), findsOneWidget);
+    expect(find.text('Save order'), findsOneWidget);
   });
 
-  testWidgets('saves order on drop', (tester) async {
+  testWidgets('moves goal then saves order', (tester) async {
     final useCase = _RecordingReorderGoalsUseCase();
 
     await tester.pumpWidget(
@@ -104,23 +108,28 @@ void main() {
           activeGoalsProvider.overrideWith((ref) => Stream.value(goals)),
           reorderGoalsUseCaseProvider.overrideWithValue(useCase),
         ],
-        child: const MaterialApp(home: GoalPriorityScreen()),
+        child: MaterialApp(
+          home: GoalPriorityScreen(now: DateTime(2026, 5, 10)),
+        ),
       ),
     );
     await tester.pumpAndSettle();
 
-    final listView = tester.widget<ReorderableListView>(
-      find.byKey(GoalPriorityScreen.listKey),
-    );
-    listView.onReorderItem!(0, 1);
+    await tester.tap(find.byKey(GoalPriorityScreen.moveDownKey('g-1')));
     await tester.pumpAndSettle();
 
-    expect(useCase.lastOrderedIds, ['g-2', 'g-1']);
     expect(
       tester.getTopLeft(find.text('Car')).dy <
           tester.getTopLeft(find.text('Emergency Fund')).dy,
       isTrue,
     );
+    expect(useCase.lastOrderedIds, isNull);
+
+    await tester.tap(find.byKey(GoalPriorityScreen.saveButtonKey));
+    await tester.pumpAndSettle();
+
+    expect(useCase.lastOrderedIds, ['g-2', 'g-1']);
+    expect(find.text('Goal order saved.'), findsOneWidget);
   });
 
   testWidgets('GoalsScreen reorder action opens GoalPriorityScreen',
@@ -152,5 +161,6 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.byKey(GoalPriorityScreen.screenKey), findsOneWidget);
+    expect(find.text('Goal order'), findsOneWidget);
   });
 }

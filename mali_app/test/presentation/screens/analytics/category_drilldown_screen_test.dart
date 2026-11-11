@@ -7,13 +7,13 @@ import 'package:go_router/go_router.dart';
 import 'package:mali_app/application/models/category_month_query.dart';
 import 'package:mali_app/application/models/home_monthly_summary_display.dart';
 import 'package:mali_app/application/providers/analytics_providers.dart';
+import 'package:mali_app/application/providers/budget_providers.dart';
 import 'package:mali_app/application/providers/home_providers.dart';
 import 'package:mali_app/domain/entities/transaction.dart';
 import 'package:mali_app/domain/usecases/get_analytics_overview_usecase.dart';
 import 'package:mali_app/domain/usecases/get_analytics_trends_usecase.dart';
 import 'package:mali_app/domain/value_objects/currency_code.dart';
 import 'package:mali_app/domain/value_objects/money.dart';
-import 'package:mali_app/presentation/models/analytics_tab.dart';
 import 'package:mali_app/presentation/screens/analytics/analytics_screen.dart';
 import 'package:mali_app/presentation/screens/analytics/category_drilldown_screen.dart';
 import 'package:mali_app/presentation/widgets/analytics/analytics_breadcrumb_bar.dart';
@@ -70,6 +70,9 @@ List<Override> _drilldownOverrides({
         months: GetAnalyticsTrendsUseCase.monthsEndingAt(DateTime(2026, 4)),
         currencies: const [],
       ),
+    ),
+    currentMonthBudgetsProvider.overrideWith(
+      (ref) => Stream.value(const []),
     ),
     categoryMonthTransactionsProvider(query).overrideWith(
       (ref) => Stream.value(transactions),
@@ -176,7 +179,7 @@ void main() {
     expect(find.text('USD 0.00'), findsOneWidget);
   });
 
-  testWidgets('Analytics breadcrumb opens the Analytics screen', (tester) async {
+  testWidgets('Insights breadcrumb opens the Insights screen', (tester) async {
     await _pumpDrilldown(tester, transactions: [_expense()], total: '45');
 
     await tester.tap(find.byKey(AnalyticsBreadcrumbBar.analyticsCrumbKey));
@@ -184,13 +187,10 @@ void main() {
 
     expect(find.byKey(AnalyticsScreen.screenKey), findsOneWidget);
     expect(find.byKey(CategoryDrilldownScreen.screenKey), findsNothing);
-    expect(
-      DefaultTabController.of(tester.element(find.byType(TabBar))).index,
-      AnalyticsTab.overview.index,
-    );
+    expect(find.text('Insights'), findsOneWidget);
   });
 
-  testWidgets('Spending breadcrumb opens the Spending tab', (tester) async {
+  testWidgets('Spending breadcrumb opens the Insights screen', (tester) async {
     await _pumpDrilldown(tester, transactions: [_expense()], total: '45');
 
     await tester.tap(find.byKey(AnalyticsBreadcrumbBar.spendingCrumbKey));
@@ -198,9 +198,6 @@ void main() {
 
     expect(find.byKey(AnalyticsScreen.screenKey), findsOneWidget);
     expect(find.byKey(CategoryDrilldownScreen.screenKey), findsNothing);
-    expect(
-      DefaultTabController.of(tester.element(find.byType(TabBar))).index,
-      AnalyticsTab.spending.index,
-    );
+    expect(find.text('Insights'), findsOneWidget);
   });
 }

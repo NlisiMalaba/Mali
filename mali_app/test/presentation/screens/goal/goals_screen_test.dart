@@ -6,21 +6,24 @@ import 'package:mali_app/application/providers/goal_providers.dart';
 import 'package:mali_app/domain/entities/savings_goal.dart';
 import 'package:mali_app/presentation/screens/goal/goal_detail_screen.dart';
 import 'package:mali_app/presentation/screens/goal/goals_screen.dart';
-import 'package:mali_app/presentation/widgets/goal/goal_card.dart';
+import 'package:mali_app/presentation/widgets/goal/goal_list_tile.dart';
+import 'package:mali_app/presentation/widgets/goal/goal_priority_hero.dart';
 
 SavingsGoal _goal({
   String id = 'g-1',
   String name = 'School Fees',
   String emoji = '🎓',
   int priorityOrder = 0,
+  String currentAmount = '500.00',
+  String targetAmount = '2000.00',
 }) {
   return SavingsGoal(
     id: id,
     userId: 'u-1',
     name: name,
     emoji: emoji,
-    targetAmount: '2000.00',
-    currentAmount: '500.00',
+    targetAmount: targetAmount,
+    currentAmount: currentAmount,
     currencyCode: 'USD',
     targetDate: DateTime(2026, 12, 19),
     priorityOrder: priorityOrder,
@@ -51,36 +54,48 @@ void main() {
     await _pumpGoalsScreen(tester, goals: const []);
 
     expect(find.byKey(GoalsScreen.screenKey), findsOneWidget);
+    expect(find.text('Goals'), findsOneWidget);
+    expect(find.text('New goal'), findsOneWidget);
     expect(find.text('No savings goals yet'), findsOneWidget);
     expect(find.text('Add your first goal'), findsOneWidget);
   });
 
-  testWidgets('lists goals in GoalCards with name, emoji, and amounts',
+  testWidgets('shows top priority hero and also-saving list tiles',
       (tester) async {
     await _pumpGoalsScreen(
       tester,
       goals: [
-        _goal(),
-        _goal(id: 'g-2', name: 'Emergency Fund', emoji: '🛟', priorityOrder: 1),
+        _goal(
+          currentAmount: '2040.00',
+          targetAmount: '3000.00',
+          name: 'Emergency fund',
+          emoji: '🛟',
+        ),
+        _goal(
+          id: 'g-2',
+          name: 'New laptop',
+          emoji: '💻',
+          priorityOrder: 1,
+          currentAmount: '420.00',
+          targetAmount: '1200.00',
+        ),
       ],
     );
 
-    expect(find.byType(GoalCard), findsNWidgets(2));
-    expect(find.text('School Fees'), findsOneWidget);
-    expect(find.text('🎓'), findsOneWidget);
-    expect(find.text('Emergency Fund'), findsOneWidget);
-    expect(find.text('🛟'), findsOneWidget);
-    expect(find.text('USD 500.00'), findsNWidgets(2));
-    expect(find.text('USD 2000.00'), findsNWidgets(2));
-    await tester.scrollUntilVisible(
-      find.text('Add New Goal'),
-      48,
-      scrollable: find.byType(Scrollable).first,
-    );
-    expect(find.text('Add New Goal'), findsOneWidget);
+    expect(find.byType(GoalPriorityHero), findsOneWidget);
+    expect(find.text('TOP PRIORITY'), findsOneWidget);
+    expect(find.text('Emergency fund ›'), findsOneWidget);
+    expect(find.text('Add money to this goal'), findsOneWidget);
+    expect(find.text('Also saving for'), findsOneWidget);
+    expect(find.text('Change order'), findsOneWidget);
+    expect(find.byType(GoalListTile), findsOneWidget);
+    expect(find.text('New laptop'), findsOneWidget);
+    expect(find.text('\$420 / \$1,200'), findsOneWidget);
+    expect(find.text('New goal'), findsOneWidget);
   });
 
-  testWidgets('tapping a GoalCard opens GoalDetailScreen', (tester) async {
+  testWidgets('tapping top priority title opens GoalDetailScreen',
+      (tester) async {
     final router = GoRouter(
       routes: [
         GoRoute(
@@ -111,7 +126,7 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    await tester.tap(find.byKey(GoalCard.cardKey('g-1')));
+    await tester.tap(find.text('School Fees ›'));
     await tester.pumpAndSettle();
 
     expect(find.byKey(GoalDetailScreen.screenKey), findsOneWidget);

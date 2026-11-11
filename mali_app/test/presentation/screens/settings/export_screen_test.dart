@@ -7,6 +7,7 @@ import 'package:go_router/go_router.dart';
 import 'package:mali_app/application/export/export_request.dart';
 import 'package:mali_app/application/providers/auth_provider.dart';
 import 'package:mali_app/application/providers/export_controller.dart';
+import 'package:mali_app/application/providers/export_preview_providers.dart';
 import 'package:mali_app/application/providers/wallet_providers.dart';
 import 'package:mali_app/domain/entities/user.dart';
 import 'package:mali_app/domain/entities/wallet.dart';
@@ -14,6 +15,7 @@ import 'package:mali_app/domain/value_objects/export_format.dart';
 import 'package:mali_app/domain/value_objects/exported_file.dart';
 import 'package:mali_app/presentation/screens/settings/export_screen.dart';
 import 'package:mali_app/presentation/screens/settings/settings_screen.dart';
+import 'package:mali_app/presentation/theme/app_theme.dart';
 import 'package:mali_app/presentation/utils/export_date_range.dart';
 
 import '../../home/home_test_overrides.dart';
@@ -74,10 +76,16 @@ Future<void> _pumpExportScreen(
   required _RecordingExportController controller,
   List<Wallet>? wallets,
 }) async {
+  await tester.binding.setSurfaceSize(const Size(800, 1400));
+  addTearDown(() => tester.binding.setSurfaceSize(null));
+
   await tester.pumpWidget(
     ProviderScope(
       overrides: [
         exportControllerProvider.overrideWith(() => controller),
+        exportTransactionCountProvider.overrideWith(
+          (ref, query) async => 63,
+        ),
         activeWalletsProvider.overrideWith(
           (ref) => Stream.value(wallets ?? [_cashWallet()]),
         ),
@@ -86,6 +94,7 @@ Future<void> _pumpExportScreen(
         ),
       ],
       child: MaterialApp(
+        theme: AppTheme.lightTheme,
         home: ExportScreen(clock: () => DateTime(2026, 9, 19)),
       ),
     ),
@@ -94,27 +103,23 @@ Future<void> _pumpExportScreen(
 }
 
 void main() {
-  testWidgets('shows the current month, PDF, and unfiltered defaults',
+  testWidgets('shows period presets, PDF, and unfiltered defaults',
       (tester) async {
     await _pumpExportScreen(tester, controller: _RecordingExportController());
 
     expect(find.byKey(ExportScreen.screenKey), findsOneWidget);
-    expect(
-      find.text(ExportDateRange.label(
-        ExportDateRange.currentMonth(DateTime(2026, 9, 19)),
-      )),
-      findsOneWidget,
-    );
+    expect(find.text('This month'), findsOneWidget);
+    expect(find.text('PDF report'), findsOneWidget);
     expect(find.text('All wallets'), findsOneWidget);
     expect(find.text('All categories'), findsOneWidget);
-    expect(find.text('Export'), findsOneWidget);
+    expect(find.text('Export 63 transactions'), findsOneWidget);
   });
 
   testWidgets('exports CSV when that format is selected', (tester) async {
     final controller = _RecordingExportController();
     await _pumpExportScreen(tester, controller: controller);
 
-    await tester.tap(find.text('CSV'));
+    await tester.tap(find.text('CSV spreadsheet'));
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(ExportScreen.submitKey));
     await tester.pumpAndSettle();
