@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:mali_app/presentation/theme/app_colors.dart';
 import 'package:mali_app/presentation/theme/app_decorations.dart';
-import 'package:mali_app/presentation/theme/app_typography.dart';
 
-/// Grouped settings block with a section title and card-wrapped children.
+/// Grouped settings block matching the HTML redesign cards.
 class SettingsSection extends StatelessWidget {
   const SettingsSection({
     required this.title,
@@ -19,17 +19,36 @@ class SettingsSection extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Padding(
-          padding: const EdgeInsets.fromLTRB(8, 0, 8, 16),
+          padding: const EdgeInsets.fromLTRB(4, 0, 4, 6),
           child: Text(
             title.toUpperCase(),
-            style: AppTypography.sectionLabel(context),
+            style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                  color: AppColors.onSurfaceVariant,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: 1,
+                  fontSize: 12,
+                ),
           ),
         ),
         Container(
-          decoration: AppDecorations.surfaceCard(radius: AppDecorations.radiusMd),
+          decoration: AppDecorations.surfaceCard(
+            radius: AppDecorations.radiusLg,
+            withShadow: false,
+          ),
+          clipBehavior: Clip.antiAlias,
           child: Column(
             mainAxisSize: MainAxisSize.min,
-            children: children,
+            children: [
+              for (var i = 0; i < children.length; i++) ...[
+                if (i > 0)
+                  const Divider(
+                    height: 1,
+                    thickness: 1,
+                    color: AppColors.settingsDivider,
+                  ),
+                children[i],
+              ],
+            ],
           ),
         ),
       ],

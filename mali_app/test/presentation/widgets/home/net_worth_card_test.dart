@@ -1,7 +1,9 @@
 import 'package:decimal/decimal.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/misc.dart' show Override;
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mali_app/application/models/home_monthly_summary_display.dart';
 import 'package:mali_app/application/providers/home_providers.dart';
 import 'package:mali_app/domain/entities/wallet.dart';
 import 'package:mali_app/domain/usecases/calculate_net_worth_usecase.dart';
@@ -37,34 +39,53 @@ CalculateNetWorthResult _netWorthResult({
   );
 }
 
+HomeMonthlySummaryDisplay _summary({
+  String income = '100',
+  String expenses = '40',
+}) {
+  return HomeMonthlySummaryDisplay(
+    month: DateTime.utc(2026, 5, 1),
+    income: Decimal.parse(income),
+    expenses: Decimal.parse(expenses),
+    displayCurrency: CurrencyCode.usd,
+  );
+}
+
+List<Override> _overrides({
+  required CalculateNetWorthResult netWorth,
+  HomeMonthlySummaryDisplay? summary,
+}) {
+  return [
+    homeNetWorthProvider.overrideWith((ref) async => netWorth),
+    homeMonthlySummaryDisplayProvider.overrideWith(
+      (ref) async => summary ?? _summary(),
+    ),
+  ];
+}
+
 void main() {
   group('NetWorthCard', () {
     testWidgets('shows net worth label and USD-equivalent total', (tester) async {
       await tester.pumpWidget(
         ProviderScope(
-          overrides: [
-            homeNetWorthProvider.overrideWith(
-              (ref) async => _netWorthResult(
-                breakdown: [
-                  ConvertedWalletBalance(
-                    wallet: _wallet(
-                      id: 'w-1',
-                      name: 'Cash',
-                      currencyCode: 'USD',
-                      balance: '1500',
-                    ),
-                    convertedAmount: Money(
-                      amount: Decimal.parse('1500'),
-                      currency: CurrencyCode.usd,
-                    ),
+          overrides: _overrides(
+            netWorth: _netWorthResult(
+              breakdown: [
+                ConvertedWalletBalance(
+                  wallet: _wallet(
+                    id: 'w-1',
+                    name: 'Cash',
+                    currencyCode: 'USD',
+                    balance: '1500',
                   ),
-                ],
-              ),
+                  convertedAmount: Money(
+                    amount: Decimal.parse('1500'),
+                    currency: CurrencyCode.usd,
+                  ),
+                ),
+              ],
             ),
-            exchangeRatesLastUpdatedProvider.overrideWith(
-              (ref) => Stream.value(null),
-            ),
-          ],
+          ),
           child: const MaterialApp(
             home: Scaffold(body: NetWorthCard()),
           ),
@@ -72,48 +93,43 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      expect(find.text('Net worth'), findsOneWidget);
+      expect(find.textContaining('Net worth'), findsOneWidget);
       expect(find.byKey(const Key('net-worth-total')), findsOneWidget);
     });
 
     testWidgets('shows hero total with currency code', (tester) async {
       await tester.pumpWidget(
         ProviderScope(
-          overrides: [
-            homeNetWorthProvider.overrideWith(
-              (ref) async => _netWorthResult(
-                breakdown: [
-                  ConvertedWalletBalance(
-                    wallet: _wallet(
-                      id: 'w-1',
-                      name: 'EcoCash USD',
-                      currencyCode: 'USD',
-                      balance: '500',
-                    ),
-                    convertedAmount: Money(
-                      amount: Decimal.parse('500'),
-                      currency: CurrencyCode.usd,
-                    ),
+          overrides: _overrides(
+            netWorth: _netWorthResult(
+              breakdown: [
+                ConvertedWalletBalance(
+                  wallet: _wallet(
+                    id: 'w-1',
+                    name: 'EcoCash USD',
+                    currencyCode: 'USD',
+                    balance: '500',
                   ),
-                  ConvertedWalletBalance(
-                    wallet: _wallet(
-                      id: 'w-2',
-                      name: 'Rand Wallet',
-                      currencyCode: 'ZAR',
-                      balance: '2000',
-                    ),
-                    convertedAmount: Money(
-                      amount: Decimal.parse('100'),
-                      currency: CurrencyCode.usd,
-                    ),
+                  convertedAmount: Money(
+                    amount: Decimal.parse('500'),
+                    currency: CurrencyCode.usd,
                   ),
-                ],
-              ),
+                ),
+                ConvertedWalletBalance(
+                  wallet: _wallet(
+                    id: 'w-2',
+                    name: 'Rand Wallet',
+                    currencyCode: 'ZAR',
+                    balance: '2000',
+                  ),
+                  convertedAmount: Money(
+                    amount: Decimal.parse('100'),
+                    currency: CurrencyCode.usd,
+                  ),
+                ),
+              ],
             ),
-            exchangeRatesLastUpdatedProvider.overrideWith(
-              (ref) => Stream.value(DateTime.utc(2026, 5, 24, 10)),
-            ),
-          ],
+          ),
           child: const MaterialApp(
             home: Scaffold(body: NetWorthCard()),
           ),
@@ -121,53 +137,47 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      final currencyPill = tester.widget<Text>(
+      final currencyLabel = tester.widget<Text>(
         find.byKey(const Key('net-worth-currency')),
       );
-      expect(currencyPill.data, 'USD');
+      expect(currencyLabel.data, 'Net worth · in USD ›');
       expect(find.byKey(const Key('net-worth-total')), findsOneWidget);
+      expect(find.textContaining('this month'), findsOneWidget);
     });
 
-    testWidgets('shows exchange rates footer when multi-currency', (tester) async {
-      final updatedAt = DateTime.now().subtract(const Duration(hours: 2));
-
+    testWidgets('shows currency chips for multi-currency wallets', (tester) async {
       await tester.pumpWidget(
         ProviderScope(
-          overrides: [
-            homeNetWorthProvider.overrideWith(
-              (ref) async => _netWorthResult(
-                breakdown: [
-                  ConvertedWalletBalance(
-                    wallet: _wallet(
-                      id: 'w-1',
-                      name: 'USD',
-                      currencyCode: 'USD',
-                      balance: '100',
-                    ),
-                    convertedAmount: Money(
-                      amount: Decimal.parse('100'),
-                      currency: CurrencyCode.usd,
-                    ),
+          overrides: _overrides(
+            netWorth: _netWorthResult(
+              breakdown: [
+                ConvertedWalletBalance(
+                  wallet: _wallet(
+                    id: 'w-1',
+                    name: 'USD',
+                    currencyCode: 'USD',
+                    balance: '100',
                   ),
-                  ConvertedWalletBalance(
-                    wallet: _wallet(
-                      id: 'w-2',
-                      name: 'ZAR',
-                      currencyCode: 'ZAR',
-                      balance: '200',
-                    ),
-                    convertedAmount: Money(
-                      amount: Decimal.parse('10'),
-                      currency: CurrencyCode.usd,
-                    ),
+                  convertedAmount: Money(
+                    amount: Decimal.parse('100'),
+                    currency: CurrencyCode.usd,
                   ),
-                ],
-              ),
+                ),
+                ConvertedWalletBalance(
+                  wallet: _wallet(
+                    id: 'w-2',
+                    name: 'ZAR',
+                    currencyCode: 'ZAR',
+                    balance: '200',
+                  ),
+                  convertedAmount: Money(
+                    amount: Decimal.parse('10'),
+                    currency: CurrencyCode.usd,
+                  ),
+                ),
+              ],
             ),
-            exchangeRatesLastUpdatedProvider.overrideWith(
-              (ref) => Stream.value(updatedAt),
-            ),
-          ],
+          ),
           child: const MaterialApp(
             home: Scaffold(body: NetWorthCard()),
           ),
@@ -175,47 +185,8 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      expect(
-        find.text('Exchange rates last updated: 2 hours ago'),
-        findsOneWidget,
-      );
-    });
-
-    testWidgets('hides exchange rates footer for single-currency wallets',
-        (tester) async {
-      await tester.pumpWidget(
-        ProviderScope(
-          overrides: [
-            homeNetWorthProvider.overrideWith(
-              (ref) async => _netWorthResult(
-                breakdown: [
-                  ConvertedWalletBalance(
-                    wallet: _wallet(
-                      id: 'w-1',
-                      name: 'Cash',
-                      currencyCode: 'USD',
-                      balance: '100',
-                    ),
-                    convertedAmount: Money(
-                      amount: Decimal.parse('100'),
-                      currency: CurrencyCode.usd,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            exchangeRatesLastUpdatedProvider.overrideWith(
-              (ref) => Stream.value(DateTime.now()),
-            ),
-          ],
-          child: const MaterialApp(
-            home: Scaffold(body: NetWorthCard()),
-          ),
-        ),
-      );
-      await tester.pumpAndSettle();
-
-      expect(find.textContaining('Exchange rates last updated'), findsNothing);
+      expect(find.text('USD'), findsOneWidget);
+      expect(find.text('ZAR'), findsOneWidget);
     });
   });
 }

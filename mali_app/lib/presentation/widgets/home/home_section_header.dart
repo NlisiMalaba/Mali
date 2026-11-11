@@ -18,13 +18,13 @@ class HomeSectionHeader extends StatelessWidget {
     final theme = Theme.of(context);
 
     return Row(
-      crossAxisAlignment: CrossAxisAlignment.end,
       children: [
         Expanded(
           child: Text(
             title,
-            style: theme.textTheme.titleLarge?.copyWith(
+            style: theme.textTheme.titleMedium?.copyWith(
               fontWeight: FontWeight.w700,
+              fontSize: 16,
             ),
           ),
         ),
@@ -32,12 +32,11 @@ class HomeSectionHeader extends StatelessWidget {
           GestureDetector(
             onTap: onAction,
             child: Text(
-              actionLabel!.toUpperCase(),
-              style: theme.textTheme.labelSmall?.copyWith(
-                fontSize: 12,
-                fontWeight: FontWeight.w700,
-                letterSpacing: 2,
-                color: AppColors.secondary,
+              actionLabel!,
+              style: theme.textTheme.labelLarge?.copyWith(
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+                color: AppColors.link,
               ),
             ),
           ),

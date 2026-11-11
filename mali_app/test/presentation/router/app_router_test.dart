@@ -73,7 +73,7 @@ void main() {
       await tester.pump(SplashScreen.minimumDisplayDuration);
       await tester.pumpAndSettle();
 
-      expect(find.text('Welcome back'), findsOneWidget);
+      expect(find.text('Create my ledger'), findsOneWidget);
     });
 
     testWidgets('navigates between all defined routes when authenticated',
@@ -103,7 +103,7 @@ void main() {
         '/transactions': find.text('No transactions yet.'),
         '/add-transaction': find.text('Add Transaction'),
         '/budgets': find.byKey(BudgetsScreen.screenKey),
-        '/wallets': find.text('Your Wallets'),
+        '/wallets': find.text('Wallets'),
         '/goals': find.byKey(GoalsScreen.screenKey),
         '/goals/priority': find.byKey(GoalPriorityScreen.screenKey),
         '/goals/goal-1': find.byKey(GoalDetailScreen.screenKey),
@@ -135,6 +135,10 @@ void main() {
         ),
       );
       await tester.pumpAndSettle();
+
+      router.go('/welcome');
+      await tester.pumpAndSettle();
+      expect(find.text('Create my ledger'), findsOneWidget);
 
       for (final route in ['/auth/login', '/auth/register']) {
         router.go(route);

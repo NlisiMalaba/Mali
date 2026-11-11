@@ -74,13 +74,35 @@ class AppColors {
   static const Color errorContainer = Color(0xFFFDE4E1);
   static const Color onErrorContainer = Color(0xFF7A1A10);
   static const Color success = Color(0xFF0F7A3D);
-  static const Color successContainer = Color(0xFFE3F4E9);
+  /// Soft green chip used on Settings / transaction avatars in the redesign.
+  static const Color successContainer = Color(0xFFE6F2DA);
   static const Color warning = Color(0xFFE8890C);
 
   /// Money leaving the user's wallets in charts ("out" bars and legends).
-  static const Color moneyOut = Color(0xFFC96F00);
+  static const Color moneyOut = Color(0xFFB85C00);
   static const Color warningText = Color(0xFF8F4A00);
   static const Color warningContainer = Color(0xFFFFE9D1);
+
+  /// Notification bell badge on Home.
+  static const Color notificationOrange = Color(0xFFE8590C);
+
+  /// Hairline divider inside settings cards.
+  static const Color settingsDivider = Color(0xFFEDF0F6);
+
+  /// Soft blue chip (sync / currency / income).
+  static const Color infoContainer = Color(0xFFE3E9FF);
+  static const Color info = Color(0xFF3B5BDB);
+
+  /// Budget / amber chip on Settings.
+  static const Color budgetChip = Color(0xFFFFF4CC);
+  static const Color budgetChipInk = Color(0xFF8A6100);
+
+  /// Exchange-rates purple chip.
+  static const Color ratesChip = Color(0xFFF1E4F8);
+  static const Color ratesChipInk = Color(0xFF7B3BA3);
+
+  /// Neutral export chip ink.
+  static const Color exportInk = Color(0xFF3A4560);
 
   // Inverse
   static const Color inverseSurface = navy;

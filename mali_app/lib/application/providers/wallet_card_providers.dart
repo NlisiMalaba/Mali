@@ -39,7 +39,7 @@ Future<String?> walletEquivalentLabel(
   return result.fold(
     (_) => null,
     (converted) =>
-        '≈ ${MoneyDisplay.withCurrency(
+        '≈ ${MoneyDisplay.compact(
           amount: converted.amount.toString(),
           currencyCode: converted.currency.value,
         )}',

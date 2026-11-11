@@ -16,6 +16,8 @@ import 'package:mali_app/presentation/screens/settings/export_screen.dart';
 import 'package:mali_app/presentation/screens/settings/settings_screen.dart';
 import 'package:mali_app/presentation/utils/export_date_range.dart';
 
+import '../../home/home_test_overrides.dart';
+
 Wallet _cashWallet() {
   return Wallet(
     id: 'w-1',
@@ -196,6 +198,9 @@ void main() {
   });
 
   testWidgets('Settings Export data opens ExportScreen', (tester) async {
+    await tester.binding.setSurfaceSize(const Size(390, 900));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
     final router = GoRouter(
       initialLocation: '/settings',
       routes: [
@@ -221,6 +226,7 @@ void main() {
           activeWalletsProvider.overrideWith(
             (ref) => Stream.value([_cashWallet()]),
           ),
+          ...homeScreenTestOverrides(),
         ],
         child: MaterialApp.router(routerConfig: router),
       ),
@@ -229,12 +235,10 @@ void main() {
 
     expect(find.byKey(SettingsScreen.screenKey), findsOneWidget);
 
-    await tester.dragUntilVisible(
-      find.text('Export data'),
-      find.byType(ListView),
-      const Offset(0, -300),
-    );
-    await tester.tap(find.text('Export data'));
+    final exportTile = find.text('Export data');
+    await tester.ensureVisible(exportTile);
+    await tester.pumpAndSettle();
+    await tester.tap(exportTile);
     await tester.pumpAndSettle();
 
     expect(find.byKey(ExportScreen.screenKey), findsOneWidget);

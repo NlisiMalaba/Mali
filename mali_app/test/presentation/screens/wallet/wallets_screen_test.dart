@@ -1,16 +1,20 @@
+import 'package:decimal/decimal.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
+import 'package:mali_app/application/models/home_monthly_summary_display.dart';
 import 'package:mali_app/application/providers/auth_provider.dart';
 import 'package:mali_app/application/providers/display_currency_provider.dart';
-import 'package:mali_app/application/providers/exchange_rate_settings_providers.dart';
 import 'package:mali_app/application/providers/home_providers.dart';
 import 'package:mali_app/application/providers/wallet_card_providers.dart';
 import 'package:mali_app/application/providers/wallet_providers.dart';
-import 'package:mali_app/domain/value_objects/currency_code.dart';
+import 'package:mali_app/domain/entities/transaction.dart';
 import 'package:mali_app/domain/entities/user.dart';
 import 'package:mali_app/domain/entities/wallet.dart';
+import 'package:mali_app/domain/usecases/calculate_net_worth_usecase.dart';
+import 'package:mali_app/domain/value_objects/currency_code.dart';
+import 'package:mali_app/domain/value_objects/money.dart';
 import 'package:mali_app/presentation/screens/wallet/wallets_screen.dart';
 
 class _TestAuth extends Auth {
@@ -66,25 +70,41 @@ void main() {
           authProvider.overrideWith(_TestAuth.new),
           activeWalletsProvider.overrideWith((ref) => _walletsStream()),
           displayCurrencyProvider.overrideWithValue(CurrencyCode.usd),
-          exchangeRateSettingsItemsProvider.overrideWith(
-            (ref) => Stream.value(const []),
-          ),
-          exchangeRatesLastUpdatedProvider.overrideWith(
-            (ref) => Stream.value(null),
-          ),
           walletEquivalentLabelProvider(
             (balance: '120.50', currencyCode: 'USD'),
           ).overrideWith((ref) async => null),
+          walletTransactionsProvider('w-1').overrideWith(
+            (ref) => Stream.value(const <Transaction>[]),
+          ),
+          homeMonthlySummaryDisplayProvider.overrideWith(
+            (ref) async => HomeMonthlySummaryDisplay(
+              month: DateTime(2026, 5),
+              income: Decimal.parse('100'),
+              expenses: Decimal.parse('40'),
+              displayCurrency: CurrencyCode.usd,
+            ),
+          ),
+          homeNetWorthProvider.overrideWith(
+            (ref) async => CalculateNetWorthResult(
+              total: Money(
+                amount: Decimal.parse('120.50'),
+                currency: CurrencyCode.usd,
+              ),
+              walletBreakdown: const [],
+            ),
+          ),
         ],
         child: MaterialApp.router(routerConfig: router),
       ),
     );
     await tester.pumpAndSettle();
 
-    expect(find.text('EcoCash USD'), findsOneWidget);
-    expect(find.text('USD 120.50'), findsOneWidget);
+    expect(find.text('Wallets'), findsOneWidget);
+    expect(find.text('EcoCash USD'), findsWidgets);
+    expect(find.text('\$120.50'), findsWidgets);
+    expect(find.textContaining('Market Rates'), findsNothing);
 
-    await tester.tap(find.text('EcoCash USD'));
+    await tester.tap(find.text('EcoCash USD').first);
     await tester.pumpAndSettle();
 
     expect(find.text('Transactions w-1'), findsOneWidget);

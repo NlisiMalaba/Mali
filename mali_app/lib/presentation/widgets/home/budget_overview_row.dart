@@ -3,33 +3,42 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mali_app/application/providers/category_providers.dart';
 import 'package:mali_app/application/providers/home_providers.dart';
 import 'package:mali_app/domain/entities/budget.dart';
+import 'package:mali_app/presentation/theme/app_colors.dart';
 import 'package:mali_app/presentation/utils/budget_usage.dart';
-import 'package:mali_app/presentation/utils/category_icons.dart';
 import 'package:mali_app/presentation/utils/money_display.dart';
 import 'package:mali_app/presentation/widgets/budget/budget_bar.dart';
 
 class BudgetOverviewRow extends ConsumerWidget {
   const BudgetOverviewRow({super.key});
 
+  static const int _maxVisible = 2;
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final budgetsAsync = ref.watch(homeTopBudgetsProvider);
 
     return budgetsAsync.when(
-      loading: () => const Center(child: CircularProgressIndicator()),
+      loading: () => const SizedBox(
+        height: 48,
+        child: Center(child: CircularProgressIndicator(strokeWidth: 2)),
+      ),
       error: (error, _) => Text('Could not load budgets: $error'),
       data: (budgets) {
         if (budgets.isEmpty) {
-          return const _EmptySectionMessage(
-            message: 'No budgets set for this month.',
+          return Text(
+            'No budgets set for this month.',
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  color: AppColors.onSurfaceVariant,
+                ),
           );
         }
 
+        final visible = budgets.take(_maxVisible).toList();
         return Column(
           children: [
-            for (var index = 0; index < budgets.length; index++) ...[
-              if (index > 0) const SizedBox(height: 12),
-              _BudgetOverviewTile(budget: budgets[index]),
+            for (var index = 0; index < visible.length; index++) ...[
+              if (index > 0) const SizedBox(height: 14),
+              _BudgetOverviewTile(budget: visible[index]),
             ],
           ],
         );
@@ -48,74 +57,61 @@ class _BudgetOverviewTile extends ConsumerWidget {
     final theme = Theme.of(context);
     final category = ref.watch(categoryByIdProvider(budget.categoryId));
     final usage = BudgetUsage.ratio(budget);
-
-    final categoryColor = category == null
-        ? theme.colorScheme.primary
-        : CategoryIcons.colorFromHex(category.colorHex);
-    final categoryIcon = category == null
-        ? Icons.account_balance_wallet_outlined
-        : CategoryIcons.fromKey(category.iconKey);
+    final remaining = BudgetUsage.remainingAmount(budget);
     final categoryName = category?.name ?? 'Budget';
+    final isWarning = usage >= budgetWarningUsageRatio;
 
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Row(
-          children: [
-            CircleAvatar(
-              backgroundColor: categoryColor.withValues(alpha: 0.15),
-              child: Icon(categoryIcon, color: categoryColor, size: 20),
+    final trailing = isWarning
+        ? Text(
+            '${(usage * 100).round()}% · '
+            '${MoneyDisplay.compact(
+              amount: remaining.abs().toString(),
+              currencyCode: budget.currencyCode,
+              trimTrailingZeros: true,
+            )} left',
+            style: theme.textTheme.bodyMedium?.copyWith(
+              color: AppColors.moneyOut,
+              fontWeight: FontWeight.w600,
+              fontSize: 14,
             ),
-            const SizedBox(width: 12),
+          )
+        : Text(
+            '${MoneyDisplay.compact(
+              amount: budget.spentAmount,
+              currencyCode: budget.currencyCode,
+              trimTrailingZeros: true,
+            )} of '
+            '${MoneyDisplay.compact(
+              amount: budget.amount,
+              currencyCode: budget.currencyCode,
+              trimTrailingZeros: true,
+            )}',
+            style: theme.textTheme.bodyMedium?.copyWith(
+              color: AppColors.onSurfaceVariant,
+              fontSize: 14,
+            ),
+          );
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Row(
+          children: [
             Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    categoryName,
-                    style: theme.textTheme.titleSmall?.copyWith(
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  BudgetBar(usage: usage),
-                  const SizedBox(height: 6),
-                  Text(
-                    '${MoneyDisplay.withCurrency(
-                      amount: budget.spentAmount,
-                      currencyCode: budget.currencyCode,
-                    )} of '
-                    '${MoneyDisplay.withCurrency(
-                      amount: budget.amount,
-                      currencyCode: budget.currencyCode,
-                    )}',
-                    style: theme.textTheme.bodySmall?.copyWith(
-                      color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
-                    ),
-                  ),
-                ],
+              child: Text(
+                categoryName,
+                style: theme.textTheme.titleSmall?.copyWith(
+                  fontWeight: FontWeight.w600,
+                  fontSize: 14,
+                ),
               ),
             ),
+            trailing,
           ],
         ),
-      ),
-    );
-  }
-}
-
-class _EmptySectionMessage extends StatelessWidget {
-  const _EmptySectionMessage({required this.message});
-
-  final String message;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return Text(
-      message,
-      style: theme.textTheme.bodyMedium?.copyWith(
-        color: theme.colorScheme.onSurface.withValues(alpha: 0.65),
-      ),
+        const SizedBox(height: 8),
+        BudgetBar(usage: usage),
+      ],
     );
   }
 }

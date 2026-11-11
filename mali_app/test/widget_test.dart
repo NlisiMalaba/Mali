@@ -13,7 +13,7 @@ class _ImmediateUnauthenticatedAuth extends Auth {
 }
 
 void main() {
-  testWidgets('unauthenticated users are redirected to login',
+  testWidgets('unauthenticated users are redirected to welcome',
       (WidgetTester tester) async {
     await tester.pumpWidget(
       ProviderScope(
@@ -28,6 +28,6 @@ void main() {
     await tester.pump(SplashScreen.minimumDisplayDuration);
     await tester.pumpAndSettle();
 
-    expect(find.text('Welcome back'), findsOneWidget);
+    expect(find.text('Create my ledger'), findsOneWidget);
   });
 }

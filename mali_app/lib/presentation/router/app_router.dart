@@ -25,6 +25,7 @@ import 'package:mali_app/presentation/screens/transaction/add_transaction_screen
 import 'package:mali_app/presentation/screens/transaction/transaction_list_screen.dart';
 import 'package:mali_app/presentation/screens/wallet/wallet_setup_screen.dart';
 import 'package:mali_app/presentation/screens/wallet/wallets_screen.dart';
+import 'package:mali_app/presentation/screens/welcome/welcome_screen.dart';
 import 'package:mali_app/presentation/widgets/app_shell.dart';
 
 final appRouterProvider = Provider<GoRouter>((ref) {
@@ -54,6 +55,10 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         builder: (context, state) => const SplashScreen(),
       ),
       GoRoute(
+        path: '/welcome',
+        builder: (context, state) => const WelcomeScreen(),
+      ),
+      GoRoute(
         path: '/auth/login',
         builder: (context, state) => const LoginScreen(),
       ),
@@ -77,21 +82,34 @@ final appRouterProvider = Provider<GoRouter>((ref) {
             builder: (context, state) => const HomeScreen(),
           ),
           GoRoute(
-            path: '/wallets',
-            builder: (context, state) => const WalletsScreen(),
+            path: '/analytics',
+            builder: (context, state) => AnalyticsScreen(
+              initialTab: AnalyticsScreen.tabFromQuery(
+                state.uri.queryParameters[AnalyticsScreen.tabQuery],
+              ),
+            ),
             routes: [
               GoRoute(
-                path: ':walletId',
+                path: 'categories/:categoryId',
                 builder: (context, state) {
-                  final walletId = state.pathParameters['walletId'] ?? '';
-                  return TransactionListScreen(walletId: walletId);
+                  final now = DateTime.now();
+                  final categoryId = state.pathParameters['categoryId'] ?? '';
+                  final year = int.tryParse(
+                        state.uri.queryParameters['year'] ?? '',
+                      ) ??
+                      now.year;
+                  final month = int.tryParse(
+                        state.uri.queryParameters['month'] ?? '',
+                      ) ??
+                      now.month;
+                  return CategoryDrilldownScreen(
+                    categoryId: categoryId,
+                    year: year,
+                    month: month,
+                  );
                 },
               ),
             ],
-          ),
-          GoRoute(
-            path: '/budgets',
-            builder: (context, state) => const BudgetsScreen(),
           ),
           GoRoute(
             path: '/goals',
@@ -110,6 +128,53 @@ final appRouterProvider = Provider<GoRouter>((ref) {
               ),
             ],
           ),
+          GoRoute(
+            path: '/settings',
+            builder: (context, state) => const SettingsScreen(),
+            routes: [
+              GoRoute(
+                path: 'exchange-rates',
+                builder: (context, state) =>
+                    const ExchangeRatesSettingsScreen(),
+              ),
+              GoRoute(
+                path: 'export',
+                builder: (context, state) => const ExportScreen(),
+              ),
+              GoRoute(
+                path: 'notifications',
+                builder: (context, state) =>
+                    const NotificationSettingsScreen(),
+              ),
+              GoRoute(
+                path: 'security',
+                builder: (context, state) => const SecuritySettingsScreen(),
+                routes: [
+                  GoRoute(
+                    path: 'pin-setup',
+                    builder: (context, state) => const PinSetupScreen(),
+                  ),
+                ],
+              ),
+            ],
+          ),
+          GoRoute(
+            path: '/wallets',
+            builder: (context, state) => const WalletsScreen(),
+            routes: [
+              GoRoute(
+                path: ':walletId',
+                builder: (context, state) {
+                  final walletId = state.pathParameters['walletId'] ?? '';
+                  return TransactionListScreen(walletId: walletId);
+                },
+              ),
+            ],
+          ),
+          GoRoute(
+            path: '/budgets',
+            builder: (context, state) => const BudgetsScreen(),
+          ),
         ],
       ),
       GoRoute(
@@ -120,84 +185,27 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         path: '/add-transaction',
         builder: (context, state) => const AddTransactionScreen(),
       ),
-      GoRoute(
-        path: '/analytics',
-        builder: (context, state) => AnalyticsScreen(
-          initialTab: AnalyticsScreen.tabFromQuery(
-            state.uri.queryParameters[AnalyticsScreen.tabQuery],
-          ),
-        ),
-        routes: [
-          GoRoute(
-            path: 'categories/:categoryId',
-            builder: (context, state) {
-              final now = DateTime.now();
-              final categoryId = state.pathParameters['categoryId'] ?? '';
-              final year = int.tryParse(
-                    state.uri.queryParameters['year'] ?? '',
-                  ) ??
-                  now.year;
-              final month = int.tryParse(
-                    state.uri.queryParameters['month'] ?? '',
-                  ) ??
-                  now.month;
-              return CategoryDrilldownScreen(
-                categoryId: categoryId,
-                year: year,
-                month: month,
-              );
-            },
-          ),
-        ],
-      ),
-      GoRoute(
-        path: '/settings',
-        builder: (context, state) => const SettingsScreen(),
-        routes: [
-          GoRoute(
-            path: 'exchange-rates',
-            builder: (context, state) =>
-                const ExchangeRatesSettingsScreen(),
-          ),
-          GoRoute(
-            path: 'export',
-            builder: (context, state) => const ExportScreen(),
-          ),
-          GoRoute(
-            path: 'notifications',
-            builder: (context, state) => const NotificationSettingsScreen(),
-          ),
-          GoRoute(
-            path: 'security',
-            builder: (context, state) => const SecuritySettingsScreen(),
-            routes: [
-              GoRoute(
-                path: 'pin-setup',
-                builder: (context, state) => const PinSetupScreen(),
-              ),
-            ],
-          ),
-        ],
-      ),
     ],
     redirect: (context, state) {
       final auth = ref.read(authProvider);
       final location = state.uri.path;
       final isAuthPage =
           location == '/auth/login' || location == '/auth/register';
+      final isWelcomePage = location == '/welcome';
+      final isPublicEntry = isAuthPage || isWelcomePage;
       final isWalletSetup = location == '/wallet-setup';
       final isLockRoute = location.startsWith('/lock');
 
       if (auth.isLoading) {
-        if (location != '/' && !isAuthPage) {
+        if (location != '/' && !isPublicEntry) {
           return '/';
         }
         return null;
       }
 
       if (auth.hasError) {
-        if (!isAuthPage && location != '/') {
-          return '/auth/login';
+        if (!isPublicEntry && location != '/') {
+          return '/welcome';
         }
         return null;
       }
@@ -205,14 +213,14 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       final user = auth.value;
       final isAuthenticated = user != null;
 
-      if (!isAuthenticated && !isAuthPage && location != '/') {
-        return '/auth/login';
+      if (!isAuthenticated && !isPublicEntry && location != '/') {
+        return '/welcome';
       }
 
       if (isAuthenticated) {
         final needsSetup = ref.read(needsWalletSetupProvider);
 
-        if (isAuthPage) {
+        if (isPublicEntry) {
           return needsSetup ? '/wallet-setup' : '/home';
         }
 

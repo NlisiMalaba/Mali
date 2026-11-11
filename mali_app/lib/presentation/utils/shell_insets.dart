@@ -2,7 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mali_app/presentation/widgets/sovereign/sovereign_bottom_nav.dart';
 
-const _shellRoutePrefixes = ['/home', '/wallets', '/budgets', '/goals'];
+const _shellRoutePrefixes = [
+  '/home',
+  '/analytics',
+  '/goals',
+  '/settings',
+  '/wallets',
+  '/budgets',
+];
 
 bool isShellRoute(BuildContext context) {
   final path = GoRouter.maybeOf(context)?.state.uri.path;

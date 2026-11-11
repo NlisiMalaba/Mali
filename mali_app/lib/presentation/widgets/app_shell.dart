@@ -12,28 +12,33 @@ class AppShell extends StatelessWidget {
   final Widget child;
 
   SovereignNavDestination _selectedDestination(String location) {
-    if (location.startsWith('/wallets')) {
-      return SovereignNavDestination.wallets;
-    }
-    if (location.startsWith('/budgets')) {
-      return SovereignNavDestination.budgets;
+    if (location.startsWith('/analytics') || location.startsWith('/insights')) {
+      return SovereignNavDestination.insights;
     }
     if (location.startsWith('/goals')) {
       return SovereignNavDestination.goals;
     }
+    if (location.startsWith('/settings') ||
+        location.startsWith('/wallets') ||
+        location.startsWith('/budgets')) {
+      return SovereignNavDestination.settings;
+    }
     return SovereignNavDestination.home;
   }
 
-  void _onDestinationSelected(BuildContext context, SovereignNavDestination dest) {
+  void _onDestinationSelected(
+    BuildContext context,
+    SovereignNavDestination dest,
+  ) {
     switch (dest) {
       case SovereignNavDestination.home:
         context.go('/home');
-      case SovereignNavDestination.wallets:
-        context.go('/wallets');
-      case SovereignNavDestination.budgets:
-        context.go('/budgets');
+      case SovereignNavDestination.insights:
+        context.go('/analytics');
       case SovereignNavDestination.goals:
         context.go('/goals');
+      case SovereignNavDestination.settings:
+        context.go('/settings');
     }
   }
 

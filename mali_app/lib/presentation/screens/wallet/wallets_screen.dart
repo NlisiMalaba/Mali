@@ -1,43 +1,51 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:mali_app/application/providers/exchange_rate_settings_providers.dart';
+import 'package:mali_app/application/models/home_monthly_summary_display.dart';
 import 'package:mali_app/application/providers/home_providers.dart';
 import 'package:mali_app/application/providers/use_case_providers.dart';
+import 'package:mali_app/application/providers/wallet_card_providers.dart';
 import 'package:mali_app/application/providers/wallet_providers.dart';
 import 'package:mali_app/domain/entities/wallet.dart';
-import 'package:mali_app/presentation/screens/settings/export_screen.dart';
+import 'package:mali_app/domain/usecases/calculate_net_worth_usecase.dart';
 import 'package:mali_app/presentation/theme/app_colors.dart';
 import 'package:mali_app/presentation/theme/app_decorations.dart';
 import 'package:mali_app/presentation/theme/app_typography.dart';
-import 'package:mali_app/presentation/utils/exchange_rate_labels.dart';
 import 'package:mali_app/presentation/utils/money_display.dart';
-import 'package:mali_app/presentation/widgets/settings/edit_exchange_rate_sheet.dart';
-import 'package:mali_app/presentation/widgets/sovereign/sovereign_app_bar.dart';
 import 'package:mali_app/presentation/widgets/wallet/add_wallet_sheet.dart';
 
-class WalletsScreen extends ConsumerWidget {
+class WalletsScreen extends ConsumerStatefulWidget {
   const WalletsScreen({super.key});
 
-  Future<void> _openAddWallet(BuildContext context) async {
+  @override
+  ConsumerState<WalletsScreen> createState() => _WalletsScreenState();
+}
+
+class _WalletsScreenState extends ConsumerState<WalletsScreen> {
+  final _pageController = PageController(viewportFraction: 0.9);
+  int _selectedIndex = 0;
+
+  @override
+  void dispose() {
+    _pageController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _openAddWallet() async {
     final created = await AddWalletSheet.show(context);
-    if (created == true && context.mounted) {
+    if (created == true && mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Wallet added.')),
       );
     }
   }
 
-  Future<bool> _archiveWallet(
-    WidgetRef ref,
-    BuildContext context,
-    Wallet wallet,
-  ) async {
+  Future<bool> _archiveWallet(Wallet wallet) async {
     final result = await ref.read(archiveWalletUseCaseProvider)(
       walletId: wallet.id,
     );
 
-    if (!context.mounted) return false;
+    if (!mounted) return false;
 
     final failure = result.fold((left) => left, (_) => null);
     if (failure != null) {
@@ -53,83 +61,452 @@ class WalletsScreen extends ConsumerWidget {
     return true;
   }
 
-  Map<String, List<Wallet>> _groupByCurrency(List<Wallet> wallets) {
-    final groups = <String, List<Wallet>>{};
-    for (final wallet in wallets) {
-      groups.putIfAbsent(wallet.currencyCode, () => []).add(wallet);
-    }
-    return groups;
+  @override
+  Widget build(BuildContext context) {
+    final walletsAsync = ref.watch(activeWalletsProvider);
+    final summaryAsync = ref.watch(homeMonthlySummaryDisplayProvider);
+    final netWorthAsync = ref.watch(homeNetWorthProvider);
+    final canPop = GoRouter.of(context).canPop();
+
+    return Scaffold(
+      backgroundColor: AppColors.background,
+      body: SafeArea(
+        child: walletsAsync.when(
+          loading: () => const Center(child: CircularProgressIndicator()),
+          error: (error, _) => Center(
+            child: Padding(
+              padding: const EdgeInsets.all(24),
+              child: Text('Could not load wallets: $error'),
+            ),
+          ),
+          data: (wallets) {
+            if (_selectedIndex >= wallets.length && wallets.isNotEmpty) {
+              WidgetsBinding.instance.addPostFrameCallback((_) {
+                if (!mounted) return;
+                setState(() => _selectedIndex = 0);
+              });
+            }
+
+            return Column(
+              children: [
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(20, 8, 20, 12),
+                  child: Row(
+                    children: [
+                      if (canPop) ...[
+                        _HeaderIconButton(
+                          icon: Icons.arrow_back_ios_new_rounded,
+                          onPressed: () => context.pop(),
+                        ),
+                        const SizedBox(width: 12),
+                      ],
+                      Expanded(
+                        child: Text(
+                          'Wallets',
+                          style: AppTypography.money(
+                            fontSize: 28,
+                            color: AppColors.onSurface,
+                          ),
+                        ),
+                      ),
+                      FilledButton.icon(
+                        onPressed: _openAddWallet,
+                        style: FilledButton.styleFrom(
+                          backgroundColor: AppColors.navy,
+                          foregroundColor: AppColors.silver,
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 14,
+                            vertical: 12,
+                          ),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(14),
+                          ),
+                        ),
+                        icon: const Icon(Icons.add, size: 18),
+                        label: const Text(
+                          'Add',
+                          style: TextStyle(fontWeight: FontWeight.w700),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Expanded(
+                  child: wallets.isEmpty
+                      ? _EmptyWallets(onAdd: _openAddWallet)
+                      : ListView(
+                          padding: const EdgeInsets.only(bottom: 16),
+                          children: [
+                            SizedBox(
+                              height: 210,
+                              child: PageView.builder(
+                                controller: _pageController,
+                                itemCount: wallets.length,
+                                onPageChanged: (index) {
+                                  setState(() => _selectedIndex = index);
+                                },
+                                itemBuilder: (context, index) {
+                                  final wallet = wallets[index];
+                                  return Padding(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 6,
+                                      vertical: 8,
+                                    ),
+                                    child: _HeroWalletCard(
+                                      wallet: wallet,
+                                      variant: _HeroWalletVariant.forIndex(index),
+                                      onTap: () =>
+                                          context.push('/wallets/${wallet.id}'),
+                                    ),
+                                  );
+                                },
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            _PageDots(
+                              count: wallets.length,
+                              selectedIndex: _selectedIndex,
+                            ),
+                            const SizedBox(height: 16),
+                            Padding(
+                              padding:
+                                  const EdgeInsets.symmetric(horizontal: 20),
+                              child: _MonthFlowCard(summaryAsync: summaryAsync),
+                            ),
+                            const SizedBox(height: 16),
+                            Padding(
+                              padding:
+                                  const EdgeInsets.symmetric(horizontal: 20),
+                              child: DecoratedBox(
+                                decoration: AppDecorations.surfaceCard(
+                                  radius: 22,
+                                  color: AppColors.surfaceContainerLowest,
+                                ),
+                                child: Column(
+                                  children: [
+                                    for (var i = 0; i < wallets.length; i++) ...[
+                                      if (i > 0)
+                                        const Divider(
+                                          height: 1,
+                                          indent: 90,
+                                          endIndent: 16,
+                                        ),
+                                      Dismissible(
+                                        key: ValueKey(wallets[i].id),
+                                        direction: DismissDirection.endToStart,
+                                        background: Container(
+                                          alignment: Alignment.centerRight,
+                                          padding:
+                                              const EdgeInsets.only(right: 24),
+                                          color: AppColors.errorContainer,
+                                          child: const Icon(
+                                            Icons.archive_outlined,
+                                          ),
+                                        ),
+                                        confirmDismiss: (_) =>
+                                            _archiveWallet(wallets[i]),
+                                        child: _WalletListTile(
+                                          wallet: wallets[i],
+                                          emphasize: i == 0,
+                                          onTap: () => context.push(
+                                            '/wallets/${wallets[i].id}',
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                ),
+                if (wallets.isNotEmpty)
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(20, 0, 20, 12),
+                    child: _TotalBar(netWorthAsync: netWorthAsync),
+                  ),
+              ],
+            );
+          },
+        ),
+      ),
+    );
   }
+}
+
+enum _HeroWalletVariant {
+  silver,
+  navy,
+  light;
+
+  static _HeroWalletVariant forIndex(int index) {
+    switch (index % 3) {
+      case 0:
+        return _HeroWalletVariant.silver;
+      case 1:
+        return _HeroWalletVariant.navy;
+      default:
+        return _HeroWalletVariant.light;
+    }
+  }
+}
+
+class _HeaderIconButton extends StatelessWidget {
+  const _HeaderIconButton({
+    required this.icon,
+    required this.onPressed,
+  });
+
+  final IconData icon;
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: AppColors.surfaceContainerLowest,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(14),
+        side: const BorderSide(color: AppColors.outlineVariant),
+      ),
+      child: InkWell(
+        onTap: onPressed,
+        borderRadius: BorderRadius.circular(14),
+        child: SizedBox(
+          width: 46,
+          height: 46,
+          child: Icon(icon, color: AppColors.onSurface, size: 20),
+        ),
+      ),
+    );
+  }
+}
+
+class _HeroWalletCard extends ConsumerWidget {
+  const _HeroWalletCard({
+    required this.wallet,
+    required this.variant,
+    required this.onTap,
+  });
+
+  final Wallet wallet;
+  final _HeroWalletVariant variant;
+  final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final walletsAsync = ref.watch(activeWalletsProvider);
-    final ratesAsync = ref.watch(exchangeRateSettingsItemsProvider);
-    final lastUpdatedAsync = ref.watch(exchangeRatesLastUpdatedProvider);
+    final theme = Theme.of(context);
+    final equivalentAsync = ref.watch(
+      walletEquivalentLabelProvider((
+        balance: wallet.balance,
+        currencyCode: wallet.currencyCode,
+      )),
+    );
+    final txAsync = ref.watch(walletTransactionsProvider(wallet.id));
+    final txCount = txAsync.asData?.value.length;
 
-    return Scaffold(
-      appBar: const SovereignAppBar(title: 'Manage Wallets & Rates'),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () => _openAddWallet(context),
-        tooltip: 'Add wallet',
-        backgroundColor: AppColors.primaryContainer,
-        foregroundColor: AppColors.onPrimaryContainer,
-        child: const Icon(Icons.add),
+    final background = switch (variant) {
+      _HeroWalletVariant.silver => AppColors.silver,
+      _HeroWalletVariant.navy => AppColors.navy,
+      _HeroWalletVariant.light => AppColors.surfaceContainerLowest,
+    };
+    final foreground = switch (variant) {
+      _HeroWalletVariant.navy => AppColors.onPrimary,
+      _ => AppColors.navy,
+    };
+    final muted = foreground.withValues(alpha: 0.85);
+
+    return Material(
+      color: background,
+      elevation: variant == _HeroWalletVariant.silver ? 8 : 2,
+      shadowColor: AppColors.navy.withValues(alpha: 0.35),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(26),
+        side: variant == _HeroWalletVariant.navy
+            ? BorderSide.none
+            : const BorderSide(color: AppColors.outlineVariant),
       ),
-      body: walletsAsync.when(
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (error, _) => Center(
-          child: Padding(
-            padding: const EdgeInsets.all(24),
-            child: Text('Could not load wallets: $error'),
-          ),
-        ),
-        data: (wallets) {
-          return ListView(
-            padding: const EdgeInsets.fromLTRB(24, 8, 24, 16),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(26),
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(22, 22, 22, 20),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              _MarketRatesSection(
-                ratesAsync: ratesAsync,
-                lastUpdatedAsync: lastUpdatedAsync,
-              ),
-              const SizedBox(height: 40),
-              Text(
-                'ASSET DISTRIBUTION',
-                style: AppTypography.sectionLabel(context),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                'Your Wallets',
-                style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                  fontWeight: FontWeight.w800,
-                ),
-              ),
-              const SizedBox(height: 24),
-              if (wallets.isEmpty)
-                _EmptyWallets(onAdd: () => _openAddWallet(context))
-              else
-                ..._groupByCurrency(wallets).entries.map(
-                  (entry) => _WalletGroup(
-                    currencyCode: entry.key,
-                    wallets: entry.value,
-                    onArchive: (wallet) => _archiveWallet(ref, context, wallet),
-                  ),
-                ),
-              const SizedBox(height: 24),
-              OutlinedButton.icon(
-                onPressed: () => context.push(ExportScreen.location),
-                style: OutlinedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(vertical: 20),
-                  backgroundColor: AppColors.surfaceContainerHighest,
-                  side: BorderSide.none,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(
-                      AppDecorations.radiusXl,
+              Row(
+                children: [
+                  Text(
+                    wallet.currencyCode,
+                    style: theme.textTheme.labelMedium?.copyWith(
+                      color: foreground,
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: 1.2,
                     ),
                   ),
+                  const Spacer(),
+                  Text(
+                    wallet.name,
+                    style: theme.textTheme.labelLarge?.copyWith(
+                      color: muted,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ),
+              const Spacer(),
+              Text(
+                MoneyDisplay.compact(
+                  amount: wallet.balance,
+                  currencyCode: wallet.currencyCode,
+                  trimTrailingZeros: wallet.currencyCode == 'ZWG',
                 ),
-                icon: const Icon(Icons.receipt_long),
-                label: const Text('Currency Transfer Log'),
+                style: theme.textTheme.headlineMedium?.copyWith(
+                  color: foreground,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: -1,
+                ),
+              ),
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      equivalentAsync.asData?.value ??
+                          _walletSubtitle(wallet.name),
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: muted,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                  if (txCount != null)
+                    Text(
+                      '$txCount transaction${txCount == 1 ? '' : 's'}',
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: muted,
+                      ),
+                    ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _PageDots extends StatelessWidget {
+  const _PageDots({
+    required this.count,
+    required this.selectedIndex,
+  });
+
+  final int count;
+  final int selectedIndex;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        for (var i = 0; i < count; i++) ...[
+          if (i > 0) const SizedBox(width: 8),
+          AnimatedContainer(
+            duration: const Duration(milliseconds: 200),
+            width: i == selectedIndex ? 24 : 8,
+            height: 8,
+            decoration: BoxDecoration(
+              color: i == selectedIndex
+                  ? AppColors.navy
+                  : AppColors.silverDim,
+              borderRadius: BorderRadius.circular(4),
+            ),
+          ),
+        ],
+      ],
+    );
+  }
+}
+
+class _MonthFlowCard extends StatelessWidget {
+  const _MonthFlowCard({required this.summaryAsync});
+
+  final AsyncValue<HomeMonthlySummaryDisplay> summaryAsync;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+      decoration: AppDecorations.surfaceCard(
+        radius: 22,
+        color: AppColors.surfaceContainerLowest,
+      ),
+      child: summaryAsync.when(
+        loading: () => const SizedBox(
+          height: 48,
+          child: Center(child: CircularProgressIndicator(strokeWidth: 2)),
+        ),
+        error: (_, _) => Text(
+          'Could not load month summary',
+          style: theme.textTheme.bodySmall,
+        ),
+        data: (summary) {
+          return Row(
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'In this month',
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: AppColors.onSurfaceVariant,
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      MoneyDisplay.compactSigned(
+                        amount: summary.income.toString(),
+                        currencyCode: summary.displayCurrency.value,
+                        prefix: '+',
+                      ),
+                      style: theme.textTheme.titleLarge?.copyWith(
+                        color: AppColors.success,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Out this month',
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: AppColors.onSurfaceVariant,
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      MoneyDisplay.compactSigned(
+                        amount: summary.expenses.toString(),
+                        currencyCode: summary.displayCurrency.value,
+                        prefix: '-',
+                      ),
+                      style: theme.textTheme.titleLarge?.copyWith(
+                        color: AppColors.onSurface,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ],
           );
@@ -139,317 +516,55 @@ class WalletsScreen extends ConsumerWidget {
   }
 }
 
-class _MarketRatesSection extends ConsumerWidget {
-  const _MarketRatesSection({
-    required this.ratesAsync,
-    required this.lastUpdatedAsync,
+class _WalletListTile extends ConsumerWidget {
+  const _WalletListTile({
+    required this.wallet,
+    required this.onTap,
+    this.emphasize = false,
   });
-
-  final AsyncValue<List<ExchangeRateSettingsItem>> ratesAsync;
-  final AsyncValue<DateTime?> lastUpdatedAsync;
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final theme = Theme.of(context);
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          crossAxisAlignment: CrossAxisAlignment.end,
-          children: [
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'REAL-TIME DATA',
-                  style: AppTypography.sectionLabel(context),
-                ),
-                Text(
-                  'Market Rates',
-                  style: theme.textTheme.headlineMedium?.copyWith(
-                    fontWeight: FontWeight.w800,
-                  ),
-                ),
-              ],
-            ),
-            lastUpdatedAsync.when(
-              data: (updatedAt) => Text(
-                updatedAt == null
-                    ? 'No rates yet'
-                    : ExchangeRateLabels.lastUpdated(
-                        updatedAt,
-                        DateTime.now(),
-                      ),
-                style: theme.textTheme.bodySmall?.copyWith(
-                  color: AppColors.onSurfaceVariant,
-                ),
-              ),
-              loading: () => const SizedBox.shrink(),
-              error: (_, _) => const SizedBox.shrink(),
-            ),
-          ],
-        ),
-        const SizedBox(height: 24),
-        ratesAsync.when(
-          loading: () => const Center(child: CircularProgressIndicator()),
-          error: (error, _) => Text('Could not load rates: $error'),
-          data: (items) => Column(
-            children: [
-              for (var i = 0; i < items.length; i++) ...[
-                if (i > 0) const SizedBox(height: 16),
-                _RateCard(item: items[i]),
-              ],
-            ],
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-class _RateCard extends ConsumerWidget {
-  const _RateCard({required this.item});
-
-  final ExchangeRateSettingsItem item;
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final theme = Theme.of(context);
-    final pairLabel =
-        '${item.pair.base.value} / ${item.pair.quote.value}';
-    final rateValue = item.rate?.rate ?? '';
-    final isPrimary = item.pair.base.value == 'USD';
-
-    return Container(
-      padding: const EdgeInsets.all(24),
-      decoration: AppDecorations.ghostBorderCard(radius: AppDecorations.radiusMd),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: (isPrimary
-                          ? AppColors.primaryContainer
-                          : AppColors.secondaryContainer)
-                      .withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Icon(
-                  isPrimary ? Icons.currency_exchange : Icons.show_chart,
-                  color: isPrimary ? AppColors.primary : AppColors.secondary,
-                ),
-              ),
-              const SizedBox(width: 8),
-              Text(
-                pairLabel,
-                style: theme.textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 16),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-            decoration: BoxDecoration(
-              color: AppColors.surfaceContainerHigh,
-              borderRadius: BorderRadius.circular(AppDecorations.radiusMd),
-            ),
-            child: Text(
-              rateValue.isEmpty
-                  ? '1.00 ${item.pair.base.value} = —'
-                  : '1.00 ${item.pair.base.value} = $rateValue ${item.pair.quote.value}',
-              style: theme.textTheme.titleLarge?.copyWith(
-                fontWeight: FontWeight.w700,
-              ),
-            ),
-          ),
-          const SizedBox(height: 16),
-          FilledButton(
-            onPressed: () async {
-              final saved = await EditExchangeRateSheet.show(
-                context,
-                pair: item.pair,
-                initialRate: item.rate?.rate,
-              );
-              if (saved == true && context.mounted) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Exchange rate saved.')),
-                );
-              }
-            },
-            style: FilledButton.styleFrom(
-              backgroundColor:
-                  isPrimary ? AppColors.primary : AppColors.secondary,
-            ),
-            child: const Text('SET RATE'),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _WalletGroup extends StatelessWidget {
-  const _WalletGroup({
-    required this.currencyCode,
-    required this.wallets,
-    required this.onArchive,
-  });
-
-  final String currencyCode;
-  final List<Wallet> wallets;
-  final Future<bool> Function(Wallet wallet) onArchive;
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 32),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Row(
-            children: [
-              Expanded(
-                child: Container(
-                  height: 1,
-                  color: AppColors.outlineVariant.withValues(alpha: 0.3),
-                ),
-              ),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 12),
-                child: Text(
-                  '$currencyCode WALLETS',
-                  style: AppTypography.sectionLabel(context).copyWith(
-                    fontSize: 12,
-                  ),
-                ),
-              ),
-              Expanded(
-                child: Container(
-                  height: 1,
-                  color: AppColors.outlineVariant.withValues(alpha: 0.3),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          Container(
-            decoration: AppDecorations.surfaceCard(radius: AppDecorations.radiusXl),
-            child: Column(
-              children: [
-                for (var i = 0; i < wallets.length; i++) ...[
-                  if (i > 0)
-                    Divider(
-                      height: 1,
-                      indent: 16,
-                      endIndent: 16,
-                      color: AppColors.surfaceContainer,
-                    ),
-                  Dismissible(
-                    key: ValueKey(wallets[i].id),
-                    direction: DismissDirection.endToStart,
-                    background: Container(
-                      alignment: Alignment.centerRight,
-                      padding: const EdgeInsets.only(right: 24),
-                      color: AppColors.errorContainer,
-                      child: const Icon(Icons.archive_outlined),
-                    ),
-                    confirmDismiss: (_) => onArchive(wallets[i]),
-                    child: _WalletRow(
-                      wallet: wallets[i],
-                      onTap: () =>
-                          context.push('/wallets/${wallets[i].id}'),
-                    ),
-                  ),
-                ],
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _WalletRow extends StatelessWidget {
-  const _WalletRow({required this.wallet, required this.onTap});
 
   final Wallet wallet;
   final VoidCallback onTap;
-
-  IconData _iconForWallet() {
-    final lower = wallet.name.toLowerCase();
-    if (lower.contains('ecocash') || lower.contains('onemoney')) {
-      return Icons.smartphone;
-    }
-    if (lower.contains('bank')) {
-      return Icons.account_balance;
-    }
-    return Icons.payments;
-  }
-
-  Color _iconColor() {
-    switch (wallet.currencyCode) {
-      case 'ZWG':
-        return AppColors.primary;
-      case 'ZAR':
-        return AppColors.tertiary;
-      default:
-        return AppColors.onPrimary;
-    }
-  }
-
-  String _walletSubtitle(String name) {
-    final lower = name.toLowerCase();
-    if (lower.contains('ecocash') || lower.contains('onemoney')) {
-      return 'Mobile Money';
-    }
-    if (lower.contains('bank')) {
-      return 'Bank Account';
-    }
-    if (lower.contains('cash')) {
-      return 'Physical Currency';
-    }
-    return 'Digital Wallet';
-  }
-
-  Color _iconBackground() {
-    switch (wallet.currencyCode) {
-      case 'ZWG':
-        return AppColors.primary.withValues(alpha: 0.1);
-      case 'ZAR':
-        return AppColors.tertiaryContainer.withValues(alpha: 0.1);
-      default:
-        return AppColors.primaryContainer;
-    }
-  }
+  final bool emphasize;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
+    final equivalentAsync = ref.watch(
+      walletEquivalentLabelProvider((
+        balance: wallet.balance,
+        currencyCode: wallet.currencyCode,
+      )),
+    );
+
+    final badgeBackground =
+        emphasize ? AppColors.navy : AppColors.surfaceContainer;
+    final badgeForeground =
+        emphasize ? AppColors.silver : const Color(0xFF3A4560);
 
     return InkWell(
       onTap: onTap,
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         child: Row(
           children: [
             Container(
-              width: 48,
-              height: 48,
+              width: 42,
+              height: 42,
+              alignment: Alignment.center,
               decoration: BoxDecoration(
-                color: _iconBackground(),
-                borderRadius: BorderRadius.circular(AppDecorations.radiusMd),
+                color: badgeBackground,
+                borderRadius: BorderRadius.circular(12),
               ),
-              child: Icon(_iconForWallet(), color: _iconColor()),
+              child: Text(
+                wallet.currencyCode,
+                style: theme.textTheme.labelSmall?.copyWith(
+                  color: badgeForeground,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
             ),
-            const SizedBox(width: 16),
+            const SizedBox(width: 12),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -457,11 +572,13 @@ class _WalletRow extends StatelessWidget {
                   Text(
                     wallet.name,
                     style: theme.textTheme.titleSmall?.copyWith(
-                      fontWeight: FontWeight.w700,
+                      fontWeight: FontWeight.w600,
                     ),
                   ),
+                  const SizedBox(height: 2),
                   Text(
-                    _walletSubtitle(wallet.name),
+                    equivalentAsync.asData?.value ??
+                        _walletSubtitle(wallet.name),
                     style: theme.textTheme.bodySmall?.copyWith(
                       color: AppColors.onSurfaceVariant,
                     ),
@@ -469,27 +586,75 @@ class _WalletRow extends StatelessWidget {
                 ],
               ),
             ),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                Text(
-                  MoneyDisplay.withCurrency(
-                    amount: wallet.balance,
-                    currencyCode: wallet.currencyCode,
-                  ),
-                  style: theme.textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-                const Icon(
-                  Icons.chevron_right,
-                  size: 18,
-                  color: AppColors.onSurfaceVariant,
-                ),
-              ],
+            Text(
+              MoneyDisplay.compact(
+                amount: wallet.balance,
+                currencyCode: wallet.currencyCode,
+                trimTrailingZeros: wallet.currencyCode == 'ZWG',
+              ),
+              style: theme.textTheme.titleSmall?.copyWith(
+                fontWeight: FontWeight.w700,
+              ),
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+class _TotalBar extends StatelessWidget {
+  const _TotalBar({required this.netWorthAsync});
+
+  final AsyncValue<CalculateNetWorthResult> netWorthAsync;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      decoration: BoxDecoration(
+        color: AppColors.navy,
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Row(
+        children: [
+          Text(
+            'Total in USD',
+            style: theme.textTheme.bodyMedium?.copyWith(
+              color: AppColors.onNavyMuted,
+            ),
+          ),
+          const Spacer(),
+          netWorthAsync.when(
+            loading: () => const SizedBox(
+              width: 18,
+              height: 18,
+              child: CircularProgressIndicator(
+                strokeWidth: 2,
+                color: AppColors.silver,
+              ),
+            ),
+            error: (_, _) => Text(
+              '—',
+              style: theme.textTheme.titleLarge?.copyWith(
+                color: AppColors.onPrimary,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+            data: (netWorth) => Text(
+              MoneyDisplay.compact(
+                amount: netWorth.total.amount.toString(),
+                currencyCode: netWorth.total.currency.value,
+              ),
+              style: theme.textTheme.titleLarge?.copyWith(
+                color: AppColors.onPrimary,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -502,19 +667,39 @@ class _EmptyWallets extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 32),
-      child: Column(
-        children: [
-          const Text('No wallets yet'),
-          const SizedBox(height: 16),
-          FilledButton.icon(
-            onPressed: onAdd,
-            icon: const Icon(Icons.add),
-            label: const Text('Add your first wallet'),
-          ),
-        ],
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(32),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              'No wallets yet',
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
+            const SizedBox(height: 16),
+            FilledButton.icon(
+              onPressed: onAdd,
+              icon: const Icon(Icons.add),
+              label: const Text('Add your first wallet'),
+            ),
+          ],
+        ),
       ),
     );
   }
+}
+
+String _walletSubtitle(String name) {
+  final lower = name.toLowerCase();
+  if (lower.contains('ecocash') || lower.contains('onemoney')) {
+    return 'Mobile money';
+  }
+  if (lower.contains('bank')) {
+    return 'Bank account';
+  }
+  if (lower.contains('cash')) {
+    return 'Main wallet';
+  }
+  return 'Digital wallet';
 }

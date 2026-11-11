@@ -5,12 +5,13 @@ import 'package:mali_app/presentation/widgets/common/pressable_scale.dart';
 
 enum SovereignNavDestination {
   home,
-  wallets,
-  budgets,
+  insights,
   goals,
+  settings,
 }
 
-/// Floating navy bottom bar with a raised silver "add" button in the middle.
+/// Floating navy bottom bar matching the Master of Coin HTML redesign:
+/// Home · Insights · + (add) · Goals · Settings.
 class SovereignBottomNav extends StatelessWidget {
   const SovereignBottomNav({
     required this.selected,
@@ -63,37 +64,33 @@ class SovereignBottomNav extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
               _NavItem(
-                icon: Icons.home_outlined,
-                selectedIcon: Icons.home_rounded,
                 label: 'Home',
                 selected: selected == SovereignNavDestination.home,
                 onTap: () =>
                     onDestinationSelected(SovereignNavDestination.home),
+                child: const Icon(Icons.home_outlined, size: 22),
               ),
               _NavItem(
-                icon: Icons.account_balance_wallet_outlined,
-                selectedIcon: Icons.account_balance_wallet,
-                label: 'Wallets',
-                selected: selected == SovereignNavDestination.wallets,
+                label: 'Insights',
+                selected: selected == SovereignNavDestination.insights,
                 onTap: () =>
-                    onDestinationSelected(SovereignNavDestination.wallets),
+                    onDestinationSelected(SovereignNavDestination.insights),
+                child: const Icon(Icons.pie_chart_outline, size: 22),
               ),
               _AddFab(onPressed: onAddPressed),
               _NavItem(
-                icon: Icons.pie_chart_outline,
-                selectedIcon: Icons.pie_chart,
-                label: 'Budgets',
-                selected: selected == SovereignNavDestination.budgets,
-                onTap: () =>
-                    onDestinationSelected(SovereignNavDestination.budgets),
-              ),
-              _NavItem(
-                icon: Icons.track_changes_outlined,
-                selectedIcon: Icons.track_changes,
                 label: 'Goals',
                 selected: selected == SovereignNavDestination.goals,
                 onTap: () =>
                     onDestinationSelected(SovereignNavDestination.goals),
+                child: const _TargetIcon(size: 22),
+              ),
+              _NavItem(
+                label: 'Settings',
+                selected: selected == SovereignNavDestination.settings,
+                onTap: () =>
+                    onDestinationSelected(SovereignNavDestination.settings),
+                child: const Icon(Icons.tune_rounded, size: 22),
               ),
             ],
           ),
@@ -105,21 +102,18 @@ class SovereignBottomNav extends StatelessWidget {
 
 class _NavItem extends StatelessWidget {
   const _NavItem({
-    required this.icon,
     required this.label,
     required this.selected,
     required this.onTap,
-    this.selectedIcon,
+    required this.child,
   });
 
-  final IconData icon;
-  final IconData? selectedIcon;
   final String label;
   final bool selected;
   final VoidCallback onTap;
+  final Widget child;
 
-  static const double _tapSize = 52;
-  static const double _iconSize = 24;
+  static const double _tapSize = 48;
   static const double _dotSize = 4;
 
   @override
@@ -142,20 +136,15 @@ class _NavItem extends StatelessWidget {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                AnimatedSwitcher(
-                  duration: duration,
-                  child: Icon(
-                    selected ? (selectedIcon ?? icon) : icon,
-                    key: ValueKey(selected),
-                    size: _iconSize,
-                    color: color,
-                  ),
+                IconTheme(
+                  data: IconThemeData(color: color, size: 22),
+                  child: child,
                 ),
                 const SizedBox(height: 4),
                 AnimatedContainer(
                   duration: duration,
                   curve: AppMotion.spring,
-                  width: selected ? _dotSize * 4 : _dotSize,
+                  width: _dotSize,
                   height: _dotSize,
                   decoration: BoxDecoration(
                     color: selected ? AppColors.silver : Colors.transparent,
@@ -171,13 +160,52 @@ class _NavItem extends StatelessWidget {
   }
 }
 
+/// Concentric-circle target icon from the redesign Goals tab.
+class _TargetIcon extends StatelessWidget {
+  const _TargetIcon({required this.size});
+
+  final double size;
+
+  @override
+  Widget build(BuildContext context) {
+    final color = IconTheme.of(context).color ?? AppColors.navInactive;
+    return CustomPaint(
+      size: Size.square(size),
+      painter: _TargetPainter(color: color),
+    );
+  }
+}
+
+class _TargetPainter extends CustomPainter {
+  const _TargetPainter({required this.color});
+
+  final Color color;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = color
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 2.2
+      ..strokeCap = StrokeCap.round;
+    final center = Offset(size.width / 2, size.height / 2);
+    canvas.drawCircle(center, size.width * 0.42, paint);
+    canvas.drawCircle(center, size.width * 0.24, paint);
+    canvas.drawCircle(center, size.width * 0.06, paint);
+  }
+
+  @override
+  bool shouldRepaint(covariant _TargetPainter oldDelegate) =>
+      oldDelegate.color != color;
+}
+
 class _AddFab extends StatelessWidget {
   const _AddFab({required this.onPressed});
 
   final VoidCallback onPressed;
 
   static const double _size = 58;
-  static const double _lift = -26;
+  static const double _lift = -30;
   static const double _ringWidth = 5;
 
   @override
@@ -191,14 +219,14 @@ class _AddFab extends StatelessWidget {
           scale: 0.92,
           onTap: onPressed,
           child: Container(
-            width: _size + _ringWidth * 2,
-            height: _size + _ringWidth * 2,
             padding: const EdgeInsets.all(_ringWidth),
-            decoration: BoxDecoration(
+            decoration: const BoxDecoration(
               color: AppColors.navy,
-              borderRadius: BorderRadius.circular(24),
+              borderRadius: BorderRadius.all(Radius.circular(25)),
             ),
-            child: DecoratedBox(
+            child: Container(
+              width: _size,
+              height: _size,
               decoration: BoxDecoration(
                 color: AppColors.silver,
                 borderRadius: BorderRadius.circular(20),
@@ -211,7 +239,11 @@ class _AddFab extends StatelessWidget {
                   ),
                 ],
               ),
-              child: const Icon(Icons.add_rounded, size: 30, color: AppColors.navy),
+              child: const Icon(
+                Icons.add_rounded,
+                size: 26,
+                color: AppColors.navy,
+              ),
             ),
           ),
         ),
