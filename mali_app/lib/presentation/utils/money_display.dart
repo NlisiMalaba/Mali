@@ -24,4 +24,17 @@ class MoneyDisplay {
   }) {
     return '$currencyCode ${formatAmount(amount)}';
   }
+
+  /// Compact signed amount for activity rows, e.g. `+$24.50` or `-ZiG 134.00`.
+  static String compactSigned({
+    required String amount,
+    required String currencyCode,
+    required String prefix,
+  }) {
+    final formatted = formatAmount(amount);
+    if (currencyCode.toUpperCase() == 'USD') {
+      return '$prefix\$$formatted';
+    }
+    return '$prefix$currencyCode $formatted';
+  }
 }

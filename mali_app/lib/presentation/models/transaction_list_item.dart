@@ -1,14 +1,19 @@
 import 'package:mali_app/domain/entities/transaction.dart';
 import 'package:mali_app/presentation/utils/transaction_date_grouping.dart';
+import 'package:mali_app/presentation/utils/transaction_day_summary.dart';
 
 sealed class TransactionListItem {
   const TransactionListItem();
 }
 
 class TransactionDateHeaderItem extends TransactionListItem {
-  const TransactionDateHeaderItem(this.label);
+  const TransactionDateHeaderItem({
+    required this.label,
+    required this.summary,
+  });
 
   final String label;
+  final String summary;
 }
 
 class TransactionEntryItem extends TransactionListItem {
@@ -24,16 +29,30 @@ List<TransactionListItem> buildGroupedTransactionListItems(
     return const [];
   }
 
-  final items = <TransactionListItem>[];
-  String? currentHeader;
+  final groups = <String, List<Transaction>>{};
+  final order = <String>[];
 
   for (final transaction in transactions) {
     final header = formatTransactionDateGroupHeader(transaction.transactionDate);
-    if (header != currentHeader) {
-      currentHeader = header;
-      items.add(TransactionDateHeaderItem(header));
+    final bucket = groups.putIfAbsent(header, () {
+      order.add(header);
+      return <Transaction>[];
+    });
+    bucket.add(transaction);
+  }
+
+  final items = <TransactionListItem>[];
+  for (final header in order) {
+    final dayTransactions = groups[header]!;
+    items.add(
+      TransactionDateHeaderItem(
+        label: header,
+        summary: formatTransactionDaySummary(dayTransactions),
+      ),
+    );
+    for (final transaction in dayTransactions) {
+      items.add(TransactionEntryItem(transaction));
     }
-    items.add(TransactionEntryItem(transaction));
   }
 
   return items;

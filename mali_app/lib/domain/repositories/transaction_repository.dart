@@ -29,6 +29,7 @@ class TransactionQuery {
     this.dateFrom,
     this.dateTo,
     this.type,
+    this.searchQuery,
     this.cursor,
     this.limit = 50,
   }) : assert(limit > 0, 'limit must be greater than zero');
@@ -38,6 +39,7 @@ class TransactionQuery {
   final DateTime? dateFrom;
   final DateTime? dateTo;
   final String? type;
+  final String? searchQuery;
   final TransactionCursor? cursor;
   final int limit;
 }
@@ -58,6 +60,8 @@ class TransactionWatchQuery {
     this.categoryId,
     this.dateFrom,
     this.dateTo,
+    this.type,
+    this.searchQuery,
     this.limit = 50,
   }) : assert(limit > 0, 'limit must be greater than zero');
 
@@ -65,5 +69,7 @@ class TransactionWatchQuery {
   final String? categoryId;
   final DateTime? dateFrom;
   final DateTime? dateTo;
+  final String? type;
+  final String? searchQuery;
   final int limit;
 }

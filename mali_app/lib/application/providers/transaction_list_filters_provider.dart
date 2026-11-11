@@ -32,11 +32,23 @@ class TransactionListFiltersNotifier extends _$TransactionListFiltersNotifier {
     );
   }
 
+  void setType(String? type) {
+    state = state.copyWith(type: type);
+  }
+
+  void setSearchQuery(String? searchQuery) {
+    state = state.copyWith(searchQuery: searchQuery);
+  }
+
   void clearCategory() => setCategory(null);
 
   void clearWallet() => setWallet(null);
 
   void clearDateRange() => setDateRange(from: null, to: null);
+
+  void clearType() => setType(null);
+
+  void clearSearchQuery() => setSearchQuery(null);
 
   void clearAll() {
     state = const TransactionListFilters();

@@ -7,21 +7,35 @@ class TransactionListFilters {
     this.walletId,
     this.dateFrom,
     this.dateTo,
+    this.type,
+    this.searchQuery,
   });
 
   final String? categoryId;
   final String? walletId;
   final DateTime? dateFrom;
   final DateTime? dateTo;
+  final String? type;
+  final String? searchQuery;
 
   bool get hasActiveFilters =>
       categoryId != null ||
       walletId != null ||
       dateFrom != null ||
-      dateTo != null;
+      dateTo != null ||
+      type != null ||
+      (searchQuery != null && searchQuery!.trim().isNotEmpty);
 
   String? effectiveWalletId(String? scopedWalletId) {
     return scopedWalletId ?? walletId;
+  }
+
+  String? get normalizedSearchQuery {
+    final query = searchQuery?.trim();
+    if (query == null || query.isEmpty) {
+      return null;
+    }
+    return query;
   }
 
   TransactionWatchQuery toWatchQuery(String? scopedWalletId) {
@@ -30,6 +44,8 @@ class TransactionListFilters {
       categoryId: categoryId,
       dateFrom: dateFrom,
       dateTo: dateTo,
+      type: type,
+      searchQuery: normalizedSearchQuery,
       limit: TransactionListConstants.pageSize,
     );
   }
@@ -44,6 +60,8 @@ class TransactionListFilters {
       categoryId: categoryId,
       dateFrom: dateFrom,
       dateTo: dateTo,
+      type: type,
+      searchQuery: normalizedSearchQuery,
       cursor: cursor,
       limit: limit,
     );
@@ -54,6 +72,8 @@ class TransactionListFilters {
     Object? walletId = _unset,
     Object? dateFrom = _unset,
     Object? dateTo = _unset,
+    Object? type = _unset,
+    Object? searchQuery = _unset,
   }) {
     return TransactionListFilters(
       categoryId: identical(categoryId, _unset)
@@ -64,6 +84,10 @@ class TransactionListFilters {
       dateFrom:
           identical(dateFrom, _unset) ? this.dateFrom : dateFrom as DateTime?,
       dateTo: identical(dateTo, _unset) ? this.dateTo : dateTo as DateTime?,
+      type: identical(type, _unset) ? this.type : type as String?,
+      searchQuery: identical(searchQuery, _unset)
+          ? this.searchQuery
+          : searchQuery as String?,
     );
   }
 
@@ -76,9 +100,18 @@ class TransactionListFilters {
         other.categoryId == categoryId &&
         other.walletId == walletId &&
         other.dateFrom == dateFrom &&
-        other.dateTo == dateTo;
+        other.dateTo == dateTo &&
+        other.type == type &&
+        other.searchQuery == searchQuery;
   }
 
   @override
-  int get hashCode => Object.hash(categoryId, walletId, dateFrom, dateTo);
+  int get hashCode => Object.hash(
+        categoryId,
+        walletId,
+        dateFrom,
+        dateTo,
+        type,
+        searchQuery,
+      );
 }

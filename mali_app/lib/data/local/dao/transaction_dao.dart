@@ -71,6 +71,7 @@ class TransactionDao extends DatabaseAccessor<AppDatabase>
     DateTime? dateFrom,
     DateTime? dateTo,
     String? type,
+    String? searchQuery,
     DateTime? cursorTransactionDate,
     String? cursorTransactionId,
     required int limit,
@@ -84,6 +85,7 @@ class TransactionDao extends DatabaseAccessor<AppDatabase>
               dateFrom: dateFrom,
               dateTo: dateTo,
               type: type,
+              searchQuery: searchQuery,
               cursorTransactionDate: cursorTransactionDate,
               cursorTransactionId: cursorTransactionId,
             ),
@@ -105,6 +107,8 @@ class TransactionDao extends DatabaseAccessor<AppDatabase>
     String? categoryId,
     DateTime? dateFrom,
     DateTime? dateTo,
+    String? type,
+    String? searchQuery,
     required int limit,
   }) {
     return (select(transactionsTable)
@@ -114,6 +118,8 @@ class TransactionDao extends DatabaseAccessor<AppDatabase>
                 categoryId: categoryId,
                 dateFrom: dateFrom,
                 dateTo: dateTo,
+                type: type,
+                searchQuery: searchQuery,
               ))
           ..orderBy([
             (table) => OrderingTerm.desc(table.transactionDate),
@@ -130,6 +136,7 @@ class TransactionDao extends DatabaseAccessor<AppDatabase>
     DateTime? dateFrom,
     DateTime? dateTo,
     String? type,
+    String? searchQuery,
     DateTime? cursorTransactionDate,
     String? cursorTransactionId,
   }) {
@@ -151,6 +158,12 @@ class TransactionDao extends DatabaseAccessor<AppDatabase>
     }
     if (type != null) {
       predicate = predicate & table.type.equals(type);
+    }
+    final normalizedSearch = searchQuery?.trim();
+    if (normalizedSearch != null && normalizedSearch.isNotEmpty) {
+      final pattern = '%$normalizedSearch%';
+      predicate = predicate &
+          (table.title.like(pattern) | table.notes.like(pattern));
     }
     if (cursorTransactionDate != null && cursorTransactionId != null) {
       predicate = predicate &

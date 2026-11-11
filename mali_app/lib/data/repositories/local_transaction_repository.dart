@@ -45,6 +45,7 @@ class LocalTransactionRepository implements ITransactionRepository {
       dateFrom: query.dateFrom,
       dateTo: query.dateTo,
       type: query.type,
+      searchQuery: query.searchQuery,
       cursorTransactionDate: query.cursor?.transactionDate,
       cursorTransactionId: query.cursor?.transactionId,
       limit: query.limit,
@@ -67,6 +68,8 @@ class LocalTransactionRepository implements ITransactionRepository {
           categoryId: query.categoryId,
           dateFrom: query.dateFrom,
           dateTo: query.dateTo,
+          type: query.type,
+          searchQuery: query.searchQuery,
           limit: query.limit,
         )
         .map(TransactionMapper.toDomainList);
