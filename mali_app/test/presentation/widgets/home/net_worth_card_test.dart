@@ -9,7 +9,6 @@ import 'package:mali_app/domain/entities/wallet.dart';
 import 'package:mali_app/domain/usecases/calculate_net_worth_usecase.dart';
 import 'package:mali_app/domain/value_objects/currency_code.dart';
 import 'package:mali_app/domain/value_objects/money.dart';
-import 'package:mali_app/presentation/utils/currency_display.dart';
 import 'package:mali_app/presentation/widgets/home/net_worth_card.dart';
 
 Wallet _wallet({
@@ -32,10 +31,11 @@ Wallet _wallet({
 }
 
 CalculateNetWorthResult _netWorthResult({
-  required List<ConvertedWalletBalance> breakdown,
+  required List<Money> totalsByCurrency,
+  required List<WalletBalanceBreakdown> breakdown,
 }) {
   return CalculateNetWorthResult(
-    total: Money(amount: Decimal.parse('1500'), currency: CurrencyCode.usd),
+    totalsByCurrency: totalsByCurrency,
     walletBreakdown: breakdown,
   );
 }
@@ -66,22 +66,24 @@ List<Override> _overrides({
 
 void main() {
   group('NetWorthCard', () {
-    testWidgets('shows net worth label and USD-equivalent total', (tester) async {
+    testWidgets('shows net worth label and single-currency total', (tester) async {
       await tester.pumpWidget(
         ProviderScope(
           overrides: _overrides(
             netWorth: _netWorthResult(
+              totalsByCurrency: [
+                Money(
+                  amount: Decimal.parse('1500'),
+                  currency: CurrencyCode.usd,
+                ),
+              ],
               breakdown: [
-                ConvertedWalletBalance(
+                WalletBalanceBreakdown(
                   wallet: _wallet(
                     id: 'w-1',
                     name: 'Cash',
                     currencyCode: 'USD',
                     balance: '1500',
-                  ),
-                  convertedAmount: Money(
-                    amount: Decimal.parse('1500'),
-                    currency: CurrencyCode.usd,
                   ),
                 ),
               ],
@@ -98,34 +100,36 @@ void main() {
       expect(find.byKey(const Key('net-worth-total')), findsOneWidget);
     });
 
-    testWidgets('shows hero total with currency code', (tester) async {
+    testWidgets('shows per-currency totals without mixing FX', (tester) async {
       await tester.pumpWidget(
         ProviderScope(
           overrides: _overrides(
             netWorth: _netWorthResult(
+              totalsByCurrency: [
+                Money(
+                  amount: Decimal.parse('500'),
+                  currency: CurrencyCode.usd,
+                ),
+                Money(
+                  amount: Decimal.parse('2000'),
+                  currency: CurrencyCode.zar,
+                ),
+              ],
               breakdown: [
-                ConvertedWalletBalance(
+                WalletBalanceBreakdown(
                   wallet: _wallet(
                     id: 'w-1',
                     name: 'EcoCash USD',
                     currencyCode: 'USD',
                     balance: '500',
                   ),
-                  convertedAmount: Money(
-                    amount: Decimal.parse('500'),
-                    currency: CurrencyCode.usd,
-                  ),
                 ),
-                ConvertedWalletBalance(
+                WalletBalanceBreakdown(
                   wallet: _wallet(
                     id: 'w-2',
                     name: 'Rand Wallet',
                     currencyCode: 'ZAR',
                     balance: '2000',
-                  ),
-                  convertedAmount: Money(
-                    amount: Decimal.parse('100'),
-                    currency: CurrencyCode.usd,
                   ),
                 ),
               ],
@@ -141,11 +145,10 @@ void main() {
       final currencyLabel = tester.widget<Text>(
         find.byKey(const Key('net-worth-currency')),
       );
-      expect(
-        currencyLabel.data,
-        'Net worth · in ${CurrencyDisplay.codeWithFlag(CurrencyCode.usd)} ›',
-      );
+      expect(currencyLabel.data, 'Net worth ›');
       expect(find.byKey(const Key('net-worth-total')), findsOneWidget);
+      expect(find.text('USD'), findsWidgets);
+      expect(find.text('ZAR'), findsWidgets);
       expect(find.textContaining('this month'), findsOneWidget);
     });
 
@@ -154,29 +157,31 @@ void main() {
         ProviderScope(
           overrides: _overrides(
             netWorth: _netWorthResult(
+              totalsByCurrency: [
+                Money(
+                  amount: Decimal.parse('100'),
+                  currency: CurrencyCode.usd,
+                ),
+                Money(
+                  amount: Decimal.parse('200'),
+                  currency: CurrencyCode.zar,
+                ),
+              ],
               breakdown: [
-                ConvertedWalletBalance(
+                WalletBalanceBreakdown(
                   wallet: _wallet(
                     id: 'w-1',
                     name: 'USD',
                     currencyCode: 'USD',
                     balance: '100',
                   ),
-                  convertedAmount: Money(
-                    amount: Decimal.parse('100'),
-                    currency: CurrencyCode.usd,
-                  ),
                 ),
-                ConvertedWalletBalance(
+                WalletBalanceBreakdown(
                   wallet: _wallet(
                     id: 'w-2',
                     name: 'ZAR',
                     currencyCode: 'ZAR',
                     balance: '200',
-                  ),
-                  convertedAmount: Money(
-                    amount: Decimal.parse('10'),
-                    currency: CurrencyCode.usd,
                   ),
                 ),
               ],
@@ -189,8 +194,8 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      expect(find.text('USD'), findsOneWidget);
-      expect(find.text('ZAR'), findsOneWidget);
+      expect(find.text('USD'), findsWidgets);
+      expect(find.text('ZAR'), findsWidgets);
     });
   });
 }

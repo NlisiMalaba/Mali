@@ -41,7 +41,11 @@ final appRouterProvider = Provider<GoRouter>((ref) {
     }
   });
   ref.listen(pinLockControllerProvider, (previous, next) {
-    if (previous != next) {
+    // Only redirect when unlock requirement changes. Refreshing on every
+    // pin-lock tweak remounts nested routes (e.g. PIN setup → "Create a PIN").
+    final previousNeedsUnlock = previous?.asData?.value.needsUnlock;
+    final nextNeedsUnlock = next.asData?.value.needsUnlock;
+    if (previousNeedsUnlock != nextNeedsUnlock) {
       routerRefreshListenable.value++;
     }
   });

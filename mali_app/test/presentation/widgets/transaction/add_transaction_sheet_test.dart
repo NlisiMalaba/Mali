@@ -168,9 +168,12 @@ void main() {
       );
 
       await _tap(tester, find.text('Transfer'));
+      await tester.pumpAndSettle();
 
-      await _tap(tester, find.byKey(const Key('wallet-selector-from-w-usd')));
+      await _tap(tester, find.byKey(const Key('add-transaction-to-wallet')));
+      await tester.pumpAndSettle();
       await _tap(tester, find.byKey(const Key('wallet-selector-to-w-zwg')));
+      await tester.pumpAndSettle();
 
       expect(find.byKey(const Key('transfer-exchange-rate')), findsOneWidget);
       expect(find.text('Exchange rate'), findsOneWidget);

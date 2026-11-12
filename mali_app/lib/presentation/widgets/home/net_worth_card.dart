@@ -4,17 +4,17 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:mali_app/application/providers/home_providers.dart';
 import 'package:mali_app/domain/usecases/calculate_net_worth_usecase.dart';
+import 'package:mali_app/domain/value_objects/money.dart';
 import 'package:mali_app/presentation/theme/app_colors.dart';
 import 'package:mali_app/presentation/theme/app_decorations.dart';
 import 'package:mali_app/presentation/theme/app_motion.dart';
 import 'package:mali_app/presentation/theme/app_typography.dart';
-import 'package:mali_app/presentation/utils/currency_display.dart';
 import 'package:mali_app/presentation/utils/money_display.dart';
 import 'package:mali_app/presentation/widgets/common/shimmer_box.dart';
 import 'package:mali_app/presentation/widgets/common/currency_flag_badge.dart';
 
-/// Navy hero card on Home: total net worth that counts up on load, a one-time
-/// light sheen, sparkline, and per-currency chips.
+/// Navy hero card on Home: per-currency net worth (never FX-mixed), a one-time
+/// light sheen, sparkline, and per-wallet chips.
 class NetWorthCard extends ConsumerWidget {
   const NetWorthCard({super.key});
 
@@ -30,11 +30,9 @@ class NetWorthCard extends ConsumerWidget {
       loading: () => const NetWorthCardSkeleton(),
       error: (error, _) => Text('Could not load net worth: $error'),
       data: (netWorth) {
-        final hasMultipleCurrencies = _hasMultipleCurrencies(
-          netWorth.walletBreakdown,
-        );
-        final currency = netWorth.total.currency.value;
+        final totals = netWorth.totalsByCurrency;
         final monthDelta = summaryAsync.asData?.value;
+        final badgeCurrency = monthDelta?.displayCurrency.value;
 
         return _TiltIn(
           child: Container(
@@ -55,8 +53,7 @@ class NetWorthCard extends ConsumerWidget {
                               onTap: () =>
                                   GoRouter.maybeOf(context)?.push('/wallets'),
                               child: Text(
-                                'Net worth · in '
-                                '${CurrencyDisplay.codeWithFlagForCode(currency)} ›',
+                                'Net worth ›',
                                 key: const Key('net-worth-currency'),
                                 style: theme.textTheme.bodySmall?.copyWith(
                                   color: AppColors.onNavyMuted,
@@ -66,27 +63,52 @@ class NetWorthCard extends ConsumerWidget {
                               ),
                             ),
                           ),
-                          if (monthDelta != null)
+                          if (monthDelta != null && badgeCurrency != null)
                             _MonthDeltaBadge(
                               net: monthDelta.net,
-                              currencyCode: currency,
+                              currencyCode: badgeCurrency,
                             ),
                         ],
                       ),
                       const SizedBox(height: 8),
-                      _CountUpAmount(
-                        key: const Key('net-worth-total'),
-                        amount: netWorth.total.amount,
-                        currencyCode: currency,
-                      ),
+                      if (totals.isEmpty)
+                        Text(
+                          MoneyDisplay.compact(
+                            amount: '0',
+                            currencyCode: 'USD',
+                          ),
+                          key: const Key('net-worth-total'),
+                          style: AppTypography.money(
+                            fontSize: 44,
+                            color: AppColors.onPrimary,
+                          ),
+                        )
+                      else if (totals.length == 1)
+                        _CountUpAmount(
+                          key: const Key('net-worth-total'),
+                          amount: totals.first.amount,
+                          currencyCode: totals.first.currency.value,
+                        )
+                      else
+                        KeyedSubtree(
+                          key: const Key('net-worth-total'),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              for (var i = 0; i < totals.length; i++) ...[
+                                if (i > 0) const SizedBox(height: 6),
+                                _CurrencyTotalRow(total: totals[i]),
+                              ],
+                            ],
+                          ),
+                        ),
                       const SizedBox(height: 8),
                       const SizedBox(
                         height: 40,
                         width: double.infinity,
                         child: _Sparkline(),
                       ),
-                      if (hasMultipleCurrencies ||
-                          netWorth.walletBreakdown.isNotEmpty) ...[
+                      if (netWorth.walletBreakdown.isNotEmpty) ...[
                         const SizedBox(height: 12),
                         Row(
                           children: [
@@ -112,15 +134,48 @@ class NetWorthCard extends ConsumerWidget {
       },
     );
   }
+}
 
-  bool _hasMultipleCurrencies(List<ConvertedWalletBalance> breakdown) {
-    if (breakdown.length <= 1) {
-      return false;
-    }
-    final currencies = breakdown
-        .map((entry) => entry.wallet.currencyCode)
-        .toSet();
-    return currencies.length > 1;
+class _CurrencyTotalRow extends StatelessWidget {
+  const _CurrencyTotalRow({required this.total});
+
+  final Money total;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final code = total.currency.value;
+    return Row(
+      children: [
+        CurrencyFlag(code, size: 16),
+        const SizedBox(width: 8),
+        Text(
+          code,
+          style: theme.textTheme.labelMedium?.copyWith(
+            color: AppColors.onNavyMuted,
+            fontWeight: FontWeight.w600,
+            letterSpacing: 0.4,
+          ),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: FittedBox(
+            fit: BoxFit.scaleDown,
+            alignment: Alignment.centerLeft,
+            child: Text(
+              MoneyDisplay.compact(
+                amount: total.amount.toString(),
+                currencyCode: code,
+              ),
+              style: AppTypography.money(
+                fontSize: 28,
+                color: AppColors.onPrimary,
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
   }
 }
 
@@ -154,20 +209,20 @@ class _CountUpAmount extends StatelessWidget {
         return FittedBox(
           fit: BoxFit.scaleDown,
           alignment: Alignment.centerLeft,
-            child: Text(
-              MoneyDisplay.compact(
-                amount: shown.toString(),
-                currencyCode: currencyCode,
-              ),
-              semanticsLabel: MoneyDisplay.compact(
-                amount: amount.toString(),
-                currencyCode: currencyCode,
-              ),
-              style: AppTypography.money(
-                fontSize: 44,
-                color: AppColors.onPrimary,
-              ),
+          child: Text(
+            MoneyDisplay.compact(
+              amount: shown.toString(),
+              currencyCode: currencyCode,
             ),
+            semanticsLabel: MoneyDisplay.compact(
+              amount: amount.toString(),
+              currencyCode: currencyCode,
+            ),
+            style: AppTypography.money(
+              fontSize: 44,
+              color: AppColors.onPrimary,
+            ),
+          ),
         );
       },
     );
@@ -213,7 +268,7 @@ class _MonthDeltaBadge extends StatelessWidget {
 class _BreakdownChip extends StatelessWidget {
   const _BreakdownChip({required this.entry});
 
-  final ConvertedWalletBalance entry;
+  final WalletBalanceBreakdown entry;
 
   @override
   Widget build(BuildContext context) {

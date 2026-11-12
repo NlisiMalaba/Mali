@@ -27,10 +27,18 @@ class LocalAuthBiometricAuthenticator implements IBiometricAuthenticator {
         return const BiometricCapability.unavailable();
       }
 
+      // Android often reports only strong/weak, not fingerprint/face.
+      final hasClassifiedBiometric = available.contains(BiometricType.face) ||
+          available.contains(BiometricType.fingerprint) ||
+          available.contains(BiometricType.iris);
+      final hasStrongOrWeak = available.contains(BiometricType.strong) ||
+          available.contains(BiometricType.weak);
+
       return BiometricCapability(
         isAvailable: true,
         hasFace: available.contains(BiometricType.face),
-        hasFingerprint: available.contains(BiometricType.fingerprint),
+        hasFingerprint: available.contains(BiometricType.fingerprint) ||
+            (!hasClassifiedBiometric && hasStrongOrWeak),
         hasIris: available.contains(BiometricType.iris),
       );
     } on PlatformException {

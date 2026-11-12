@@ -124,23 +124,37 @@ class _KeypadButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Material(
-      color: enabled
-          ? AppColors.surfaceContainerLowest
-          : AppColors.surfaceContainerLowest.withValues(alpha: 0.45),
-      borderRadius: BorderRadius.circular(16),
-      child: InkWell(
-        onTap: enabled ? onTap : null,
-        borderRadius: BorderRadius.circular(16),
-        child: Center(
-          child: Text(
-            label!,
-            style: AppTypography.money(
-              fontSize: 24,
-              fontWeight: FontWeight.w600,
-              color: enabled
-                  ? AppColors.onSurface
-                  : AppColors.onSurface.withValues(alpha: 0.35),
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(18),
+        boxShadow: enabled
+            ? [
+                BoxShadow(
+                  color: AppColors.navy.withValues(alpha: 0.06),
+                  blurRadius: 10,
+                  offset: const Offset(0, 4),
+                ),
+              ]
+            : null,
+      ),
+      child: Material(
+        color: enabled
+            ? AppColors.surfaceContainerLowest
+            : AppColors.surfaceContainerLowest.withValues(alpha: 0.45),
+        borderRadius: BorderRadius.circular(18),
+        child: InkWell(
+          onTap: enabled ? onTap : null,
+          borderRadius: BorderRadius.circular(18),
+          child: Center(
+            child: Text(
+              label!,
+              style: AppTypography.money(
+                fontSize: 24,
+                fontWeight: FontWeight.w600,
+                color: enabled
+                    ? AppColors.onSurface
+                    : AppColors.onSurface.withValues(alpha: 0.35),
+              ),
             ),
           ),
         ),

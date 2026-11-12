@@ -33,6 +33,10 @@ class PinLockState {
 
 @Riverpod(keepAlive: true)
 class PinLockController extends _$PinLockController {
+  /// System biometric sheets briefly pause the app. Without this, "lock
+  /// immediately" cancels the prompt and biometric enable never sticks.
+  bool _suppressLifecycleLock = false;
+
   @override
   Future<PinLockState> build() async {
     final repository = ref.read(pinLockRepositoryProvider);
@@ -46,7 +50,22 @@ class PinLockController extends _$PinLockController {
     );
   }
 
+  bool get isLifecycleLockSuppressed => _suppressLifecycleLock;
+
+  /// Runs [action] without treating biometric UI as leaving the app.
+  Future<T> runWithLifecycleLockSuppressed<T>(Future<T> Function() action) async {
+    _suppressLifecycleLock = true;
+    try {
+      return await action();
+    } finally {
+      _suppressLifecycleLock = false;
+    }
+  }
+
   void lockIfEnabled() {
+    if (_suppressLifecycleLock) {
+      return;
+    }
     final current = state.value;
     if (current == null || !current.isEnabled) {
       return;
@@ -63,11 +82,13 @@ class PinLockController extends _$PinLockController {
   }
 
   Future<void> onPinEnabled() async {
-    state = const AsyncData(
+    final repository = ref.read(pinLockRepositoryProvider);
+    final isBiometricEnabled = await repository.isBiometricEnabled();
+    state = AsyncData(
       PinLockState(
         isEnabled: true,
         isUnlocked: true,
-        isBiometricEnabled: false,
+        isBiometricEnabled: isBiometricEnabled,
       ),
     );
   }
@@ -102,18 +123,20 @@ class PinLockController extends _$PinLockController {
   }
 
   /// Returns an error message, or null on success or user cancellation (PIN fallback).
-  Future<String?> unlockWithBiometric() async {
-    final result = await ref.read(authenticateWithBiometricUseCaseProvider)();
-    switch (result.outcome) {
-      case BiometricAuthOutcome.success:
-        markUnlocked();
-        return null;
-      case BiometricAuthOutcome.cancelled:
-        return null;
-      case BiometricAuthOutcome.failed:
-      case BiometricAuthOutcome.unavailable:
-        return result.message ?? 'Biometric authentication failed.';
-    }
+  Future<String?> unlockWithBiometric() {
+    return runWithLifecycleLockSuppressed(() async {
+      final result = await ref.read(authenticateWithBiometricUseCaseProvider)();
+      switch (result.outcome) {
+        case BiometricAuthOutcome.success:
+          markUnlocked();
+          return null;
+        case BiometricAuthOutcome.cancelled:
+          return null;
+        case BiometricAuthOutcome.failed:
+        case BiometricAuthOutcome.unavailable:
+          return result.message ?? 'Biometric authentication failed.';
+      }
+    });
   }
 }
 

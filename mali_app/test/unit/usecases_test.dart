@@ -675,21 +675,16 @@ void main() {
 
   group('CalculateNetWorthUseCase', () {
     late MockIWalletRepository walletRepository;
-    late MockIExchangeRateRepository exchangeRateRepository;
     late CalculateNetWorthUseCase useCase;
 
     setUp(() {
       walletRepository = MockIWalletRepository();
-      exchangeRateRepository = MockIExchangeRateRepository();
       useCase = CalculateNetWorthUseCase(
         walletRepository: walletRepository,
-        convertMoneyUseCase: ConvertMoneyUseCase(
-          exchangeRateRepository: exchangeRateRepository,
-        ),
       );
     });
 
-    test('returns total when wallets are already in display currency', () async {
+    test('sums wallets that share a currency', () async {
       when(walletRepository.watchActive()).thenAnswer(
         (_) => Stream.value([
           _wallet(id: 'w-1', currencyCode: 'USD', balance: '10'),
@@ -697,36 +692,41 @@ void main() {
         ]),
       );
 
-      final result = await useCase.call(displayCurrency: CurrencyCode.usd);
+      final result = await useCase.call();
       expect(result.isRight(), isTrue);
-      expect(result.getOrElse((_) => throw StateError('expected right')).total.amount,
-          Decimal.parse('25'));
+      final value = result.getOrElse((_) => throw StateError('expected right'));
+      expect(value.totalsByCurrency, hasLength(1));
+      expect(value.totalsByCurrency.first.currency, CurrencyCode.usd);
+      expect(value.totalsByCurrency.first.amount, Decimal.parse('25'));
     });
 
-    test('uses direct exchange rate for conversion', () async {
-      when(walletRepository.watchActive())
-          .thenAnswer((_) => Stream.value([_wallet(currencyCode: 'ZAR', balance: '20')]));
-      when(exchangeRateRepository.getRate(
-        baseCurrencyCode: CurrencyCode.zar,
-        quoteCurrencyCode: CurrencyCode.usd,
-      )).thenAnswer((_) async => _rate(base: 'ZAR', quote: 'USD', rate: '0.05'));
+    test('keeps separate totals per currency without converting', () async {
+      when(walletRepository.watchActive()).thenAnswer(
+        (_) => Stream.value([
+          _wallet(id: 'w-1', currencyCode: 'USD', balance: '100'),
+          _wallet(id: 'w-2', currencyCode: 'ZWG', balance: '500'),
+          _wallet(id: 'w-3', currencyCode: 'ZAR', balance: '20'),
+        ]),
+      );
 
-      final result = await useCase.call(displayCurrency: CurrencyCode.usd);
-      expect(result.getOrElse((_) => throw StateError('expected right')).total.amount,
-          Decimal.parse('1'));
+      final result = await useCase.call();
+      final value = result.getOrElse((_) => throw StateError('expected right'));
+      expect(value.totalsByCurrency, hasLength(3));
+      expect(value.totalFor(CurrencyCode.usd)?.amount, Decimal.parse('100'));
+      expect(value.totalFor(CurrencyCode.zwg)?.amount, Decimal.parse('500'));
+      expect(value.totalFor(CurrencyCode.zar)?.amount, Decimal.parse('20'));
     });
 
-    test('returns not found when no usable exchange rate exists', () async {
-      when(walletRepository.watchActive())
-          .thenAnswer((_) => Stream.value([_wallet(currencyCode: 'BWP', balance: '20')]));
-      when(exchangeRateRepository.getRate(
-        baseCurrencyCode: CurrencyCode.bwp,
-        quoteCurrencyCode: CurrencyCode.usd,
-      )).thenAnswer((_) async => null);
+    test('returns storage failure when a wallet balance is invalid', () async {
+      when(walletRepository.watchActive()).thenAnswer(
+        (_) => Stream.value([_wallet(currencyCode: 'USD', balance: 'not-a-number')]),
+      );
 
-      final result = await useCase.call(displayCurrency: CurrencyCode.usd);
-      expect(result.swap().getOrElse((_) => const StorageFailure(message: 'x')),
-          isA<NotFoundFailure>());
+      final result = await useCase.call();
+      expect(
+        result.swap().getOrElse((_) => const ValidationFailure(message: 'x')),
+        isA<StorageFailure>(),
+      );
     });
   });
 

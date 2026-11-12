@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:mali_app/application/providers/pin_lock_providers.dart';
 import 'package:mali_app/application/providers/use_case_providers.dart';
 import 'package:mali_app/core/constants/pin_lock_constants.dart';
 import 'package:mali_app/domain/usecases/set_pin_usecase.dart';
@@ -65,22 +64,19 @@ class _PinSetupScreenState extends ConsumerState<PinSetupScreen> {
       return;
     }
 
-    result.fold(
-      (failure) {
-        setState(() {
-          _isSubmitting = false;
-          _firstPin = null;
-          _errorMessage = failure.message;
-        });
-      },
-      (_) async {
-        await ref.read(pinLockControllerProvider.notifier).onPinEnabled();
-        if (!mounted) {
-          return;
-        }
-        context.pop(true);
-      },
-    );
+    if (result.isLeft()) {
+      final failure = result.getLeft().toNullable();
+      setState(() {
+        _isSubmitting = false;
+        _firstPin = null;
+        _errorMessage = failure?.message ?? 'Could not save PIN.';
+      });
+      return;
+    }
+
+    // Pop first, then let the caller update pin-lock state. Updating state
+    // here refreshes GoRouter and remounts this screen back to "Create a PIN".
+    context.pop(true);
   }
 
   void _onBackspace() {

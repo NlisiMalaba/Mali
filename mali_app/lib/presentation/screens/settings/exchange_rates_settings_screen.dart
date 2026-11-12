@@ -95,7 +95,7 @@ class _ExchangeRatesSettingsScreenState
               );
 
             final youHave = netWorthAsync.maybeWhen(
-              data: (result) => result.total,
+              data: (result) => result.totalFor(_previewBase),
               orElse: () => null,
             );
 

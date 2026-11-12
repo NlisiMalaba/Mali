@@ -22,10 +22,7 @@ const homeTopGoalLimit = 2;
 
 @riverpod
 Future<CalculateNetWorthResult> homeNetWorth(Ref ref) async {
-  final displayCurrency = ref.watch(displayCurrencyProvider);
-  final result = await ref.read(calculateNetWorthUseCaseProvider)(
-    displayCurrency: displayCurrency,
-  );
+  final result = await ref.read(calculateNetWorthUseCaseProvider)();
 
   return result.fold(
     (failure) => throw failure,

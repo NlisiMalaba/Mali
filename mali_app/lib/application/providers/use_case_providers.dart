@@ -100,7 +100,6 @@ ConvertMoneyUseCase convertMoneyUseCase(Ref ref) {
 CalculateNetWorthUseCase calculateNetWorthUseCase(Ref ref) {
   return CalculateNetWorthUseCase(
     walletRepository: ref.watch(walletRepositoryProvider),
-    convertMoneyUseCase: ref.watch(convertMoneyUseCaseProvider),
   );
 }
 

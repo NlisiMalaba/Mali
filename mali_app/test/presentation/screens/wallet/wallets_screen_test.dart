@@ -86,10 +86,12 @@ void main() {
           ),
           homeNetWorthProvider.overrideWith(
             (ref) async => CalculateNetWorthResult(
-              total: Money(
-                amount: Decimal.parse('120.50'),
-                currency: CurrencyCode.usd,
-              ),
+              totalsByCurrency: [
+                Money(
+                  amount: Decimal.parse('120.50'),
+                  currency: CurrencyCode.usd,
+                ),
+              ],
               walletBreakdown: const [],
             ),
           ),
@@ -108,8 +110,11 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Wallets'), findsOneWidget);
+    expect(find.text('All wallets in USD'), findsOneWidget);
     expect(find.text('EcoCash USD'), findsWidgets);
     expect(find.text('\$120.50'), findsWidgets);
+    expect(find.text('Add wallet'), findsOneWidget);
+    expect(find.textContaining('green in, red out'), findsOneWidget);
     expect(find.textContaining('Market Rates'), findsNothing);
 
     await tester.tap(find.text('EcoCash USD').first);

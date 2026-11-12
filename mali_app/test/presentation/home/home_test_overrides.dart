@@ -17,9 +17,9 @@ List<dynamic> homeScreenTestOverrides() {
 
   return [
     homeNetWorthProvider.overrideWith(
-      (ref) async => CalculateNetWorthResult(
-        total: Money(amount: Decimal.zero, currency: CurrencyCode.usd),
-        walletBreakdown: const [],
+      (ref) async => const CalculateNetWorthResult(
+        totalsByCurrency: [],
+        walletBreakdown: [],
       ),
     ),
     homeMonthlySummaryDisplayProvider.overrideWith(

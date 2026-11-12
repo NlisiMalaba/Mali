@@ -79,8 +79,13 @@ class SecuritySettingsScreen extends ConsumerWidget {
     WidgetRef ref, {
     required bool enabled,
   }) async {
-    final result = await ref.read(setBiometricUnlockUseCaseProvider)(
-      SetBiometricUnlockParams(enabled: enabled),
+    final controller = ref.read(pinLockControllerProvider.notifier);
+    // Biometric sheets pause the activity; without suppression, "lock
+    // immediately" interrupts setup and the toggle never stays on.
+    final result = await controller.runWithLifecycleLockSuppressed(
+      () => ref.read(setBiometricUnlockUseCaseProvider)(
+        SetBiometricUnlockParams(enabled: enabled),
+      ),
     );
 
     if (!context.mounted) {
@@ -94,9 +99,7 @@ class SecuritySettingsScreen extends ConsumerWidget {
         );
       },
       (_) {
-        ref
-            .read(pinLockControllerProvider.notifier)
-            .onBiometricEnabledChanged(enabled);
+        controller.onBiometricEnabledChanged(enabled);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
@@ -113,6 +116,10 @@ class SecuritySettingsScreen extends ConsumerWidget {
   Future<void> _enablePin(BuildContext context, WidgetRef ref) async {
     final created = await context.push<bool>('/settings/security/pin-setup');
     if (created != true || !context.mounted) {
+      return;
+    }
+    await ref.read(pinLockControllerProvider.notifier).onPinEnabled();
+    if (!context.mounted) {
       return;
     }
     ScaffoldMessenger.of(context).showSnackBar(
@@ -150,6 +157,10 @@ class SecuritySettingsScreen extends ConsumerWidget {
     if (verified == true && context.mounted) {
       final changed = await context.push<bool>('/settings/security/pin-setup');
       if (changed == true && context.mounted) {
+        await ref.read(pinLockControllerProvider.notifier).onPinEnabled();
+        if (!context.mounted) {
+          return;
+        }
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('PIN updated.')),
         );

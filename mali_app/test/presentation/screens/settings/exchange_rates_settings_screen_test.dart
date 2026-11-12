@@ -65,10 +65,12 @@ Future<void> _pumpScreen(WidgetTester tester) async {
         ),
         homeNetWorthProvider.overrideWith(
           (ref) async => CalculateNetWorthResult(
-            total: Money(
-              amount: Decimal.parse('100'),
-              currency: CurrencyCode.usd,
-            ),
+            totalsByCurrency: [
+              Money(
+                amount: Decimal.parse('100'),
+                currency: CurrencyCode.usd,
+              ),
+            ],
             walletBreakdown: const [],
           ),
         ),

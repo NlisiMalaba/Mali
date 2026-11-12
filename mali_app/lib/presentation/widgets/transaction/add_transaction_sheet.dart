@@ -20,24 +20,27 @@ import 'package:mali_app/presentation/theme/app_typography.dart';
 import 'package:mali_app/presentation/utils/amount_keypad_input.dart';
 import 'package:mali_app/presentation/utils/currency_display.dart';
 import 'package:mali_app/presentation/utils/transaction_amount_style.dart';
+import 'package:mali_app/presentation/widgets/common/currency_flag_badge.dart';
 import 'package:mali_app/presentation/widgets/transaction/category_selector.dart';
 import 'package:mali_app/presentation/widgets/transaction/numeric_keypad.dart';
 import 'package:mali_app/presentation/widgets/transaction/transaction_success_overlay.dart';
 import 'package:mali_app/presentation/widgets/transaction/transaction_type_toggle.dart';
 import 'package:mali_app/presentation/widgets/transaction/transfer_exchange_rate_field.dart';
-import 'package:mali_app/presentation/widgets/transaction/wallet_selector.dart';
 
 class AddTransactionSheet extends ConsumerStatefulWidget {
   const AddTransactionSheet({
     this.initialWalletId,
+    this.initialType = TransactionType.expense,
     super.key,
   });
 
   final String? initialWalletId;
+  final TransactionType initialType;
 
   static Future<bool?> show(
     BuildContext context, {
     String? initialWalletId,
+    TransactionType initialType = TransactionType.expense,
   }) {
     return showModalBottomSheet<bool>(
       context: context,
@@ -49,6 +52,7 @@ class AddTransactionSheet extends ConsumerStatefulWidget {
         height: MediaQuery.sizeOf(context).height,
         child: AddTransactionSheet(
           initialWalletId: initialWalletId,
+          initialType: initialType,
         ),
       ),
     );
@@ -63,7 +67,7 @@ class _AddTransactionSheetState extends ConsumerState<AddTransactionSheet> {
   final _notesController = TextEditingController();
   final _exchangeRateController = TextEditingController();
 
-  TransactionType _type = TransactionType.expense;
+  late TransactionType _type = widget.initialType;
   String _amount = AmountKeypadInput.initialValue;
   CurrencyCode _currency = CurrencyCode.usd;
   Category? _selectedCategory;
@@ -103,19 +107,19 @@ class _AddTransactionSheetState extends ConsumerState<AddTransactionSheet> {
 
   bool get _hasValidAmount => AmountKeypadInput.isPositive(_amount);
 
-  bool get _needsExchangeRate {
+  bool _needsExchangeRate(List<Wallet> wallets) {
     if (_type != TransactionType.transfer) {
       return false;
     }
-    final fromWallet = _findWallet(_fromWalletId);
-    final toWallet = _findWallet(_toWalletId);
+    final fromWallet = _findWallet(_fromWalletId, wallets);
+    final toWallet = _findWallet(_toWalletId, wallets);
     if (fromWallet == null || toWallet == null) {
       return false;
     }
     return fromWallet.currencyCode != toWallet.currencyCode;
   }
 
-  bool get _canSubmit {
+  bool _canSubmit(List<Wallet> wallets) {
     if (!_hasValidAmount || _fromWalletId == null) {
       return false;
     }
@@ -123,7 +127,7 @@ class _AddTransactionSheetState extends ConsumerState<AddTransactionSheet> {
       if (_toWalletId == null || _toWalletId == _fromWalletId) {
         return false;
       }
-      if (_needsExchangeRate && !isValidExchangeRate(_exchangeRate)) {
+      if (_needsExchangeRate(wallets) && !isValidExchangeRate(_exchangeRate)) {
         return false;
       }
     }
@@ -131,14 +135,10 @@ class _AddTransactionSheetState extends ConsumerState<AddTransactionSheet> {
   }
 
   Wallet? _findWallet(String? walletId, [List<Wallet>? wallets]) {
-    if (walletId == null) {
+    if (walletId == null || wallets == null) {
       return null;
     }
-    final source = wallets;
-    if (source == null) {
-      return null;
-    }
-    for (final wallet in source) {
+    for (final wallet in wallets) {
       if (wallet.id == walletId) {
         return wallet;
       }
@@ -246,10 +246,19 @@ class _AddTransactionSheetState extends ConsumerState<AddTransactionSheet> {
     }
   }
 
-  Future<void> _pickWallet(List<Wallet> wallets) async {
+  Future<void> _pickWallet(
+    List<Wallet> wallets, {
+    required String selectedId,
+    required ValueChanged<Wallet> onSelected,
+    String? excludeId,
+    String keyPrefix = 'wallet-picker',
+  }) async {
     if (wallets.isEmpty) {
       return;
     }
+    final options = excludeId == null
+        ? wallets
+        : wallets.where((wallet) => wallet.id != excludeId).toList();
     final selected = await showModalBottomSheet<Wallet>(
       context: context,
       showDragHandle: true,
@@ -257,18 +266,15 @@ class _AddTransactionSheetState extends ConsumerState<AddTransactionSheet> {
         child: ListView(
           shrinkWrap: true,
           children: [
-            for (final wallet in wallets)
+            for (final wallet in options)
               ListTile(
-                key: Key('wallet-picker-${wallet.id}'),
-                leading: const Icon(
-                  Icons.account_balance_wallet_outlined,
-                  color: AppColors.success,
-                ),
+                key: Key('$keyPrefix-${wallet.id}'),
+                leading: CurrencyFlag(wallet.currencyCode, size: 22),
                 title: Text(wallet.name),
                 subtitle: Text(
                   CurrencyDisplay.codeWithFlagForCode(wallet.currencyCode),
                 ),
-                trailing: wallet.id == _fromWalletId
+                trailing: wallet.id == selectedId
                     ? const Icon(Icons.check, color: AppColors.navy)
                     : null,
                 onTap: () => Navigator.of(sheetContext).pop(wallet),
@@ -279,8 +285,27 @@ class _AddTransactionSheetState extends ConsumerState<AddTransactionSheet> {
     );
     if (selected != null && mounted) {
       await ref.read(recentWalletsProvider.notifier).recordUsage(selected.id);
-      _onFromWalletChanged(selected);
+      onSelected(selected);
     }
+  }
+
+  Future<void> _pickFromWallet(List<Wallet> wallets) {
+    return _pickWallet(
+      wallets,
+      selectedId: _fromWalletId ?? '',
+      onSelected: _onFromWalletChanged,
+      keyPrefix: 'wallet-selector-from',
+    );
+  }
+
+  Future<void> _pickToWallet(List<Wallet> wallets) {
+    return _pickWallet(
+      wallets,
+      selectedId: _toWalletId ?? '',
+      excludeId: _fromWalletId,
+      onSelected: _onToWalletChanged,
+      keyPrefix: 'wallet-selector-to',
+    );
   }
 
   Future<void> _scanReceipt() async {
@@ -427,13 +452,16 @@ class _AddTransactionSheetState extends ConsumerState<AddTransactionSheet> {
   }
 
   Future<void> _submit() async {
+    final wallets =
+        ref.read(activeWalletsProvider).asData?.value ?? const <Wallet>[];
     setState(() => _submitted = true);
-    if (!_canSubmit) {
+    if (!_canSubmit(wallets)) {
       final message = !_hasValidAmount
           ? 'Enter an amount greater than zero.'
           : _type == TransactionType.transfer && _toWalletId == null
               ? 'Select a destination wallet for the transfer.'
-              : _needsExchangeRate && !isValidExchangeRate(_exchangeRate)
+              : _needsExchangeRate(wallets) &&
+                      !isValidExchangeRate(_exchangeRate)
                   ? 'Enter a valid exchange rate for this transfer.'
                   : 'Select a wallet for this transaction.';
       ScaffoldMessenger.of(context).showSnackBar(
@@ -458,7 +486,8 @@ class _AddTransactionSheetState extends ConsumerState<AddTransactionSheet> {
       currencyCode: _currency.value,
       walletId: _fromWalletId!,
       categoryId: _selectedCategory?.id,
-      exchangeRate: _needsExchangeRate ? _exchangeRate?.trim() : null,
+      exchangeRate:
+          _needsExchangeRate(wallets) ? _exchangeRate?.trim() : null,
       title: _transactionTitle(),
       notes: _optionalNotes(),
       transactionDate: _transactionDate,
@@ -537,7 +566,7 @@ class _AddTransactionSheetState extends ConsumerState<AddTransactionSheet> {
 
           final suggestedRate = suggestedRateAsync?.asData?.value;
 
-          if (_needsExchangeRate &&
+          if (_needsExchangeRate(wallets) &&
               _loadedExchangeRateKey == null &&
               suggestedRate != null &&
               (_exchangeRate == null || _exchangeRate!.isEmpty)) {
@@ -571,17 +600,14 @@ class _AddTransactionSheetState extends ConsumerState<AddTransactionSheet> {
                               style: TextStyle(
                                 color: AppColors.onPrimary,
                                 fontWeight: FontWeight.w600,
-                                fontSize: 13,
+                                fontSize: 15,
                               ),
                             ),
                           ),
                           const Spacer(),
-                          Text(
-                            _walletLabel(fromWallet),
-                            style: const TextStyle(
-                              color: AppColors.onNavyMuted,
-                              fontSize: 13,
-                            ),
+                          _HeaderWalletPill(
+                            label: _walletLabel(fromWallet),
+                            currencyCode: fromWallet?.currencyCode,
                           ),
                         ],
                       ),
@@ -663,20 +689,34 @@ class _AddTransactionSheetState extends ConsumerState<AddTransactionSheet> {
                                               children: [
                                                 Expanded(
                                                   child: _MetaChip(
+                                                    key: const Key(
+                                                      'add-transaction-from-wallet',
+                                                    ),
+                                                    flagCode:
+                                                        fromWallet?.currencyCode,
                                                     icon: Icons
                                                         .account_balance_wallet_outlined,
-                                                    label: _walletLabel(
-                                                      fromWallet,
-                                                    ),
+                                                    label: _type ==
+                                                            TransactionType
+                                                                .transfer
+                                                        ? 'From · ${_walletLabel(fromWallet)}'
+                                                        : _walletLabel(
+                                                            fromWallet,
+                                                          ),
                                                     onTap: () =>
-                                                        _pickWallet(wallets),
+                                                        _pickFromWallet(
+                                                      wallets,
+                                                    ),
                                                   ),
                                                 ),
                                                 const SizedBox(width: 8),
                                                 Expanded(
                                                   child: _MetaChip(
+                                                    key: const Key(
+                                                      'add-transaction-date',
+                                                    ),
                                                     icon: Icons
-                                                        .calendar_today_outlined,
+                                                        .calendar_today_rounded,
                                                     label: _dateLabel(),
                                                     onTap: _pickDate,
                                                   ),
@@ -685,29 +725,46 @@ class _AddTransactionSheetState extends ConsumerState<AddTransactionSheet> {
                                             ),
                                             if (_type ==
                                                 TransactionType.transfer) ...[
-                                              const SizedBox(height: 12),
-                                              WalletSelector(
-                                                wallets: wallets,
-                                                mode:
-                                                    WalletSelectorMode.transfer,
-                                                fromWalletId: _fromWalletId,
-                                                toWalletId: _toWalletId,
-                                                onFromWalletChanged:
-                                                    _onFromWalletChanged,
-                                                onToWalletChanged:
-                                                    _onToWalletChanged,
-                                                exchangeRateController:
-                                                    _exchangeRateController,
-                                                suggestedExchangeRate:
-                                                    suggestedRate,
-                                                onExchangeRateChanged: (value) {
-                                                  setState(
-                                                    () => _exchangeRate = value,
-                                                  );
-                                                },
+                                              const SizedBox(height: 8),
+                                              _MetaChip(
+                                                key: const Key(
+                                                  'add-transaction-to-wallet',
+                                                ),
+                                                flagCode:
+                                                    toWallet?.currencyCode,
+                                                icon: Icons
+                                                    .south_west_rounded,
+                                                label: toWallet == null
+                                                    ? 'To wallet'
+                                                    : 'To · ${_walletLabel(toWallet)}',
+                                                onTap: () =>
+                                                    _pickToWallet(wallets),
                                               ),
+                                              if (_needsExchangeRate(
+                                                wallets,
+                                              )) ...[
+                                                const SizedBox(height: 12),
+                                                TransferExchangeRateField(
+                                                  fromCurrency:
+                                                      fromWallet?.currencyCode ??
+                                                          _currency.value,
+                                                  toCurrency:
+                                                      toWallet?.currencyCode ??
+                                                          _currency.value,
+                                                  controller:
+                                                      _exchangeRateController,
+                                                  suggestedRate: suggestedRate,
+                                                  onChanged: (value) {
+                                                    setState(
+                                                      () =>
+                                                          _exchangeRate = value,
+                                                    );
+                                                  },
+                                                ),
+                                              ],
                                             ],
-                                            if (_submitted && !_canSubmit) ...[
+                                            if (_submitted &&
+                                                !_canSubmit(wallets)) ...[
                                               const SizedBox(height: 8),
                                               Text(
                                                 'Complete required fields before saving.',
@@ -776,6 +833,7 @@ class _AmountDisplay extends StatelessWidget {
       currency.decimalPlaces,
     );
     final symbol = CurrencyDisplay.symbol(currency);
+    final prefix = TransactionAmountStyle.prefixFor(type.value);
     final amountColor = TransactionAmountStyle.colorFor(type.value);
 
     return Column(
@@ -793,6 +851,17 @@ class _AmountDisplay extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.center,
           crossAxisAlignment: CrossAxisAlignment.end,
           children: [
+            if (prefix.isNotEmpty)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 10),
+                child: Text(
+                  prefix,
+                  style: AppTypography.money(
+                    fontSize: 28,
+                    color: amountColor.withValues(alpha: 0.75),
+                  ),
+                ),
+              ),
             Padding(
               padding: const EdgeInsets.only(bottom: 10),
               child: Text(
@@ -828,35 +897,80 @@ class _AmountDisplay extends StatelessWidget {
   }
 }
 
+class _HeaderWalletPill extends StatelessWidget {
+  const _HeaderWalletPill({
+    required this.label,
+    required this.currencyCode,
+  });
+
+  final String label;
+  final String? currencyCode;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+      decoration: BoxDecoration(
+        color: AppColors.navyRaised,
+        borderRadius: BorderRadius.circular(999),
+        border: Border.all(color: AppColors.navyBorder),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (currencyCode != null) ...[
+            CurrencyFlag(currencyCode!, size: 14),
+            const SizedBox(width: 6),
+          ],
+          Text(
+            label,
+            style: const TextStyle(
+              color: AppColors.onNavyMuted,
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class _MetaChip extends StatelessWidget {
   const _MetaChip({
     required this.icon,
     required this.label,
     required this.onTap,
+    this.flagCode,
+    super.key,
   });
 
   final IconData icon;
   final String label;
   final VoidCallback onTap;
+  final String? flagCode;
 
   @override
   Widget build(BuildContext context) {
     return Material(
       color: AppColors.surfaceContainerLowest,
       shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(14),
         side: const BorderSide(color: Color(0xFFE1E5EE)),
       ),
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(14),
         child: SizedBox(
-          height: 44,
+          height: 48,
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 12),
             child: Row(
               children: [
-                Icon(icon, size: 16, color: AppColors.success),
+                if (flagCode != null)
+                  CurrencyFlag(flagCode!, size: 16)
+                else
+                  Icon(icon, size: 16, color: AppColors.success),
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
